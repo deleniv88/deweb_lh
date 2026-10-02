@@ -15,9 +15,9 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -25,6 +25,8 @@ jobs:
       - name: Install
         run: npm ci
 
+      # Tina Cloud переіндексовує репозиторій після коміту — кілька спроб з паузою,
+      # щоб не впасти з "schema doesn't match", поки індекс не оновився
       - name: Build
         env:
           NEXT_PUBLIC_TINA_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_TINA_CLIENT_ID }}
@@ -40,6 +42,7 @@ jobs:
           done
           exit 1
 
+      # ключі для форми → out/api/config.php (у репозиторії їх немає)
       - name: Write form config
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -57,12 +60,29 @@ jobs:
           '
           test -f out/api/config.php
 
+      # FTP інколи обриває з'єднання (ECONNRESET) — особливо на великих файлах (відео).
+      # Тому: довший таймаут + автоматична друга спроба, якщо перша обірвалась.
       - name: Upload to lh.pl (FTP)
+        id: ftp1
+        continue-on-error: true
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
+          timeout: 600000
+          local-dir: ./out/
+          server-dir: ${{ secrets.FTP_DIR }}
+
+      - name: Upload to lh.pl (FTP, retry)
+        if: steps.ftp1.outcome == 'failure'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          timeout: 600000
           local-dir: ./out/
           server-dir: ${{ secrets.FTP_DIR }}
