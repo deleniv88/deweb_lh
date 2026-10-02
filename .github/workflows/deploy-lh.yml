@@ -70,7 +70,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           timeout: 600000
           local-dir: ./out/
           server-dir: ${{ secrets.FTP_DIR }}
@@ -82,7 +82,7 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          protocol: ftp
           timeout: 600000
           local-dir: ./out/
           server-dir: ${{ secrets.FTP_DIR }}
