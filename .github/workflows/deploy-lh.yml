@@ -1,0 +1,68 @@
+# Автодеплой на lh.pl: кожен коміт у main (зокрема Save в адмінці Tina)
+# → збірка сайту → заливка готових файлів по FTP.
+name: Deploy to lh.pl
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-lh
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_TINA_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          NEXT_PUBLIC_TINA_BRANCH: main
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.SITE_URL }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+        run: |
+          for i in 1 2 3 4 5; do
+            npm run build && exit 0
+            echo "Build failed (attempt $i). Waiting 45s for Tina Cloud to finish indexing..."
+            sleep 45
+          done
+          exit 1
+
+      - name: Write form config
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          node -e '
+            const k=["TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","GMAIL_USER","GMAIL_APP_PASSWORD","NOTIFY_EMAIL","TURNSTILE_SECRET_KEY"];
+            const q=v=>"\x27"+String(v||"").replace(/\\/g,"\\\\").replace(/\x27/g,"\\\x27")+"\x27";
+            const body=k.map(x=>"  "+q(x)+" => "+q(process.env[x])+",").join("\n");
+            require("fs").writeFileSync("out/api/config.php","<?php\nreturn [\n"+body+"\n];\n");
+          '
+          test -f out/api/config.php
+
+      - name: Upload to lh.pl (FTP)
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./out/
+          server-dir: ${{ secrets.FTP_DIR }}
