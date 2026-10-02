@@ -95,6 +95,13 @@
         "category": "Sales - Expert website",
         "city": "London",
         "url": "https://helixboost.com/"
+      },
+      {
+        "image": "/uploads/Amimed.webp",
+        "name": "AMIMED",
+        "category": "Medical laboratory · Corporate website",
+        "city": "Wołomin",
+        "url": "https://amimed.pl/"
       }
     ]
   },
