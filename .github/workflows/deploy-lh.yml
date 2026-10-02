@@ -60,29 +60,29 @@ jobs:
           '
           test -f out/api/config.php
 
-      # FTP інколи обриває з'єднання (ECONNRESET) — особливо на великих файлах (відео).
-      # Тому: довший таймаут + автоматична друга спроба, якщо перша обірвалась.
-      - name: Upload to lh.pl (FTP)
-        id: ftp1
-        continue-on-error: true
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          timeout: 600000
-          local-dir: ./out/
-          server-dir: ${{ secrets.FTP_DIR }}
-
-      - name: Upload to lh.pl (FTP, retry)
-        if: steps.ftp1.outcome == 'failure'
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftp
-          timeout: 600000
-          local-dir: ./out/
-          server-dir: ${{ secrets.FTP_DIR }}
+      # Заливка через lftp: стабільніша за звичайний FTP-клієнт — сама перепідключається,
+      # якщо сервер обриває з'єднання (ECONNRESET), і дозаливає те, що не дійшло.
+      - name: Upload to lh.pl (lftp)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.FTP_DIR }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          cat > /tmp/upload.lftp <<LFTP
+          set ftp:ssl-allow true
+          set ftp:ssl-force false
+          set ssl:verify-certificate no
+          set ftp:passive-mode true
+          set net:timeout 30
+          set net:max-retries 10
+          set net:reconnect-interval-base 5
+          set net:reconnect-interval-max 30
+          set xfer:clobber on
+          open --user "$FTP_USERNAME" --password "$FTP_PASSWORD" "$FTP_SERVER"
+          mirror --reverse --parallel=2 --verbose=1 out/ "$FTP_DIR"
+          bye
+          LFTP
+          lftp -f /tmp/upload.lftp
+          rm -f /tmp/upload.lftp
