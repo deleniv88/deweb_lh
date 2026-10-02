@@ -1,0 +1,396 @@
+{
+  "seo": {
+    "title": "Deweb studio — Websites that turn visitors into clients",
+    "description": "Design, code and AI in one place: scalable websites built to feed your marketing."
+  },
+  "hero": {
+    "titleLine1": "Websites that turn",
+    "titleLine2": "visitors into clients",
+    "lead": "Design, code and AI in one place: scalable websites built to feed your marketing.",
+    "ctaLabel": "Get a free quote",
+    "ctaHref": "#contact",
+    "photo": "/uploads/photo.webp",
+    "photoAlt": "Andrii, founder of Deweb studio",
+    "name": "Andrew Deleniv",
+    "stats": [
+      {
+        "value": "70+",
+        "label": "completed websites"
+      },
+      {
+        "value": "6",
+        "label": "years of experience"
+      },
+      {
+        "value": "12",
+        "label": "months of support included"
+      }
+    ]
+  },
+  "work": {
+    "titleAccent": "Recent",
+    "titleRest": "work",
+    "lead": "Different niches, one goal:\nturning visitors into clients.",
+    "buttonLabel": "See all work",
+    "buttonHref": "#projects",
+    "cases": [
+      {
+        "image": "/uploads/dieselprog.webp",
+        "name": "DieselProg",
+        "category": "Automotive · Corporate website",
+        "city": "Wrocław",
+        "url": "https://dieselprog.pl/"
+      },
+      {
+        "image": "/uploads/porady-lekarskie.webp",
+        "name": "Dr. Michał Domaszewski",
+        "category": "Medicine · One-page site",
+        "city": "Warsaw",
+        "url": "https://michaldomaszewski.pl/"
+      },
+      {
+        "image": "/uploads/kk-consulting.webp",
+        "name": "K&K Consulting Group",
+        "category": "Accounting · Corporate website",
+        "city": "Wrocław",
+        "url": "https://kk-group.com.pl/"
+      },
+      {
+        "image": "/uploads/nautilus.webp",
+        "name": "Nautilus Oyster Bar",
+        "category": "Restaurant · Landing page",
+        "city": "Tallinn",
+        "url": "https://thenautilus.ee/"
+      },
+      {
+        "image": "/uploads/blissti.webp",
+        "name": "Blissti Beauty Studio",
+        "category": "Beauty · Landing page",
+        "city": "Warsaw",
+        "url": "https://blissti.pl/"
+      },
+      {
+        "image": "/uploads/linkset.webp",
+        "name": "Linkset",
+        "category": "IT services · Corporate website",
+        "city": "Poland",
+        "url": "https://linkset.pl/"
+      }
+    ]
+  },
+  "services": {
+    "titleAccent": "Services",
+    "titleRest": "for every goal",
+    "lead": "Pick the format that fits where your business is right now.",
+    "note": "Not sure which one you need? Describe your task, and I'll suggest the right format.",
+    "items": [
+      {
+        "type": "One-page site",
+        "timeline": "Timeline: 2–3 weeks",
+        "name": "Landing page",
+        "description": "For when you need to present a service or product and start getting requests fast. One page where everything leads to the contact form.",
+        "features": [
+          "Structure built for conversion",
+          "Request form with alerts to Telegram or email",
+          "Looks sharp on every screen",
+          "Great for experts, new services and ad campaigns"
+        ],
+        "buttonLabel": "Discuss project",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-landing.webp"
+      },
+      {
+        "type": "Multi-page site",
+        "timeline": "Timeline: 4–8 weeks",
+        "name": "Corporate website",
+        "description": "For when you offer several services and clients want details before they reach out. A page for every service helps both clients and Google.",
+        "features": [
+          "Separate pages for services, about, cases and blog",
+          "SEO-ready structure from day one",
+          "Multilingual: PL · UA · EN",
+          "You edit texts and photos yourself"
+        ],
+        "buttonLabel": "Discuss project",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-corporate.webp"
+      },
+      {
+        "type": "E-commerce",
+        "timeline": "Timeline: 6+ weeks",
+        "name": "Online store",
+        "description": "For when you sell products and want to take orders and payments online, without marketplaces in between.",
+        "features": [
+          "Catalog with categories and filters",
+          "Cart, online payments and delivery options",
+          "Manage products without a developer"
+        ],
+        "buttonLabel": "Discuss project",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-store.webp"
+      }
+    ]
+  },
+  "features": {
+    "titleAccent": "Every",
+    "titleRest": "site includes",
+    "lead": "Six things built into every website. Scroll, click, or just watch.",
+    "items": [
+      {
+        "icon": "fast",
+        "name": "Fast loading",
+        "description": "Pages open in about a second, even on mobile.",
+        "image": "/uploads/feature-fast.webp",
+        "imageAlt": "Lighthouse report: 95 Performance, 95 Accessibility, 100 Best Practices, 100 SEO"
+      },
+      {
+        "icon": "devices",
+        "name": "Looks right everywhere",
+        "description": "Phone, tablet or laptop, the same quality.",
+        "image": "/uploads/feature-responsive.webp",
+        "imageAlt": "The same website shown on laptop, tablet and mobile"
+      },
+      {
+        "icon": "edit",
+        "name": "Edit it yourself",
+        "description": "Change texts and photos without a developer.",
+        "image": "/uploads/feature-edit.webp",
+        "imageAlt": "Admin panel: editing the site texts and photos right on the page"
+      },
+      {
+        "icon": "inbox",
+        "name": "No lost requests",
+        "description": "Each one goes to your email, CRM or Google Sheets.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "chart",
+        "name": "Clear analytics",
+        "description": "Google Analytics shows where your clients come from.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "globe",
+        "name": "Multilingual",
+        "description": "Any language when you need it.",
+        "image": "",
+        "imageAlt": ""
+      }
+    ]
+  },
+  "projectLine": {
+    "title": "Project line",
+    "note": "Example timeline for a corporate website.\nA landing page takes about half of it.",
+    "hint": "Hover a step to see what you get at the end of it.",
+    "buttonLabel": "Plan my project",
+    "buttonHref": "#contact",
+    "steps": [
+      {
+        "name": "Audience",
+        "icon": "users",
+        "start": 1,
+        "span": 4,
+        "variant": "solid",
+        "when": "Week 1",
+        "description": "Who your clients are and what makes them trust.",
+        "result": "Client profile"
+      },
+      {
+        "name": "Competitors",
+        "icon": "chart",
+        "start": 2,
+        "span": 4,
+        "variant": "soft",
+        "when": "Week 1",
+        "description": "What the top competitors do well and where they fall short.",
+        "result": "Competitor review"
+      },
+      {
+        "name": "Structure",
+        "icon": "sitemap",
+        "start": 5,
+        "span": 4,
+        "variant": "light",
+        "when": "Week 1–2",
+        "description": "Pages, sections and the path to a request.",
+        "result": "Sitemap & wireframes"
+      },
+      {
+        "name": "Design",
+        "icon": "palette",
+        "start": 7,
+        "span": 7,
+        "variant": "gradient",
+        "when": "Week 2–3",
+        "description": "A design direction first, then every page in Figma.",
+        "result": "Figma design"
+      },
+      {
+        "name": "Development",
+        "icon": "code",
+        "start": 11,
+        "span": 8,
+        "variant": "solid",
+        "when": "Week 3–4",
+        "description": "WordPress or custom code, fast and easy to edit.",
+        "result": "Working site"
+      },
+      {
+        "name": "Launch",
+        "icon": "rocket",
+        "start": 18,
+        "span": 3,
+        "variant": "dark",
+        "when": "Week 4",
+        "description": "Domain, hosting, analytics and a handover session.",
+        "result": "Live site"
+      },
+      {
+        "name": "Support",
+        "icon": "headset",
+        "start": 20,
+        "span": 2,
+        "variant": "outline",
+        "when": "Week 4 → ongoing",
+        "description": "Updates, fixes and small changes after launch.",
+        "result": "Ongoing care"
+      }
+    ]
+  },
+  "testimonials": {
+    "titleAccent": "Clients",
+    "titleRest": "about us",
+    "lead": "Short stories from happy clients.",
+    "items": [
+      {
+        "name": "YourAid",
+        "company": "Online psychological support centre",
+        "avatar": "",
+        "avatarText": "YA",
+        "caption": "Website for an online psychological support centre",
+        "video": "/uploads/videos/youraid.mp4",
+        "poster": "/uploads/videos/youraid.webp"
+      },
+      {
+        "name": "Mind for Masters",
+        "company": "M4M",
+        "avatar": "",
+        "avatarText": "M4M",
+        "caption": "Website for online Scrum Master training",
+        "video": "/uploads/videos/m4m.mp4",
+        "poster": "/uploads/videos/m4m.webp"
+      },
+      {
+        "name": "Świadoma Mama",
+        "company": "Shara Consulting",
+        "avatar": "",
+        "avatarText": "ŚM",
+        "caption": "Website for online courses for future moms",
+        "video": "/uploads/videos/shara.mp4",
+        "poster": "/uploads/videos/shara.webp"
+      }
+    ]
+  },
+  "about": {
+    "titleAccent": "Hi,",
+    "titleRest": "I'm Andrew.",
+    "text": "I design and build websites for small and growing businesses: **clinics, salons, IT companies, restaurants and service brands.** For 6 years I've been doing both design and development, so the site you approve in Figma is exactly the site that goes live.",
+    "photo": "/uploads/photo.webp",
+    "name": "Andrew Deleniv",
+    "role": "Founder of Deweb Studio · Warsaw",
+    "soloTitle": "Why I work solo",
+    "soloText": "You talk directly to the person who designs and builds your site. No account managers, no hand-offs between teams, no details lost on the way. One person, one process, full responsibility.",
+    "facts": [
+      {
+        "value": "70+",
+        "label": "websites delivered"
+      },
+      {
+        "value": "6",
+        "label": "years of experience"
+      },
+      {
+        "value": "PL · UA · EN",
+        "label": "languages"
+      }
+    ],
+    "buttonLabel": "Let's talk"
+  },
+  "faq": {
+    "titleAccent": "Questions",
+    "titleRest": "& answers",
+    "lead": "Everything about price, timing and what happens after launch.",
+    "askLabel": "Ask your own question",
+    "items": [
+      {
+        "question": "How much does a website cost?",
+        "answer": "The price depends on the features, the number of sections and pages, and other details. **A simple website starts from €300.** Describe your project, and I'll send you an exact quote."
+      },
+      {
+        "question": "How long does it take?",
+        "answer": "A landing page takes **2–3 weeks**, a corporate website **4–8 weeks**, and an online store **6+ weeks**. The timeline also depends on how quickly you send content and feedback."
+      },
+      {
+        "question": "How does payment work?",
+        "answer": "Work starts after a **50% prepayment** of the total price. The remaining 50% is paid once all work is finished."
+      },
+      {
+        "question": "Are there any extra costs besides development?",
+        "answer": "Yes. If you don't have them yet, the **domain and hosting** are paid separately. I'll tell you the exact amount in advance and add it to the total. This is a **yearly payment**."
+      },
+      {
+        "question": "Will the website be fully mine?",
+        "answer": "Yes. After launch you get the **domain, hosting and all access**. The only exception: if the website stays on my hosting, access to the hosting account itself isn't shared."
+      },
+      {
+        "question": "Can I edit the site myself?",
+        "answer": "Yes, you can change texts and photos **without a developer**. After launch I'll send you a **video guide** on how to manage your website."
+      },
+      {
+        "question": "What happens after launch?",
+        "answer": "**One year of support is included:** technical updates and keeping the website running smoothly. Visual changes and new features aren't part of it and are quoted separately."
+      }
+    ]
+  },
+  "footer": {
+    "chipFrom": "Idea",
+    "chipTo": "Reality",
+    "headline": "Got a great idea you want to bring to life?",
+    "buttonLabel": "Let's talk",
+    "links": [
+      {
+        "icon": "instagram",
+        "label": "Instagram",
+        "url": "https://www.instagram.com/deleniv"
+      },
+      {
+        "icon": "telegram",
+        "label": "Telegram",
+        "url": "https://t.me/deleniv"
+      },
+      {
+        "icon": "linkedin",
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/in/andriideleniv/"
+      },
+      {
+        "icon": "email",
+        "label": "Email",
+        "url": "mailto:andrii.deleniv@gmail.com"
+      }
+    ],
+    "copyright": "© 2026 · Andrew Deleniv",
+    "middle": "Be kind",
+    "privacyLabel": "Privacy Policy",
+    "privacyUrl": "#"
+  },
+  "quoteForm": {
+    "tag": "Free quote",
+    "title": "Tell me about your project",
+    "subtitle": "A few details are enough. I'll get back to you with a quote and next steps.",
+    "successTitle": "Thank you!",
+    "successText": "Your request is on its way. I'll get back to you soon.",
+    "fabLabel": "Get a free quote"
+  }
+}

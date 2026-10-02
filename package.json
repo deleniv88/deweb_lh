@@ -1,0 +1,29 @@
+{
+  "name": "deweb-studio-lh",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tinacms dev -c \"next dev\"",
+    "build": "tinacms build && next build",
+    "build:local": "tinacms build --local --skip-cloud-checks -c \"next build\""
+  },
+  "dependencies": {
+    "lenis": "1.3.26",
+    "next": "15.5.26",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "slate": "0.114.0",
+    "slate-dom": "0.114.0",
+    "tinacms": "3.14.1"
+  },
+  "devDependencies": {
+    "@tinacms/cli": "3.1.0",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}
