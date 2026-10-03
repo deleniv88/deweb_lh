@@ -6,6 +6,15 @@ import Behaviors from "./Behaviors";
 import { featureIcons, stepIcons, HandIcon, ArrowUpRight, CheckCircle, Lines, PlayIcon, SoundOffIcon, SoundOnIcon, socialIcons, RightArrow, Rich } from "./Icons";
 import QuoteModal from "./QuoteModal";
 
+/* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
+function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
+  const t = text || "";
+  const a = (accent || "").trim();
+  const i = a ? t.toLowerCase().lastIndexOf(a.toLowerCase()) : -1;
+  if (i < 0) return <>{t}</>;
+  return <>{t.slice(0, i)}<em>{t.slice(i, i + a.length)}</em>{t.slice(i + a.length)}</>;
+}
+
 type Props = {
   query: string;
   variables: Record<string, unknown>;
@@ -47,7 +56,7 @@ export default function HomeClient(props: Props) {
         <div className="hero__copy">
           <h1 className="hero__title">
             <span data-tina-field={tinaField(hero, "titleLine1")}>{hero?.titleLine1}</span>{" "}
-            <span data-tina-field={tinaField(hero, "titleLine2")}>{hero?.titleLine2}</span>
+            <span data-tina-field={tinaField(hero, "titleLine2")}><Accent text={hero?.titleLine2} accent={hero?.titleAccent} /></span>
           </h1>
           <p className="hero__lead" data-tina-field={tinaField(hero, "lead")}>{hero?.lead}</p>
         </div>
@@ -78,10 +87,6 @@ export default function HomeClient(props: Props) {
               </h2>
               <p className="work__lead" data-tina-field={tinaField(work, "lead")}><Lines text={work?.lead} /></p>
             </div>
-            <a className="btn-soft" href={work?.buttonHref || "#projects"} data-tina-field={tinaField(work, "buttonLabel")}>
-              <span className="u-link">{work?.buttonLabel}</span>
-              <ArrowUpRight />
-            </a>
           </div>
 
           <div className="work__controls">
@@ -190,7 +195,7 @@ export default function HomeClient(props: Props) {
           <div className="feat__body" data-feat key={depsKey}>
             <ol className="feat__list" role="tablist" aria-orientation="vertical" aria-label="What every site includes">
               {featItems.map((f: any, i: number) => (
-                <li className="feat__li" role="presentation" key={i}>
+                <li className={`feat__li${i === 0 ? " is-open" : ""}`} role="presentation" key={i}>
                   <button
                     className={`feat__item${i === 0 ? " is-active" : ""}`}
                     type="button"
@@ -206,6 +211,16 @@ export default function HomeClient(props: Props) {
                       <span className="feat__desc"><span data-tina-field={tinaField(f, "description")}>{f.description}</span></span>
                     </span>
                   </button>
+                  {/* на мобільному фото з'являється під пунктом, як акордеон */}
+                  <div className="feat__mimg" aria-hidden="true">
+                    <div>
+                      {f.image ? (
+                        <img src={f.image} alt="" width={1042} height={521} loading="lazy" decoding="async" />
+                      ) : (
+                        <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>Preview coming soon</small></div>
+                      )}
+                    </div>
+                  </div>
                 </li>
               ))}
             </ol>
