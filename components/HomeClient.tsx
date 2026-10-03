@@ -56,7 +56,7 @@ export default function HomeClient(props: Props) {
         <div className="hero__copy">
           <h1 className="hero__title">
             <span data-tina-field={tinaField(hero, "titleLine1")}>{hero?.titleLine1}</span>{" "}
-            <span data-tina-field={tinaField(hero, "titleLine2")}><Accent text={hero?.titleLine2} accent={hero?.titleAccent} /></span>
+            <span data-tina-field={tinaField(hero, "titleLine2")}><Accent text={hero?.titleLine2} accent={hero?.titleAccent ?? "into clients"} /></span>
           </h1>
           <p className="hero__lead" data-tina-field={tinaField(hero, "lead")}>{hero?.lead}</p>
         </div>

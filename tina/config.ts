@@ -55,7 +55,7 @@ export default defineConfig({
             fields: [
               { type: "string", name: "titleLine1", label: "Заголовок — рядок 1" },
               { type: "string", name: "titleLine2", label: "Заголовок — рядок 2" },
-              { type: "string", name: "titleAccent", label: "Виділені синім слова (на мобільному), напр. «into clients»" },
+              { type: "string", name: "titleAccent", label: "Виділені синім слова в заголовку, напр. «into clients»" },
               { type: "string", name: "lead", label: "Підзаголовок", ui: textarea },
               { type: "string", name: "ctaLabel", label: "Кнопка — текст" },
               { type: "string", name: "ctaHref", label: "Кнопка — посилання" },

@@ -276,7 +276,7 @@ html{scroll-padding-top:var(--hdr-h)}
   color:var(--ink);
 }
 .hero__title span{display:block;white-space:nowrap}
-.hero__title em{font-style:normal}
+.hero__title em{font-style:normal;color:var(--accent-b)}   /* виділені слова (into clients) — синім */
 .hero__lead{
   max-width:calc(568 * var(--u));
   font-family:var(--f-body);
@@ -447,15 +447,15 @@ html{scroll-padding-top:var(--hdr-h)}
   .lang svg{width:calc(8 * var(--u));height:calc(4 * var(--u))}
 
   /* Навігація → кнопка меню + випадне меню */
+  /* бургер як у макеті: скляна рамка 52×48 і біла кнопка 42×38 всередині (як у перемикача мови) */
   .burger{
     display:inline-flex;
-    flex-direction:column;
-    gap:calc(4 * var(--u));
-    width:calc(48 * var(--u));
-    padding:0;
+    align-items:center;
     justify-content:center;
+    width:calc(52 * var(--u));
+    padding:calc(5 * var(--u));
   }
-  .burger .pill{flex-direction:column;gap:calc(4 * var(--u));width:100%}
+  .burger .pill{flex-direction:column;justify-content:center;gap:calc(4 * var(--u));width:calc(42 * var(--u));padding:0}
   .burger i{display:block;width:calc(16 * var(--u));height:max(1.5px, calc(1.5 * var(--u)));background:var(--ink);border-radius:2px;transition:transform .25s ease}
   .burger[aria-expanded="true"] i:first-child{transform:translateY(calc(2.75 * var(--u))) rotate(45deg)}
   .burger[aria-expanded="true"] i:last-child{transform:translateY(calc(-2.75 * var(--u))) rotate(-45deg)}
@@ -487,7 +487,6 @@ html{scroll-padding-top:var(--hdr-h)}
   }
   .hero__title{font-size:calc(52 * var(--u));max-width:calc(299 * var(--u))}
   .hero__title span{display:inline;white-space:normal}
-  .hero__title em{font-style:normal;color:var(--accent-b)}   /* виділені слова — синім, лише на мобільному */
   .hero__lead{max-width:calc(299 * var(--u));font-size:calc(20 * var(--u))}
 
   .hero__name{
