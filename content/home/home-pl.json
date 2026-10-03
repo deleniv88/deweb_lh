@@ -1,0 +1,425 @@
+{
+  "seo": {
+    "title": "Deweb studio — Strony, które zamieniają odwiedzających w klientów",
+    "description": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających."
+  },
+  "hero": {
+    "titleLine1": "Strony, które zamieniają",
+    "titleLine2": "odwiedzających w klientów",
+    "lead": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających.",
+    "ctaLabel": "Bezpłatna wycena",
+    "ctaHref": "#contact",
+    "photo": "/uploads/photo.webp",
+    "photoAlt": "Andrii, założyciel Deweb studio",
+    "name": "Andrii Deleniv",
+    "stats": [
+      {
+        "value": "70+",
+        "label": "zrealizowanych stron"
+      },
+      {
+        "value": "6",
+        "label": "lat doświadczenia"
+      },
+      {
+        "value": "12",
+        "label": "miesięcy wsparcia w cenie"
+      }
+    ],
+    "titleAccent": "w klientów"
+  },
+  "work": {
+    "titleAccent": "Ostatnie",
+    "titleRest": "realizacje",
+    "lead": "Różne branże, jeden cel:\nzamieniać odwiedzających w klientów.",
+    "buttonLabel": "See all work",
+    "buttonHref": "#projects",
+    "cases": [
+      {
+        "image": "/uploads/dieselprog.webp",
+        "name": "DieselProg",
+        "category": "Motoryzacja · Strona firmowa",
+        "city": "Wrocław",
+        "url": "https://dieselprog.pl/"
+      },
+      {
+        "image": "/uploads/porady-lekarskie.webp",
+        "name": "Dr. Michał Domaszewski",
+        "category": "Medycyna · Strona one-page",
+        "city": "Warszawa",
+        "url": "https://michaldomaszewski.pl/"
+      },
+      {
+        "image": "/uploads/kk-consulting.webp",
+        "name": "K&K Consulting Group",
+        "category": "Księgowość · Strona firmowa",
+        "city": "Wrocław",
+        "url": "https://kk-group.com.pl/"
+      },
+      {
+        "image": "/uploads/nautilus.webp",
+        "name": "Nautilus Oyster Bar",
+        "category": "Restauracja · Landing page",
+        "city": "Tallinn",
+        "url": "https://thenautilus.ee/"
+      },
+      {
+        "image": "/uploads/blissti.webp",
+        "name": "Blissti Beauty Studio",
+        "category": "Beauty · Landing page",
+        "city": "Warszawa",
+        "url": "https://blissti.pl/"
+      },
+      {
+        "image": "/uploads/linkset.webp",
+        "name": "Linkset",
+        "category": "Usługi IT · Strona firmowa",
+        "city": "Polska",
+        "url": "https://linkset.pl/"
+      },
+      {
+        "image": "/uploads/Gusarskiy.webp",
+        "name": "Gusarskiy Hotel",
+        "category": "Hotel · Strona wielojęzyczna",
+        "city": "Kijów",
+        "url": "https://gusarskiy.kiev.ua/"
+      },
+      {
+        "image": "/uploads/okularnia.webp",
+        "name": "Okularnia Kolankiewicz",
+        "category": "Optyk · Strona firmowa",
+        "city": "Legionowo",
+        "url": "https://okularniakolankiewicz.pl/"
+      },
+      {
+        "image": "/uploads/helix.webp",
+        "name": "HelixBoost",
+        "category": "Sprzedaż · Strona eksperta",
+        "city": "Londyn",
+        "url": "https://helixboost.com/"
+      },
+      {
+        "image": "/uploads/Amimed.webp",
+        "name": "AMIMED",
+        "category": "Laboratorium medyczne · Strona firmowa",
+        "city": "Wołomin",
+        "url": "https://amimed.pl/"
+      }
+    ]
+  },
+  "services": {
+    "titleAccent": "Usługi",
+    "titleRest": "pod każdy cel",
+    "lead": "Wybierz format, który pasuje do obecnego etapu Twojej firmy.",
+    "note": "Nie wiesz, czego potrzebujesz? Opisz zadanie, a podpowiem najlepszy format.",
+    "items": [
+      {
+        "type": "Strona one-page",
+        "timeline": "Czas realizacji: 2–3 tygodnie",
+        "name": "Landing page",
+        "description": "Gdy chcesz szybko zaprezentować usługę lub produkt i zacząć zbierać zapytania. Jedna strona, na której wszystko prowadzi do formularza kontaktowego.",
+        "features": [
+          "Struktura nastawiona na konwersję",
+          "Formularz z powiadomieniami na Telegram lub e-mail",
+          "Świetnie wygląda na każdym ekranie",
+          "Idealna dla ekspertów, nowych usług i kampanii reklamowych"
+        ],
+        "buttonLabel": "Omówmy projekt",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-landing.webp"
+      },
+      {
+        "type": "Strona wielostronicowa",
+        "timeline": "Czas realizacji: 4–8 tygodni",
+        "name": "Strona firmowa",
+        "description": "Gdy oferujesz kilka usług, a klienci chcą poznać szczegóły, zanim się odezwą. Osobna podstrona dla każdej usługi pomaga i klientom, i Google.",
+        "features": [
+          "Osobne podstrony: usługi, o nas, realizacje i blog",
+          "Struktura gotowa pod SEO od pierwszego dnia",
+          "Wielojęzyczność: PL · UA · EN",
+          "Teksty i zdjęcia edytujesz samodzielnie"
+        ],
+        "buttonLabel": "Omówmy projekt",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-corporate.webp"
+      },
+      {
+        "type": "E-commerce",
+        "timeline": "Czas realizacji: od 6 tygodni",
+        "name": "Sklep internetowy",
+        "description": "Gdy sprzedajesz produkty i chcesz przyjmować zamówienia oraz płatności online, bez pośrednictwa marketplace'ów.",
+        "features": [
+          "Katalog z kategoriami i filtrami",
+          "Koszyk, płatności online i opcje dostawy",
+          "Zarządzanie produktami bez programisty"
+        ],
+        "buttonLabel": "Omówmy projekt",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-store.webp"
+      }
+    ]
+  },
+  "features": {
+    "titleAccent": "Każda",
+    "titleRest": "strona zawiera",
+    "lead": "Sześć rzeczy wbudowanych w każdą stronę. Przewiń, kliknij albo po prostu patrz.",
+    "items": [
+      {
+        "icon": "fast",
+        "name": "Szybkie ładowanie",
+        "description": "Strony otwierają się w około sekundę, także na telefonie.",
+        "image": "/uploads/feature-fast.webp",
+        "imageAlt": "Raport Lighthouse: 95 Performance, 95 Accessibility, 100 Best Practices, 100 SEO"
+      },
+      {
+        "icon": "devices",
+        "name": "Dobrze wygląda wszędzie",
+        "description": "Telefon, tablet czy laptop — ta sama jakość.",
+        "image": "/uploads/feature-responsive.webp",
+        "imageAlt": "Ta sama strona na laptopie, tablecie i telefonie"
+      },
+      {
+        "icon": "edit",
+        "name": "Edytujesz sam",
+        "description": "Zmieniasz teksty i zdjęcia bez programisty.",
+        "image": "/uploads/feature-edit.webp",
+        "imageAlt": "Panel administracyjny: edycja tekstów i zdjęć bezpośrednio na stronie"
+      },
+      {
+        "icon": "inbox",
+        "name": "Żadne zapytanie nie ginie",
+        "description": "Każde trafia na Twój e-mail, do CRM lub Arkuszy Google.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "chart",
+        "name": "Przejrzysta analityka",
+        "description": "Google Analytics pokazuje, skąd przychodzą Twoi klienci.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "globe",
+        "name": "Wielojęzyczność",
+        "description": "Dowolny język, kiedy tylko go potrzebujesz.",
+        "image": "",
+        "imageAlt": ""
+      }
+    ]
+  },
+  "projectLine": {
+    "title": "Etapy projektu",
+    "note": "Przykładowy harmonogram strony firmowej.\nLanding page to mniej więcej połowa tego czasu.",
+    "hint": "Najedź na etap, aby zobaczyć, co otrzymasz na jego końcu.",
+    "buttonLabel": "Zaplanuj mój projekt",
+    "buttonHref": "#contact",
+    "steps": [
+      {
+        "name": "Odbiorcy",
+        "icon": "users",
+        "start": 1,
+        "span": 4,
+        "variant": "solid",
+        "when": "Tydzień 1",
+        "description": "Kim są Twoi klienci i co buduje ich zaufanie.",
+        "result": "Profil klienta"
+      },
+      {
+        "name": "Konkurencja",
+        "icon": "chart",
+        "start": 2,
+        "span": 4,
+        "variant": "soft",
+        "when": "Tydzień 1",
+        "description": "Co liderzy rynku robią dobrze, a gdzie mają braki.",
+        "result": "Analiza konkurencji"
+      },
+      {
+        "name": "Struktura",
+        "icon": "sitemap",
+        "start": 5,
+        "span": 4,
+        "variant": "light",
+        "when": "Tydzień 1–2",
+        "description": "Podstrony, sekcje i ścieżka do zapytania.",
+        "result": "Mapa strony i makiety"
+      },
+      {
+        "name": "Design",
+        "icon": "palette",
+        "start": 7,
+        "span": 7,
+        "variant": "gradient",
+        "when": "Tydzień 2–3",
+        "description": "Najpierw kierunek wizualny, potem każda podstrona w Figmie.",
+        "result": "Projekt w Figmie"
+      },
+      {
+        "name": "Wdrożenie",
+        "icon": "code",
+        "start": 11,
+        "span": 8,
+        "variant": "solid",
+        "when": "Tydzień 3–4",
+        "description": "WordPress lub własny kod — szybko i łatwo w edycji.",
+        "result": "Działająca strona"
+      },
+      {
+        "name": "Start",
+        "icon": "rocket",
+        "start": 18,
+        "span": 3,
+        "variant": "dark",
+        "when": "Tydzień 4",
+        "description": "Domena, hosting, analityka i przekazanie strony.",
+        "result": "Strona online"
+      },
+      {
+        "name": "Wsparcie",
+        "icon": "headset",
+        "start": 20,
+        "span": 2,
+        "variant": "outline",
+        "when": "Tydzień 4 → dalej",
+        "description": "Aktualizacje, poprawki i drobne zmiany po starcie.",
+        "result": "Stała opieka"
+      }
+    ]
+  },
+  "testimonials": {
+    "titleAccent": "Klienci",
+    "titleRest": "o nas",
+    "lead": "Krótkie historie zadowolonych klientów.",
+    "items": [
+      {
+        "name": "YourAid",
+        "company": "Centrum wsparcia psychologicznego online",
+        "avatar": "",
+        "avatarText": "YA",
+        "caption": "Strona centrum wsparcia psychologicznego online",
+        "video": "/uploads/videos/youraid.mp4",
+        "poster": "/uploads/videos/youraid.webp"
+      },
+      {
+        "name": "Mind for Masters",
+        "company": "M4M",
+        "avatar": "",
+        "avatarText": "M4M",
+        "caption": "Strona szkoleń online dla Scrum Masterów",
+        "video": "/uploads/videos/m4m.mp4",
+        "poster": "/uploads/videos/m4m.webp"
+      },
+      {
+        "name": "Świadoma Mama",
+        "company": "Shara Consulting",
+        "avatar": "",
+        "avatarText": "ŚM",
+        "caption": "Strona kursów online dla przyszłych mam",
+        "video": "/uploads/videos/shara.mp4",
+        "poster": "/uploads/videos/shara.webp"
+      }
+    ]
+  },
+  "about": {
+    "titleAccent": "Cześć,",
+    "titleRest": "jestem Andrii.",
+    "text": "Projektuję i tworzę strony dla małych i rozwijających się firm: **kliniki, salony, firmy IT, restauracje i marki usługowe.** Od 6 lat zajmuję się zarówno designem, jak i programowaniem, więc strona, którą akceptujesz w Figmie, to dokładnie ta, która trafia do sieci.",
+    "photo": "/uploads/photo.webp",
+    "name": "Andrii Deleniv",
+    "role": "Założyciel Deweb Studio · Warszawa",
+    "soloTitle": "Dlaczego pracuję sam",
+    "soloText": "Rozmawiasz bezpośrednio z osobą, która projektuje i buduje Twoją stronę. Bez opiekunów klienta, bez przekazywania między zespołami, bez gubienia szczegółów po drodze. Jedna osoba, jeden proces, pełna odpowiedzialność.",
+    "facts": [
+      {
+        "value": "70+",
+        "label": "zrealizowanych stron"
+      },
+      {
+        "value": "6",
+        "label": "lat doświadczenia"
+      },
+      {
+        "value": "PL · UA · EN",
+        "label": "języki"
+      }
+    ],
+    "buttonLabel": "Porozmawiajmy"
+  },
+  "faq": {
+    "titleAccent": "Pytania",
+    "titleRest": "i odpowiedzi",
+    "lead": "Wszystko o cenie, terminach i o tym, co dzieje się po starcie strony.",
+    "askLabel": "Zadaj swoje pytanie",
+    "items": [
+      {
+        "question": "Ile kosztuje strona?",
+        "answer": "Cena zależy od funkcji, liczby sekcji i podstron oraz innych szczegółów. **Prosta strona kosztuje od 300 €.** Opisz swój projekt, a prześlę dokładną wycenę."
+      },
+      {
+        "question": "Ile trwa realizacja?",
+        "answer": "Landing page to **2–3 tygodnie**, strona firmowa **4–8 tygodni**, a sklep internetowy **od 6 tygodni**. Termin zależy też od tego, jak szybko przesyłasz treści i uwagi."
+      },
+      {
+        "question": "Jak wygląda płatność?",
+        "answer": "Prace zaczynam po **przedpłacie 50%** całkowitej ceny. Pozostałe 50% płacisz po zakończeniu wszystkich prac."
+      },
+      {
+        "question": "Czy są dodatkowe koszty poza wykonaniem strony?",
+        "answer": "Tak. Jeśli jeszcze ich nie masz, **domena i hosting** są płatne osobno. Dokładną kwotę podam z góry i doliczę do całości. To **opłata roczna**."
+      },
+      {
+        "question": "Czy strona będzie w pełni moja?",
+        "answer": "Tak. Po starcie otrzymujesz **domenę, hosting i wszystkie dostępy**. Jedyny wyjątek: jeśli strona zostaje na moim hostingu, nie udostępniam dostępu do samego konta hostingowego."
+      },
+      {
+        "question": "Czy mogę sam edytować stronę?",
+        "answer": "Tak, teksty i zdjęcia zmienisz **bez programisty**. Po starcie wyślę Ci **instrukcję wideo**, jak zarządzać stroną."
+      },
+      {
+        "question": "Co dzieje się po starcie?",
+        "answer": "**Rok wsparcia jest w cenie:** aktualizacje techniczne i dbanie o sprawne działanie strony. Zmiany wizualne i nowe funkcje nie wchodzą w zakres wsparcia i są wyceniane osobno."
+      }
+    ]
+  },
+  "footer": {
+    "chipFrom": "Pomysł",
+    "chipTo": "Realizacja",
+    "headline": "Masz świetny pomysł, który chcesz zrealizować?",
+    "buttonLabel": "Porozmawiajmy",
+    "links": [
+      {
+        "icon": "instagram",
+        "label": "Instagram",
+        "url": "https://www.instagram.com/deleniv"
+      },
+      {
+        "icon": "telegram",
+        "label": "Telegram",
+        "url": "https://t.me/deleniv"
+      },
+      {
+        "icon": "linkedin",
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/in/andriideleniv/"
+      },
+      {
+        "icon": "email",
+        "label": "E-mail",
+        "url": "mailto:andrii.deleniv@gmail.com"
+      }
+    ],
+    "copyright": "© 2026 · Andrii Deleniv",
+    "middle": "Bądź życzliwy",
+    "privacyLabel": "Polityka prywatności",
+    "privacyUrl": "#"
+  },
+  "quoteForm": {
+    "tag": "Bezpłatna wycena",
+    "title": "Opowiedz mi o swoim projekcie",
+    "subtitle": "Wystarczy kilka szczegółów. Odezwę się z wyceną i kolejnymi krokami.",
+    "successTitle": "Dziękuję!",
+    "successText": "Twoje zapytanie już do mnie leci. Wkrótce się odezwę.",
+    "fabLabel": "Bezpłatna wycena"
+  }
+}

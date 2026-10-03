@@ -36,6 +36,7 @@ $name    = clean($d['name'] ?? '', 120);
 $contact = clean($d['contact'] ?? '', 160);
 $method  = clean($d['method'] ?? '', 20);
 $message = clean($d['message'] ?? '', 3000);
+$lang    = strtoupper(clean($d['lang'] ?? '', 5));
 if ($name === '' || $contact === '') out(400, ['ok' => false, 'error' => 'missing']);
 
 /* 3) спам із купою посилань */
@@ -109,10 +110,10 @@ function smtpSend(string $user, string $pass, string $to, string $subject, strin
   return $sent ? 'ok' : 'fail';
 }
 
-$tg = "🆕 <b>Нова заявка з сайту</b>\n\n👤 <b>" . esc($name) . "</b>\n📬 " . esc($via) . ': <code>' . esc($contact) . "</code>\n\n📝 "
+$tg = "🆕 <b>Нова заявка з сайту</b>" . ($lang !== '' ? " · $lang" : '') . "\n\n👤 <b>" . esc($name) . "</b>\n📬 " . esc($via) . ': <code>' . esc($contact) . "</code>\n\n📝 "
     . esc($message !== '' ? $message : '—') . ($page !== '' ? "\n\n🔗 " . esc($page) : '');
-$subject = "Нова заявка з сайту — $name";
-$text = "Ім'я: $name\nЗв'язок ($via): $contact\n\nЗапит:\n" . ($message ?: '—') . "\n\nСторінка: " . ($page ?: '—');
+$subject = "Нова заявка з сайту — $name" . ($lang !== '' ? " [$lang]" : '');
+$text = ($lang !== '' ? "Мова сайту: $lang\n" : '') . "Ім'я: $name\nЗв'язок ($via): $contact\n\nЗапит:\n" . ($message ?: '—') . "\n\nСторінка: " . ($page ?: '—');
 $html = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#242527">'
       . '<h2 style="margin:0 0 12px;color:#5e6cff">Нова заявка з сайту</h2>'
       . '<p><b>Ім\'я:</b> ' . esc($name) . '<br><b>Зв\'язок (' . esc($via) . '):</b> ' . esc($contact) . '</p>'

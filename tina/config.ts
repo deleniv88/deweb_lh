@@ -31,11 +31,15 @@ export default defineConfig({
       /* ================= ГОЛОВНА ================= */
       {
         name: "home",
-        label: "Головна сторінка",
+        label: "Головна сторінка (EN · PL · UA)",
         path: "content/home",
         format: "json",
         ui: {
-          router: () => "/", // відкриває головну для візуального редагування
+          // кожна мова — окремий документ: home (EN), home-pl (PL), home-ua (UA)
+          router: ({ document }) => {
+            const f = document._sys.filename;
+            return f === "home-pl" ? "/pl/" : f === "home-ua" ? "/ua/" : "/";
+          },
           allowedActions: { create: false, delete: false },
         },
         fields: [

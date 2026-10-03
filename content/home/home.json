@@ -1,12 +1,12 @@
 {
   "seo": {
     "title": "Deweb studio — Websites that turn visitors into clients",
-    "description": "Design, code and AI in one place: scalable websites built to feed your marketing."
+    "description": "Design, code and AI in one place: websites that bring your business clients, not just visitors."
   },
   "hero": {
     "titleLine1": "Websites that turn",
     "titleLine2": "visitors into clients",
-    "lead": "Design, code and AI in one place: scalable websites built to feed your marketing.",
+    "lead": "Design, code and AI in one place: websites that bring your business clients, not just visitors.",
     "ctaLabel": "Get a free quote",
     "ctaHref": "#contact",
     "photo": "/uploads/photo.webp",
@@ -25,7 +25,8 @@
         "value": "12",
         "label": "months of support included"
       }
-    ]
+    ],
+    "titleAccent": "into clients"
   },
   "work": {
     "titleAccent": "Recent",

@@ -5,6 +5,8 @@ import Header from "./Header";
 import Behaviors from "./Behaviors";
 import { featureIcons, stepIcons, HandIcon, ArrowUpRight, CheckCircle, Lines, PlayIcon, SoundOffIcon, SoundOnIcon, socialIcons, RightArrow, Rich } from "./Icons";
 import QuoteModal from "./QuoteModal";
+import { useEffect } from "react";
+import { UI, localeOf, fill, type Locale } from "../lib/i18n";
 
 /* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
 function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
@@ -16,6 +18,7 @@ function Accent({ text, accent }: { text?: string | null; accent?: string | null
 }
 
 type Props = {
+  locale?: Locale;
   query: string;
   variables: Record<string, unknown>;
   data: any;
@@ -25,7 +28,12 @@ type Props = {
    а в /admin оновлює сторінку наживо, поки ти друкуєш у бічній панелі.
    data-tina-field — робить елемент клікабельним в адмінці (відкриває потрібне поле). */
 export default function HomeClient(props: Props) {
-  const { data } = useTina(props);
+  const { data } = useTina({ query: props.query, variables: props.variables, data: props.data });
+  const locale: Locale = props.locale || "en";
+  const t = UI[locale];
+  const tx = t; /* службові написи всередині циклів, де змінна t зайнята */
+  /* мова сторінки для браузера і скрінрідерів */
+  useEffect(() => { document.documentElement.lang = localeOf(locale).htmlLang; }, [locale]);
   const home = data.home;
   const { hero, work, services, features, projectLine, testimonials, about, faq, footer, quoteForm } = home;
 
@@ -38,8 +46,8 @@ export default function HomeClient(props: Props) {
   const depsKey = `${cases.length}-${svcItems.length}-${featItems.length}-${steps.length}-${stories.length}-${faqs.length}`;
 
   return (
-    <>
-      <Header />
+    <div className={`locale locale-${locale}`}>
+      <Header locale={locale} />
 
       {/* ================= HERO ================= */}
       <section className="hero" aria-label="Deweb studio">
@@ -92,17 +100,17 @@ export default function HomeClient(props: Props) {
           <div className="work__controls">
             <p className="sr-only" aria-live="polite" data-work-live></p>
             <div className="work__arrows">
-              <button className="arrow-btn" type="button" data-work-prev aria-label="Previous project">
+              <button className="arrow-btn" type="button" data-work-prev aria-label={t.prevProject}>
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16 10H4M4 10l5.5-5.5M4 10l5.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
-              <button className="arrow-btn" type="button" data-work-next aria-label="Next project">
+              <button className="arrow-btn" type="button" data-work-next aria-label={t.nextProject}>
                 <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M16 10l-5.5-5.5M16 10l-5.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
             </div>
           </div>
         </div>
 
-        <ul className="work__track" data-work-track aria-label="Projects" aria-roledescription="carousel" tabIndex={0} key={depsKey}>
+        <ul className="work__track" data-work-track data-live-tpl={t.liveTpl} aria-label={t.projects} aria-roledescription="carousel" tabIndex={0} key={depsKey}>
           {cases.map((c: any, i: number) => {
             const href = c.url || "#";
             return (
@@ -119,7 +127,7 @@ export default function HomeClient(props: Props) {
                     </p>
                   </div>
                   <a className="work__visit" href={href} target="_blank" rel="noopener" data-tina-field={tinaField(c, "url")}>
-                    <span className="u-link">View website</span>
+                    <span className="u-link">{t.viewWebsite}</span>
                     <ArrowUpRight />
                   </a>
                 </div>
@@ -128,7 +136,7 @@ export default function HomeClient(props: Props) {
           })}
         </ul>
 
-        <div className="drag-cursor" aria-hidden="true">View website</div>
+        <div className="drag-cursor" aria-hidden="true">{t.viewWebsite}</div>
       </section>
 
       {/* ================= SERVICES ================= */}
@@ -193,7 +201,7 @@ export default function HomeClient(props: Props) {
           </div>
 
           <div className="feat__body" data-feat key={depsKey}>
-            <ol className="feat__list" role="tablist" aria-orientation="vertical" aria-label="What every site includes">
+            <ol className="feat__list" role="tablist" aria-orientation="vertical" aria-label={t.featuresAria}>
               {featItems.map((f: any, i: number) => (
                 <li className={`feat__li${i === 0 ? " is-open" : ""}`} role="presentation" key={i}>
                   <button
@@ -217,7 +225,7 @@ export default function HomeClient(props: Props) {
                       {f.image ? (
                         <img src={f.image} alt="" width={1042} height={521} loading="lazy" decoding="async" />
                       ) : (
-                        <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>Preview coming soon</small></div>
+                        <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>{t.previewSoon}</small></div>
                       )}
                     </div>
                   </div>
@@ -242,7 +250,7 @@ export default function HomeClient(props: Props) {
                     <div className="feat__ph">
                       {featureIcons[f.icon] || featureIcons.fast}
                       <span>{f.name}</span>
-                      <small>Preview coming soon</small>
+                      <small>{t.previewSoon}</small>
                     </div>
                   )}
                 </div>
@@ -264,18 +272,18 @@ export default function HomeClient(props: Props) {
           <div className="pl__scroll">
             <div className="pl__gantt" style={{ ["--n" as any]: steps.length || 1 }}>
               <span className="pl__hline" aria-hidden="true"></span>
-              {["Week 1", "Week 2", "Week 3", "Week 4"].map((w, k) => (
+              {[1, 2, 3, 4].map((n) => `${t.week} ${n}`).map((w, k) => (
                 <span className="pl__week" key={w} style={{ gridColumn: `${k * 5 + 1} / span 5` }}>{w}</span>
               ))}
               <span className="pl__week" style={{ gridColumn: 21 }}>∞</span>
               {Array.from({ length: 20 }).map((_, k) => (
-                <span className="pl__day" key={k} style={{ gridColumn: k + 1 }}>{["Mon", "Tue", "Wed", "Thu", "Fri"][k % 5]}</span>
+                <span className="pl__day" key={k} style={{ gridColumn: k + 1 }}>{t.days[k % 5]}</span>
               ))}
-              <span className="pl__day" style={{ gridColumn: 21 }}>After</span>
+              <span className="pl__day" style={{ gridColumn: 21 }}>{t.after}</span>
               {[6, 11, 16, 21].map((c) => (
                 <span className="pl__vline" key={c} style={{ gridColumn: c }} aria-hidden="true"></span>
               ))}
-              <div className="pl__mhead" aria-hidden="true"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>∞</span></div>
+              <div className="pl__mhead" aria-hidden="true">{[1, 2, 3, 4].map((n) => <span key={n}>{t.weekShort}{n}</span>)}<span>∞</span></div>
 
               {steps.map((st: any, i: number) => {
                 const start = Math.min(21, Math.max(1, Number(st.start) || 1));
@@ -303,7 +311,7 @@ export default function HomeClient(props: Props) {
                   </div>
                 );
               })}
-              <span className="pl__now" aria-hidden="true"></span>
+              <span className="pl__now" data-label={t.today} aria-hidden="true"></span>
             </div>
           </div>
 
@@ -319,7 +327,7 @@ export default function HomeClient(props: Props) {
 
 
       {/* ================= CLIENTS ABOUT US ================= */}
-      <section className="tst" id="reviews" aria-labelledby="tst-title" data-tst key={`tst-${depsKey}`}>
+      <section className="tst" id="reviews" aria-labelledby="tst-title" data-tst data-mute={t.mute} data-unmute={t.unmute} key={`tst-${depsKey}`}>
         <div className="tst__head">
           <h2 className="tst__title" id="tst-title">
             <em data-tina-field={tinaField(testimonials, "titleAccent")}>{testimonials?.titleAccent}</em>{" "}
@@ -328,35 +336,35 @@ export default function HomeClient(props: Props) {
           <p className="tst__lead" data-tina-field={tinaField(testimonials, "lead")}>{testimonials?.lead}</p>
         </div>
 
-        <div className="tst__deck" tabIndex={0} aria-roledescription="carousel" aria-label="Client video stories">
+        <div className="tst__deck" tabIndex={0} aria-roledescription="carousel" aria-label={t.storiesAria}>
           {stories.map((t: any, i: number) => (
             <article className="tst__card" key={i} data-pos={i === 0 ? "center" : i === 1 ? "right" : i === stories.length - 1 ? "left" : "hidden"} data-tina-field={tinaField(t)}>
               {t.poster && <img className="tst__poster" src={t.poster} alt="" loading="lazy" decoding="async" />}
               {t.video && (
-                <video className="tst__video" data-src={t.video} poster={t.poster || undefined} muted loop playsInline preload="none" aria-label={`Video review: ${t.name}`} />
+                <video className="tst__video" data-src={t.video} poster={t.poster || undefined} muted loop playsInline preload="none" aria-label={fill(tx.videoTpl, { name: t.name })} />
               )}
               <span className="tst__shade" aria-hidden="true"></span>
               <div className="tst__bars" aria-hidden="true">{stories.map((_: any, k: number) => <i key={k}></i>)}</div>
               <div className="tst__top">
                 <span className="tst__ava">{t.avatar ? <img src={t.avatar} alt="" /> : t.avatarText}</span>
                 <span className="tst__who"><b>{t.name}</b><span>{t.company}</span></span>
-                <button className="tst__sound" type="button" aria-label="Unmute">
+                <button className="tst__sound" type="button" aria-label={tx.unmute}>
                   <span className="off"><SoundOffIcon /></span>
                   <span className="on"><SoundOnIcon /></span>
                 </button>
               </div>
-              <button className="tst__play" type="button" aria-label={`Play ${t.name} with sound`}><PlayIcon /></button>
+              <button className="tst__play" type="button" aria-label={fill(tx.playTpl, { name: t.name })}><PlayIcon /></button>
               <p className="tst__caption">{t.caption}</p>
             </article>
           ))}
         </div>
 
         <div className="tst__nav">
-          <button className="tst__arrow" type="button" data-tst-prev aria-label="Previous story">
+          <button className="tst__arrow" type="button" data-tst-prev aria-label={t.prevStory}>
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M16 10H4M4 10l5.5-5.5M4 10l5.5 5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           <p className="tst__count" aria-live="polite"><b data-tst-cur>1</b> / {stories.length}</p>
-          <button className="tst__arrow" type="button" data-tst-next aria-label="Next story">
+          <button className="tst__arrow" type="button" data-tst-next aria-label={t.nextStory}>
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10h12M16 10l-5.5-5.5M16 10l-5.5 5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </div>
@@ -443,7 +451,7 @@ export default function HomeClient(props: Props) {
             <button className="ft__cta" type="button" data-open-quote data-tina-field={tinaField(footer, "buttonLabel")}>
               {footer?.buttonLabel}<ArrowUpRight />
             </button>
-            <nav className="ft__links" aria-label="Social and contact">
+            <nav className="ft__links" aria-label={t.social}>
               {(footer?.links || []).filter(Boolean).map((l: any, i: number) => (
                 <a key={i} href={l.url || "#"} target={String(l.url || "").startsWith("http") ? "_blank" : undefined} rel="noopener" data-tina-field={tinaField(l)}>
                   {socialIcons[l.icon] || socialIcons.email}{l.label}
@@ -460,9 +468,9 @@ export default function HomeClient(props: Props) {
         </div>
       </footer>
 
-      <QuoteModal form={quoteForm} />
+      <QuoteModal form={quoteForm} t={t} locale={locale} />
 
       <Behaviors depsKey={depsKey} page="home" />
-    </>
+    </div>
   );
 }

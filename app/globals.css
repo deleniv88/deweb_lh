@@ -435,7 +435,8 @@ html{scroll-padding-top:var(--hdr-h)}
   /* мобільний макет 375 × 884 */
   :root{--u:min(calc(100vw / 375), calc(var(--vh) / 884))}
 
-  .hero{min-height:calc(884 * var(--u));max-height:calc(1040 * var(--u))}
+  /* мобільний: текст і фото йдуть потоком — якщо заголовок довший (PL/UA), фото просто стає нижче, а не налазить на текст */
+  .hero{display:flex;flex-direction:column;height:auto;min-height:max(var(--vh), calc(884 * var(--u)));max-height:none}
 
   :root{--hdr-x:calc(20 * var(--u));--hdr-top:calc(20 * var(--u));--hdr-top-sm:calc(12 * var(--u));--hdr-pill:calc(48 * var(--u));--logo-center:calc(9 * var(--u))}
   .logo{margin-top:calc(4 * var(--u))}
@@ -479,9 +480,12 @@ html{scroll-padding-top:var(--hdr-h)}
 
   /* ---- перший екран за мобільним макетом ---- */
   .hero__copy{
-    left:calc(18 * var(--u));
-    top:calc(131 * var(--u));
+    position:relative;
+    left:auto;
+    top:auto;
     bottom:auto;
+    margin:calc(131 * var(--u)) 0 0 calc(18 * var(--u));
+    order:-1;   /* у розмітці фото йде раніше — на мобільному текст ставимо першим */
     width:calc(337 * var(--u));
     gap:calc(19 * var(--u));
   }
@@ -506,10 +510,18 @@ html{scroll-padding-top:var(--hdr-h)}
     font-size:calc(127.7 / 375 * 100vw);
   }
   .hero__photo{
-    left:calc(50% - 232.4 * var(--u));
+    position:relative;
+    left:auto;
+    bottom:auto;
+    flex:1 0 auto;
+    align-self:center;
     width:calc(464.8 * var(--u));
-    height:calc(517.8 * var(--u));
+    height:auto;
+    min-height:calc(440 * var(--u));
+    max-height:calc(517.8 * var(--u));
+    margin-top:calc(6 * var(--u));
   }
+  .hero__photo img{position:absolute;inset:0}
 
   .stats{
     left:calc(15 * var(--u));
@@ -1324,7 +1336,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 
 /* лінія "Today", що пробігає по графіку */
 .pl__now{position:absolute;z-index:3;top:calc(48 * var(--s));bottom:0;left:0;width:2px;border-radius:2px;background:#4b5aff;opacity:0;pointer-events:none}
-.pl__now::before{content:"Today";position:absolute;top:calc(-22 * var(--s));left:50%;transform:translateX(-50%);padding:calc(2 * var(--s)) calc(8 * var(--s));border-radius:100px;background:#4b5aff;color:#fff;font-family:var(--f-body);font-weight:700;font-size:calc(11 * var(--s));white-space:nowrap}
+.pl__now::before{content:attr(data-label);position:absolute;top:calc(-22 * var(--s));left:50%;transform:translateX(-50%);padding:calc(2 * var(--s)) calc(8 * var(--s));border-radius:100px;background:#4b5aff;color:#fff;font-family:var(--f-body);font-weight:700;font-size:calc(11 * var(--s));white-space:nowrap}
 .pl.go .pl__now{animation:plnow 3.4s cubic-bezier(.45,0,.25,1) .3s forwards}
 @keyframes plnow{0%{opacity:0;left:0}8%{opacity:1}92%{opacity:1;left:calc(100% - 160 * var(--s))}100%{opacity:0;left:calc(100% - 160 * var(--s))}}
 
@@ -1813,3 +1825,13 @@ html.lenis,html.lenis body{height:auto}
   .feat__mimg img,.feat__mimg .feat__ph{display:block;width:100%;height:auto;aspect-ratio:2 / 1;object-fit:contain}
   .feat__li.is-open .feat__mimg{grid-template-rows:1fr;margin-top:calc(12 * var(--s))}
 }
+
+/* обгортка сторінки мови — не впливає на верстку */
+.locale{display:contents}
+/* українська: Urbanist не має кирилиці → заголовки Onest */
+.locale-ua{--f-display:var(--font-onest), 'Helvetica Neue', Arial, sans-serif}
+.locale-ua .hero__title,.locale-ua .work__title,.locale-ua .svc__title,.locale-ua .feat__title,.locale-ua .pl__title,
+.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title,.locale-ua .ft__h{letter-spacing:-.04em}
+/* Onest «щільніший» за Urbanist — тонші накреслення, щоб заголовки виглядали так само легко */
+.locale-ua .hero__title,.locale-ua .work__title,.locale-ua .svc__title,.locale-ua .feat__title,.locale-ua .pl__title,
+.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title{font-weight:300}

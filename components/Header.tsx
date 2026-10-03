@@ -1,55 +1,49 @@
+import { LOCALES, UI, localeOf, type Locale } from "../lib/i18n";
+
 /* Хедер: лого, вибір мови, меню. На головній посилання — якорі (#services),
-   на інших сторінках — ведуть на головну (/#services). */
-
-/* Мови сайту. Поки що сторінка лише англійською — EN активна.
-   TODO: коли з'являться /pl і /ua, заміни href на реальні адреси. */
-const LANGS = [
-  { code: "EN", name: "English", href: "/", current: true },
-  { code: "PL", name: "Polski", href: "#", current: false },
-  { code: "UA", name: "Українська", href: "#", current: false },
-];
-
-export default function Header({ home = true }: { home?: boolean }) {
-  const p = home ? "" : "/";
+   на інших сторінках (блог) — ведуть на головну потрібної мови. */
+export default function Header({ home = true, locale = "en" }: { home?: boolean; locale?: Locale }) {
+  const t = UI[locale];
+  const cur = localeOf(locale);
+  const p = home ? "" : cur.path;
   const links = [
-    { href: `${p}#services`, label: "Services" },
-    { href: `${p}#projects`, label: "Projects" },
-    { href: `${p}#process`, label: "Process" },
-    { href: `${p}#faq`, label: "FAQ" },
+    { href: `${p}#services`, label: t.nav.services },
+    { href: `${p}#projects`, label: t.nav.projects },
+    { href: `${p}#process`, label: t.nav.process },
+    { href: `${p}#faq`, label: t.nav.faq },
   ];
-  const active = LANGS.find((l) => l.current) || LANGS[0];
   return (
     <header className="site-header" data-site-header>
-      <a href="/" className="logo" aria-label="Deweb studio — home">
+      <a href={cur.path} className="logo" aria-label={t.home}>
         <span className="logo__main">D<span className="logo__e">e</span>web</span>
         <span className="logo__sub">studio</span>
       </a>
       <div className="header-right">
         <div className="lang" data-lang>
-          <button className="glass lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="lang-menu" aria-label={`Language: ${active.name}`}>
+          <button className="glass lang__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="lang-menu" aria-label={`${t.language}: ${cur.name}`}>
             <span className="pill">
-              {active.code}
+              {cur.label}
               <svg viewBox="0 0 8 4" fill="none" aria-hidden="true"><path d="M.5.5 4 3.5 7.5.5" stroke="#242527" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </span>
           </button>
           <ul className="lang__menu" id="lang-menu">
-            {LANGS.map((l) => (
+            {LOCALES.map((l) => (
               <li key={l.code}>
-                <a className="lang__item" href={l.href} hrefLang={l.code.toLowerCase() === "ua" ? "uk" : l.code.toLowerCase()} aria-current={l.current ? "true" : undefined}>
+                <a className="lang__item" href={l.path} hrefLang={l.htmlLang} lang={l.htmlLang} aria-current={l.code === locale ? "true" : undefined}>
                   <span>{l.name}</span>
-                  <span className="lang__code">{l.code}</span>
+                  <span className="lang__code">{l.label}</span>
                 </a>
               </li>
             ))}
           </ul>
         </div>
-        <button className="glass burger" type="button" aria-label="Menu" aria-expanded="false" aria-controls="main-nav">
+        <button className="glass burger" type="button" aria-label={t.menu} aria-expanded="false" aria-controls="main-nav">
           <span className="pill"><i></i><i></i></span>
         </button>
-        <nav className="glass nav" id="main-nav" aria-label="Main">
+        <nav className="glass nav" id="main-nav" aria-label={t.mainNav}>
           <ul className="nav__list">
             {links.map((l) => (
-              <li key={l.label}><a className="nav__link" href={l.href}>{l.label}</a></li>
+              <li key={l.href}><a className="nav__link" href={l.href}>{l.label}</a></li>
             ))}
           </ul>
         </nav>

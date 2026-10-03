@@ -1,5 +1,6 @@
 import Script from "next/script";
 import { ArrowUpRight, CloseIcon, TickIcon, socialIcons } from "./Icons";
+import { UI, type Locale, type UIStrings } from "../lib/i18n";
 
 /* Cloudflare Turnstile — невидима перевірка "чи це людина".
    Вмикається, лише якщо на Vercel задано NEXT_PUBLIC_TURNSTILE_SITE_KEY. */
@@ -7,8 +8,9 @@ const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /* Поп-ап "Get a free quote". Відкривається з будь-якої кнопки з data-open-quote
    або посилання на #contact (логіка — lib/behaviors.js → initQuote). */
-export default function QuoteModal({ form }: { form?: any }) {
+export default function QuoteModal({ form, t = UI.en, locale = "en" }: { form?: any; t?: UIStrings; locale?: Locale }) {
   const f = form || {};
+  const tf = t.form;
   const methods = [
     { k: "telegram", label: "Telegram" },
     { k: "instagram", label: "Instagram" },
@@ -17,10 +19,10 @@ export default function QuoteModal({ form }: { form?: any }) {
   ];
   return (
     <>
-      <div className="qm" id="quote" aria-hidden="true" data-quote>
+      <div className="qm" id="quote" aria-hidden="true" data-quote data-i18n={JSON.stringify(tf)}>
         <div className="qm__bg" data-close></div>
         <div className="qm__box" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="qm-title">
-          <button className="qm__x" type="button" data-close aria-label="Close"><CloseIcon /></button>
+          <button className="qm__x" type="button" data-close aria-label={t.close}><CloseIcon /></button>
           <div className="qm__head">
             <span className="qm__tag">{f.tag || "Free quote"}</span>
             <h2 className="qm__title" id="qm-title">{f.title || "Tell me about your project"}</h2>
@@ -28,12 +30,12 @@ export default function QuoteModal({ form }: { form?: any }) {
           </div>
           <form className="qf" noValidate>
             <div>
-              <label className="qf__lab" htmlFor="qf-name">Your name</label>
-              <input className="qf__in" id="qf-name" name="name" autoComplete="name" placeholder="What's your name?" required />
+              <label className="qf__lab" htmlFor="qf-name">{tf.nameLabel}</label>
+              <input className="qf__in" id="qf-name" name="name" autoComplete="name" placeholder={tf.namePh} required />
               <p className="qf__hint" data-hint="name"></p>
             </div>
             <div>
-              <span className="qf__lab" id="qf-contact-lab">How should I contact you?</span>
+              <span className="qf__lab" id="qf-contact-lab">{tf.contactLabel}</span>
               <div className="qf__chips" role="radiogroup" aria-labelledby="qf-contact-lab">
                 {methods.map((m) => (
                   <button key={m.k} type="button" className="qf__chip" role="radio" aria-checked="false" data-k={m.k}>
@@ -43,17 +45,18 @@ export default function QuoteModal({ form }: { form?: any }) {
               </div>
               <input className="qf__in" id="qf-contact" name="contact" aria-labelledby="qf-contact-lab" required />
               <input type="hidden" name="method" />
+              <input type="hidden" name="lang" value={locale} />
               <p className="qf__hint" data-hint="contact"></p>
             </div>
             <div>
-              <label className="qf__lab" htmlFor="qf-msg">Briefly describe your request</label>
-              <textarea className="qf__in" id="qf-msg" name="message" placeholder="A landing page, a corporate site or a store? Any deadline?"></textarea>
+              <label className="qf__lab" htmlFor="qf-msg">{tf.msgLabel}</label>
+              <textarea className="qf__in" id="qf-msg" name="message" placeholder={tf.msgPh}></textarea>
             </div>
             <input className="qf__hp" type="text" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
             {TURNSTILE_KEY && <div className="cf-turnstile qf__ts" data-sitekey={TURNSTILE_KEY} data-appearance="interaction-only" data-theme="light"></div>}
-            <button className="btn-primary qf__send" type="submit"><span>Send request</span><ArrowUpRight /></button>
+            <button className="btn-primary qf__send" type="submit"><span>{tf.send}</span><ArrowUpRight /></button>
             <p className="qf__hint" data-hint="form"></p>
-            <p className="qf__note">No spam. Your details are used only to reply to your request.</p>
+            <p className="qf__note">{tf.note}</p>
           </form>
           <div className="qm__ok" role="status">
             <span className="qm__tick"><TickIcon /></span>

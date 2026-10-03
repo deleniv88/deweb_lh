@@ -1,0 +1,425 @@
+{
+  "seo": {
+    "title": "Deweb studio — Сайти, які перетворюють відвідувачів на клієнтів",
+    "description": "Дизайн, код і AI в одному місці: сайти, які приводять вашому бізнесу клієнтів, а не просто відвідувачів."
+  },
+  "hero": {
+    "titleLine1": "Сайти, які перетворюють",
+    "titleLine2": "відвідувачів на клієнтів",
+    "lead": "Дизайн, код і AI в одному місці: сайти, які приводять вашому бізнесу клієнтів, а не просто відвідувачів.",
+    "ctaLabel": "Безкоштовна оцінка",
+    "ctaHref": "#contact",
+    "photo": "/uploads/photo.webp",
+    "photoAlt": "Андрій, засновник Deweb studio",
+    "name": "Андрій Деленів",
+    "stats": [
+      {
+        "value": "70+",
+        "label": "готових сайтів"
+      },
+      {
+        "value": "6",
+        "label": "років досвіду"
+      },
+      {
+        "value": "12",
+        "label": "місяців підтримки включено"
+      }
+    ],
+    "titleAccent": "на клієнтів"
+  },
+  "work": {
+    "titleAccent": "Останні",
+    "titleRest": "роботи",
+    "lead": "Різні ніші, одна мета:\nперетворювати відвідувачів на клієнтів.",
+    "buttonLabel": "See all work",
+    "buttonHref": "#projects",
+    "cases": [
+      {
+        "image": "/uploads/dieselprog.webp",
+        "name": "DieselProg",
+        "category": "Автосервіс · Корпоративний сайт",
+        "city": "Вроцлав",
+        "url": "https://dieselprog.pl/"
+      },
+      {
+        "image": "/uploads/porady-lekarskie.webp",
+        "name": "Dr. Michał Domaszewski",
+        "category": "Медицина · Односторінковий сайт",
+        "city": "Варшава",
+        "url": "https://michaldomaszewski.pl/"
+      },
+      {
+        "image": "/uploads/kk-consulting.webp",
+        "name": "K&K Consulting Group",
+        "category": "Бухгалтерія · Корпоративний сайт",
+        "city": "Вроцлав",
+        "url": "https://kk-group.com.pl/"
+      },
+      {
+        "image": "/uploads/nautilus.webp",
+        "name": "Nautilus Oyster Bar",
+        "category": "Ресторан · Лендінг",
+        "city": "Таллінн",
+        "url": "https://thenautilus.ee/"
+      },
+      {
+        "image": "/uploads/blissti.webp",
+        "name": "Blissti Beauty Studio",
+        "category": "Б'юті · Лендінг",
+        "city": "Варшава",
+        "url": "https://blissti.pl/"
+      },
+      {
+        "image": "/uploads/linkset.webp",
+        "name": "Linkset",
+        "category": "IT-послуги · Корпоративний сайт",
+        "city": "Польща",
+        "url": "https://linkset.pl/"
+      },
+      {
+        "image": "/uploads/Gusarskiy.webp",
+        "name": "Gusarskiy Hotel",
+        "category": "Готель · Багатомовний сайт",
+        "city": "Київ",
+        "url": "https://gusarskiy.kiev.ua/"
+      },
+      {
+        "image": "/uploads/okularnia.webp",
+        "name": "Okularnia Kolankiewicz",
+        "category": "Оптика · Корпоративний сайт",
+        "city": "Легіоново",
+        "url": "https://okularniakolankiewicz.pl/"
+      },
+      {
+        "image": "/uploads/helix.webp",
+        "name": "HelixBoost",
+        "category": "Продажі · Сайт експерта",
+        "city": "Лондон",
+        "url": "https://helixboost.com/"
+      },
+      {
+        "image": "/uploads/Amimed.webp",
+        "name": "AMIMED",
+        "category": "Медична лабораторія · Корпоративний сайт",
+        "city": "Воломін",
+        "url": "https://amimed.pl/"
+      }
+    ]
+  },
+  "services": {
+    "titleAccent": "Послуги",
+    "titleRest": "під будь-яку мету",
+    "lead": "Оберіть формат, який підходить вашому бізнесу саме зараз.",
+    "note": "Не знаєте, що саме потрібно? Опишіть задачу, і я підкажу правильний формат.",
+    "items": [
+      {
+        "type": "Односторінковий сайт",
+        "timeline": "Термін: 2–3 тижні",
+        "name": "Лендінг",
+        "description": "Коли потрібно швидко представити послугу чи продукт і почати отримувати заявки. Одна сторінка, де все веде до форми звʼязку.",
+        "features": [
+          "Структура, побудована на конверсію",
+          "Форма заявки зі сповіщеннями в Telegram або на email",
+          "Чудово виглядає на будь-якому екрані",
+          "Ідеально для експертів, нових послуг і рекламних кампаній"
+        ],
+        "buttonLabel": "Обговорити проєкт",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-landing.webp"
+      },
+      {
+        "type": "Багатосторінковий сайт",
+        "timeline": "Термін: 4–8 тижнів",
+        "name": "Корпоративний сайт",
+        "description": "Коли у вас кілька послуг і клієнти хочуть дізнатися деталі, перш ніж звернутися. Окрема сторінка для кожної послуги допомагає і клієнтам, і Google.",
+        "features": [
+          "Окремі сторінки для послуг, про нас, кейсів і блогу",
+          "SEO-структура з першого дня",
+          "Багатомовність: PL · UA · EN",
+          "Тексти й фото редагуєте самі"
+        ],
+        "buttonLabel": "Обговорити проєкт",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-corporate.webp"
+      },
+      {
+        "type": "E-commerce",
+        "timeline": "Термін: від 6 тижнів",
+        "name": "Інтернет-магазин",
+        "description": "Коли ви продаєте товари й хочете приймати замовлення та оплати онлайн, без маркетплейсів-посередників.",
+        "features": [
+          "Каталог із категоріями та фільтрами",
+          "Кошик, онлайн-оплата й варіанти доставки",
+          "Керування товарами без програміста"
+        ],
+        "buttonLabel": "Обговорити проєкт",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-store.webp"
+      }
+    ]
+  },
+  "features": {
+    "titleAccent": "Кожен",
+    "titleRest": "сайт містить",
+    "lead": "Шість речей, вбудованих у кожен сайт. Гортайте, клікайте або просто дивіться.",
+    "items": [
+      {
+        "icon": "fast",
+        "name": "Швидке завантаження",
+        "description": "Сторінки відкриваються приблизно за секунду, навіть на телефоні.",
+        "image": "/uploads/feature-fast.webp",
+        "imageAlt": "Звіт Lighthouse: 95 Performance, 95 Accessibility, 100 Best Practices, 100 SEO"
+      },
+      {
+        "icon": "devices",
+        "name": "Гарно виглядає всюди",
+        "description": "Телефон, планшет чи ноутбук — однакова якість.",
+        "image": "/uploads/feature-responsive.webp",
+        "imageAlt": "Один і той самий сайт на ноутбуці, планшеті й телефоні"
+      },
+      {
+        "icon": "edit",
+        "name": "Редагуєте самі",
+        "description": "Змінюйте тексти й фото без програміста.",
+        "image": "/uploads/feature-edit.webp",
+        "imageAlt": "Адмінка: редагування текстів і фото прямо на сторінці"
+      },
+      {
+        "icon": "inbox",
+        "name": "Жодна заявка не губиться",
+        "description": "Кожна потрапляє на вашу пошту, в CRM або Google Таблиці.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "chart",
+        "name": "Зрозуміла аналітика",
+        "description": "Google Analytics показує, звідки приходять ваші клієнти.",
+        "image": "",
+        "imageAlt": ""
+      },
+      {
+        "icon": "globe",
+        "name": "Багатомовність",
+        "description": "Будь-яка мова, коли вона вам потрібна.",
+        "image": "",
+        "imageAlt": ""
+      }
+    ]
+  },
+  "projectLine": {
+    "title": "Етапи проєкту",
+    "note": "Приклад таймлайну для корпоративного сайту.\nЛендінг займає приблизно половину цього часу.",
+    "hint": "Наведіть на етап, щоб побачити, що ви отримаєте в кінці.",
+    "buttonLabel": "Спланувати мій проєкт",
+    "buttonHref": "#contact",
+    "steps": [
+      {
+        "name": "Аудиторія",
+        "icon": "users",
+        "start": 1,
+        "span": 4,
+        "variant": "solid",
+        "when": "Тиждень 1",
+        "description": "Хто ваші клієнти і що викликає в них довіру.",
+        "result": "Профіль клієнта"
+      },
+      {
+        "name": "Конкуренти",
+        "icon": "chart",
+        "start": 2,
+        "span": 4,
+        "variant": "soft",
+        "when": "Тиждень 1",
+        "description": "Що лідери ринку роблять добре і де вони слабкі.",
+        "result": "Огляд конкурентів"
+      },
+      {
+        "name": "Структура",
+        "icon": "sitemap",
+        "start": 5,
+        "span": 4,
+        "variant": "light",
+        "when": "Тиждень 1–2",
+        "description": "Сторінки, блоки й шлях до заявки.",
+        "result": "Карта сайту й прототипи"
+      },
+      {
+        "name": "Дизайн",
+        "icon": "palette",
+        "start": 7,
+        "span": 7,
+        "variant": "gradient",
+        "when": "Тиждень 2–3",
+        "description": "Спершу візуальний напрям, потім кожна сторінка у Figma.",
+        "result": "Дизайн у Figma"
+      },
+      {
+        "name": "Розробка",
+        "icon": "code",
+        "start": 11,
+        "span": 8,
+        "variant": "solid",
+        "when": "Тиждень 3–4",
+        "description": "WordPress або власний код — швидко й зручно редагувати.",
+        "result": "Робочий сайт"
+      },
+      {
+        "name": "Запуск",
+        "icon": "rocket",
+        "start": 18,
+        "span": 3,
+        "variant": "dark",
+        "when": "Тиждень 4",
+        "description": "Домен, хостинг, аналітика й передача сайту.",
+        "result": "Сайт онлайн"
+      },
+      {
+        "name": "Підтримка",
+        "icon": "headset",
+        "start": 20,
+        "span": 2,
+        "variant": "outline",
+        "when": "Тиждень 4 → далі",
+        "description": "Оновлення, виправлення й дрібні зміни після запуску.",
+        "result": "Постійний супровід"
+      }
+    ]
+  },
+  "testimonials": {
+    "titleAccent": "Клієнти",
+    "titleRest": "про нас",
+    "lead": "Короткі історії задоволених клієнтів.",
+    "items": [
+      {
+        "name": "YourAid",
+        "company": "Онлайн-центр психологічної підтримки",
+        "avatar": "",
+        "avatarText": "YA",
+        "caption": "Сайт для онлайн-центру психологічної підтримки",
+        "video": "/uploads/videos/youraid.mp4",
+        "poster": "/uploads/videos/youraid.webp"
+      },
+      {
+        "name": "Mind for Masters",
+        "company": "M4M",
+        "avatar": "",
+        "avatarText": "M4M",
+        "caption": "Сайт онлайн-навчання для Scrum Master",
+        "video": "/uploads/videos/m4m.mp4",
+        "poster": "/uploads/videos/m4m.webp"
+      },
+      {
+        "name": "Świadoma Mama",
+        "company": "Shara Consulting",
+        "avatar": "",
+        "avatarText": "ŚM",
+        "caption": "Сайт онлайн-курсів для майбутніх мам",
+        "video": "/uploads/videos/shara.mp4",
+        "poster": "/uploads/videos/shara.webp"
+      }
+    ]
+  },
+  "about": {
+    "titleAccent": "Привіт,",
+    "titleRest": "я Андрій.",
+    "text": "Я проєктую і створюю сайти для малого бізнесу, що росте: **клініки, салони, IT-компанії, ресторани та сервісні бренди.** Уже 6 років я займаюся і дизайном, і розробкою, тож сайт, який ви погоджуєте у Figma, — це саме той сайт, що виходить у світ.",
+    "photo": "/uploads/photo.webp",
+    "name": "Андрій Деленів",
+    "role": "Засновник Deweb Studio · Варшава",
+    "soloTitle": "Чому я працюю сам",
+    "soloText": "Ви спілкуєтеся напряму з людиною, яка проєктує і будує ваш сайт. Без менеджерів, без передачі між командами, без втрачених деталей. Одна людина, один процес, повна відповідальність.",
+    "facts": [
+      {
+        "value": "70+",
+        "label": "готових сайтів"
+      },
+      {
+        "value": "6",
+        "label": "років досвіду"
+      },
+      {
+        "value": "PL · UA · EN",
+        "label": "мови"
+      }
+    ],
+    "buttonLabel": "Поговорімо"
+  },
+  "faq": {
+    "titleAccent": "Питання",
+    "titleRest": "й відповіді",
+    "lead": "Усе про ціну, терміни й те, що відбувається після запуску.",
+    "askLabel": "Поставити своє питання",
+    "items": [
+      {
+        "question": "Скільки коштує сайт?",
+        "answer": "Ціна залежить від функцій, кількості блоків і сторінок та інших деталей. **Простий сайт — від 300 €.** Опишіть свій проєкт, і я надішлю точну оцінку."
+      },
+      {
+        "question": "Скільки часу займає розробка?",
+        "answer": "Лендінг — **2–3 тижні**, корпоративний сайт — **4–8 тижнів**, інтернет-магазин — **від 6 тижнів**. Термін також залежить від того, як швидко ви надсилаєте матеріали й правки."
+      },
+      {
+        "question": "Як відбувається оплата?",
+        "answer": "Робота починається після **передоплати 50%** від загальної вартості. Решту 50% ви оплачуєте після завершення всіх робіт."
+      },
+      {
+        "question": "Чи є додаткові витрати, крім розробки?",
+        "answer": "Так. Якщо у вас їх ще немає, **домен і хостинг** оплачуються окремо. Точну суму я скажу заздалегідь і додам до загальної вартості. Це **щорічний платіж**."
+      },
+      {
+        "question": "Сайт буде повністю моїм?",
+        "answer": "Так. Після запуску ви отримуєте **домен, хостинг і всі доступи**. Єдиний виняток: якщо сайт залишається на моєму хостингу, доступ до самого хостинг-акаунта не передається."
+      },
+      {
+        "question": "Чи можу я сам редагувати сайт?",
+        "answer": "Так, тексти й фото ви зміните **без програміста**. Після запуску я надішлю **відеоінструкцію**, як керувати сайтом."
+      },
+      {
+        "question": "Що відбувається після запуску?",
+        "answer": "**Рік підтримки включено:** технічні оновлення й стабільна робота сайту. Візуальні зміни та нові функції до цього не входять і оцінюються окремо."
+      }
+    ]
+  },
+  "footer": {
+    "chipFrom": "Ідея",
+    "chipTo": "Реальність",
+    "headline": "Маєте класну ідею, яку хочете втілити?",
+    "buttonLabel": "Поговорімо",
+    "links": [
+      {
+        "icon": "instagram",
+        "label": "Instagram",
+        "url": "https://www.instagram.com/deleniv"
+      },
+      {
+        "icon": "telegram",
+        "label": "Telegram",
+        "url": "https://t.me/deleniv"
+      },
+      {
+        "icon": "linkedin",
+        "label": "LinkedIn",
+        "url": "https://www.linkedin.com/in/andriideleniv/"
+      },
+      {
+        "icon": "email",
+        "label": "Email",
+        "url": "mailto:andrii.deleniv@gmail.com"
+      }
+    ],
+    "copyright": "© 2026 · Андрій Деленів",
+    "middle": "Будьте добрими",
+    "privacyLabel": "Політика конфіденційності",
+    "privacyUrl": "#"
+  },
+  "quoteForm": {
+    "tag": "Безкоштовна оцінка",
+    "title": "Розкажіть про свій проєкт",
+    "subtitle": "Кількох деталей достатньо. Я відповім з оцінкою та наступними кроками.",
+    "successTitle": "Дякую!",
+    "successText": "Ваш запит уже в дорозі. Я скоро відповім.",
+    "fabLabel": "Безкоштовна оцінка"
+  }
+}
