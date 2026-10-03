@@ -10,8 +10,8 @@
     "ctaLabel": "Bezpłatna wycena",
     "ctaHref": "#contact",
     "photo": "/uploads/photo.webp",
-    "photoAlt": "Andrii, założyciel Deweb studio",
-    "name": "Andrii Deleniv",
+    "photoAlt": "Andrzej, założyciel Deweb studio",
+    "name": "Andrzej Deleniv",
     "stats": [
       {
         "value": "70+",
@@ -323,7 +323,7 @@
   },
   "about": {
     "titleAccent": "Cześć,",
-    "titleRest": "jestem Andrii.",
+    "titleRest": "jestem Andrzej.",
     "text": "Projektuję i tworzę strony dla małych i rozwijających się firm: **kliniki, salony, firmy IT, restauracje i marki usługowe.** Od 6 lat zajmuję się zarówno designem, jak i programowaniem, więc strona, którą akceptujesz w Figmie, to dokładnie ta, która trafia do sieci.",
     "photo": "/uploads/photo.webp",
     "name": "Andrii Deleniv",
@@ -409,7 +409,7 @@
         "url": "mailto:andrii.deleniv@gmail.com"
       }
     ],
-    "copyright": "© 2026 · Andrii Deleniv",
+    "copyright": "© 2026 · Andrzej Deleniv",
     "middle": "Bądź życzliwy",
     "privacyLabel": "Polityka prywatności",
     "privacyUrl": "#"
