@@ -493,14 +493,17 @@ html{scroll-padding-top:var(--hdr-h)}
     width:calc(337 * var(--u));
     gap:calc(19 * var(--u));
   }
-  .hero__title{font-size:calc(52 * var(--u));max-width:calc(299 * var(--u))}
+  .hero__title{font-size:calc(44 * var(--u));max-width:none}   /* 3 рядки в EN/PL/UA */
+  .locale-en .hero__title{max-width:calc(255 * var(--u))}   /* Websites that / turn visitors / into clients */
+  .locale-pl .hero__title em{white-space:nowrap}   /* «w klientów» разом у 3-му рядку */
+  .locale-ua .hero__title{font-size:calc(33 * var(--u))}    /* «перетворюють відвідувачів» довге — інакше 4 рядки */
   .hero__title span{display:inline;white-space:normal}
-  .hero__lead{max-width:calc(299 * var(--u));font-size:calc(20 * var(--u))}
+  .hero__lead{max-width:none;font-size:calc(17 * var(--u))}   /* 3 рядки */
 
   .hero__name{
     display:block;
     left:calc(50% + 82.5 * var(--u));
-    top:calc(100% - 430 * var(--u));   /* над словом DEWEB, а не на літері E */
+    top:calc(100% - 424 * var(--u));   /* одразу над літерою E слова DEWEB */
     transform:none;
     width:calc(70 * var(--u));
     white-space:normal;
@@ -777,7 +780,9 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
   .work{--card-w:calc(340 * var(--s))}
   .work__head{align-items:flex-end;gap:calc(16 * var(--s));padding:0 calc(20 * var(--s))}
   .work__intro{gap:calc(20 * var(--s));flex:1 1 auto;min-width:0}   /* довгий заголовок переноситься, стрілки лишаються видимими */
-  .work__title{font-size:calc(44 * var(--s));white-space:normal}
+  .work__title{font-size:calc(44 * var(--s));white-space:nowrap}
+  .locale-pl .work__title{font-size:calc(34 * var(--s))}   /* довші заголовки — в 1 рядок */
+  .locale-ua .work__title{font-size:calc(38 * var(--s))}
   .work__lead{font-size:calc(16 * var(--s))}
   .btn-soft{font-size:calc(16 * var(--s));padding:calc(13 * var(--s)) calc(24 * var(--s))}
   .work__controls{flex-shrink:0}
@@ -922,10 +927,10 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
   align-items:flex-start;   /* галочка — по першому рядку, навіть якщо текст у 2 рядки */
   gap:calc(6 * var(--s));
   font-family:var(--f-display);
-  font-size:calc(16 * var(--s));
+  font-size:calc(20 * var(--s));
   line-height:1.2;
 }
-.svc-card__list svg{width:calc(16 * var(--s));height:calc(16 * var(--s));flex-shrink:0;margin-top:.1em}
+.svc-card__list svg{width:calc(18 * var(--s));height:calc(18 * var(--s));flex-shrink:0;margin-top:.1em}
 .btn-primary{
   display:inline-flex;
   align-items:center;
@@ -972,7 +977,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
   .svc-card__name{font-size:calc(40 * var(--s))}
   .svc-card__desc{font-size:calc(18 * var(--s))}
   .svc-card__list{display:grid;grid-template-columns:1fr 1fr;column-gap:calc(20 * var(--s))}
-  .svc-card__list li{font-size:calc(15 * var(--s))}
+  .svc-card__list li{font-size:calc(17 * var(--s))}
   .btn-primary{font-size:calc(18 * var(--s));padding:calc(14 * var(--s)) calc(28 * var(--s))}
 }
 
@@ -999,8 +1004,8 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
   .svc-card__name{font-size:calc(30 * var(--s))}
   .svc-card__desc{font-size:calc(15 * var(--s))}
   .svc-card__list{grid-template-columns:1fr;gap:calc(6 * var(--s))}
-  .svc-card__list li{font-size:calc(13 * var(--s))}
-  .svc-card__list svg{width:calc(14 * var(--s));height:calc(14 * var(--s))}
+  .svc-card__list li{font-size:calc(15 * var(--s))}
+  .svc-card__list svg{width:calc(16 * var(--s));height:calc(16 * var(--s))}
   /* усі круглі кнопки на мобільному — одного розміру */
   .btn-primary,.ft__cta{font-size:calc(16 * var(--s));padding:calc(18 * var(--s)) calc(32 * var(--s))}
 }

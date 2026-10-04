@@ -23,7 +23,7 @@
       },
       {
         "value": "12",
-        "label": "miesięcy wsparcia w cenie"
+        "label": "mies. wsparcia w cenie"
       }
     ],
     "titleAccent": "w klientów"
@@ -385,7 +385,7 @@
   "footer": {
     "chipFrom": "Pomysł",
     "chipTo": "Realizacja",
-    "headline": "Masz świetny pomysł, który chcesz zrealizować?",
+    "headline": "Od pomysłu do gotowej strony internetowej.",
     "buttonLabel": "Porozmawiajmy",
     "links": [
       {

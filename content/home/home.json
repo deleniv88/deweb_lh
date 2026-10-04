@@ -23,7 +23,7 @@
       },
       {
         "value": "12",
-        "label": "months of support included"
+        "label": "mo. of support included"
       }
     ],
     "titleAccent": "into clients"
@@ -385,7 +385,7 @@
   "footer": {
     "chipFrom": "Idea",
     "chipTo": "Reality",
-    "headline": "Got a great idea you want to bring to life?",
+    "headline": "From idea to a finished website.",
     "buttonLabel": "Let's talk",
     "links": [
       {
