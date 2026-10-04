@@ -1758,6 +1758,14 @@ textarea.qf__in{height:calc(88 * var(--m));padding:calc(12 * var(--m)) calc(18 *
 .quote-fab:hover svg{transform:translate(calc(-3 * var(--u)), calc(3 * var(--u)))}
 .quote-fab.is-shown{transform:translate(-50%,0)}
 html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
+/* ноут/десктоп: кнопка з hero при скролі "з'їжджає" вниз і стає плаваючою */
+@media (min-width:768px){
+  .quote-fab{opacity:0;pointer-events:none;transform:translate(-50%,calc(-27 * var(--u)));transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .3s ease, filter .25s ease}
+  .quote-fab.is-shown{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+  html.is-locked .quote-fab{opacity:0;pointer-events:none}
+  .hero .cta{transition:filter .25s ease, transform .25s ease, opacity .2s ease}
+  html.fab-on .hero .cta{animation:none;opacity:0;pointer-events:none}   /* animation fill тримає opacity — вимикаємо */
+}
 
 /* ---- Tablet ---- */
 @media (max-width:1279px){
