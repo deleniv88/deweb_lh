@@ -146,7 +146,7 @@ export default function HomeClient(props: Props) {
             <div className="svc__head">
               <h2 className="svc__title" id="svc-title">
                 <em data-tina-field={tinaField(services, "titleAccent")}>{services?.titleAccent}</em>{" "}
-                <span data-tina-field={tinaField(services, "titleRest")}>{services?.titleRest}</span>
+                <span data-tina-field={tinaField(services, "titleRest")}><Lines text={services?.titleRest} /></span>
               </h2>
               <p className="svc__lead" data-tina-field={tinaField(services, "lead")}>{services?.lead}</p>
               <p className="svc__note" data-tina-field={tinaField(services, "note")}>{services?.note}</p>

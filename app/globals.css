@@ -278,7 +278,7 @@ html{scroll-padding-top:var(--hdr-h)}
 .hero__title span{display:block;white-space:nowrap}
 .hero__title em{font-style:normal;color:var(--accent-b)}   /* виділені слова (into clients) — синім */
 .hero__lead{
-  max-width:calc(568 * var(--u));
+  max-width:calc(680 * var(--u));   /* підзаголовок у 2 рядки (і для довших PL/UA текстів) */
   font-family:var(--f-body);
   font-weight:300;
   font-size:calc(24 * var(--u));
@@ -331,7 +331,7 @@ html{scroll-padding-top:var(--hdr-h)}
 }
 .stat{
   position:relative;
-  width:calc(162 * var(--u));
+  width:calc(200 * var(--u));   /* ширші картки — підпис вміщується у 2 рядки на всіх мовах */
   height:calc(136 * var(--u));
   padding:calc(24 * var(--u));
   border-radius:calc(24 * var(--u));
@@ -358,11 +358,11 @@ html{scroll-padding-top:var(--hdr-h)}
   font-size:calc(16 * var(--u));
   line-height:1;
   letter-spacing:-.04em;
-  max-width:calc(114 * var(--u));
+  max-width:none;
   text-box:trim-both cap alphabetic;
 }
-.stat:nth-child(1) .stat__label{max-width:calc(80 * var(--u))}
-.stat:nth-child(2) .stat__label{max-width:calc(80 * var(--u))}
+.stat:nth-child(1) .stat__label{max-width:calc(110 * var(--u))}
+.stat:nth-child(2) .stat__label{max-width:calc(110 * var(--u))}
 
 /* ---------- Page-load (одна оркестрована поява) ---------- */
 @media (prefers-reduced-motion:no-preference){
@@ -433,7 +433,8 @@ html{scroll-padding-top:var(--hdr-h)}
 /* ================= MOBILE (<768) · макет 390 ================= */
 @media (max-width:767px){
   /* мобільний макет 375 × 884 */
-  :root{--u:min(calc(100vw / 375), calc(var(--vh) / 884))}
+  /* масштаб лише від ширини екрана — шрифти й блоки однакові на будь-якому телефоні, як у макеті 375 */
+  :root{--u:calc(100vw / 375)}
 
   /* мобільний: текст і фото йдуть потоком — якщо заголовок довший (PL/UA), фото просто стає нижче, а не налазить на текст */
   .hero{display:flex;flex-direction:column;height:auto;min-height:max(var(--vh), calc(884 * var(--u)));max-height:none}
@@ -496,7 +497,7 @@ html{scroll-padding-top:var(--hdr-h)}
   .hero__name{
     display:block;
     left:calc(50% + 82.5 * var(--u));
-    top:calc(100% - 423 * var(--u));
+    top:calc(100% - 430 * var(--u));   /* над словом DEWEB, а не на літері E */
     transform:none;
     width:calc(70 * var(--u));
     white-space:normal;
@@ -517,7 +518,7 @@ html{scroll-padding-top:var(--hdr-h)}
     align-self:center;
     width:calc(464.8 * var(--u));
     height:auto;
-    min-height:calc(440 * var(--u));
+    min-height:calc(517.8 * var(--u));
     max-height:calc(517.8 * var(--u));
     margin-top:calc(6 * var(--u));
   }
@@ -772,8 +773,8 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 @media (max-width:767px){
   .work{--card-w:calc(340 * var(--s))}
   .work__head{align-items:flex-end;gap:calc(16 * var(--s));padding:0 calc(20 * var(--s))}
-  .work__intro{gap:calc(20 * var(--s))}
-  .work__title{font-size:calc(44 * var(--s))}
+  .work__intro{gap:calc(20 * var(--s));flex:1 1 auto;min-width:0}   /* довгий заголовок переноситься, стрілки лишаються видимими */
+  .work__title{font-size:calc(44 * var(--s));white-space:normal}
   .work__lead{font-size:calc(16 * var(--s))}
   .btn-soft{font-size:calc(16 * var(--s));padding:calc(13 * var(--s)) calc(24 * var(--s))}
   .work__controls{flex-shrink:0}
@@ -1835,3 +1836,15 @@ html.lenis,html.lenis body{height:auto}
 /* Onest «щільніший» за Urbanist — тонші накреслення, щоб заголовки виглядали так само легко */
 .locale-ua .hero__title,.locale-ua .work__title,.locale-ua .svc__title,.locale-ua .feat__title,.locale-ua .pl__title,
 .locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title{font-weight:300}
+
+/* ---- латинське слово DEWEB завжди Urbanist (в UA-версії заголовки Onest, але DEWEB — це логотип) ---- */
+.locale-ua .hero__word,.locale-ua .ft__mark{font-family:var(--font-urbanist), 'Helvetica Neue', Arial, sans-serif;font-weight:700}
+/* ручні переноси в заголовку послуг — лише на мобільному */
+.svc__title br{display:none}
+@media (max-width:767px){ .svc__title br{display:inline} }
+
+/* ---- поп-ап заявки на мобільному: окрема картка з відступами з усіх боків ---- */
+@media (max-width:767px){
+  .qm{padding:10px 10px calc(10px + env(safe-area-inset-bottom,0px));align-items:flex-end;height:100dvh;inset:auto 0 0 0}
+  .qm__box{max-height:calc(100dvh - 20px - env(safe-area-inset-bottom,0px));border-radius:calc(22 * var(--m));border-color:rgba(94,108,255,.25);box-shadow:0 calc(12 * var(--m)) calc(40 * var(--m)) calc(-12 * var(--m)) rgba(36,37,39,.3)}
+}

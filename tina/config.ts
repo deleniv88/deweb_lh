@@ -111,7 +111,7 @@ export default defineConfig({
             label: "Services (послуги)",
             fields: [
               { type: "string", name: "titleAccent", label: "Заголовок — синє слово" },
-              { type: "string", name: "titleRest", label: "Заголовок — решта" },
+              { type: "string", name: "titleRest", label: "Заголовок — решта (Enter = перенос на мобільному)", ui: textarea },
               { type: "string", name: "lead", label: "Підзаголовок" },
               { type: "string", name: "note", label: "Примітка під підзаголовком" },
               {
