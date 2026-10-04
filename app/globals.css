@@ -1762,8 +1762,10 @@ html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
 :root{--fab-drop:calc(-27 * var(--u))}
 @media (max-width:767px){:root{--fab-drop:calc(-24 * var(--u))}}
 @media all{
-  .quote-fab{opacity:0;pointer-events:none;transform:translate(-50%,var(--fab-drop));transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .3s ease, filter .25s ease}
-  .quote-fab.is-shown{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+  /* ховається без руху: спершу гасне на місці, а вже невидимою повертається у стартову позицію */
+  .quote-fab{opacity:0;pointer-events:none;transform:translate(-50%,var(--fab-drop));transition:opacity .3s ease, transform 0s linear .3s, filter .25s ease}
+  /* з'являється з рухом вниз */
+  .quote-fab.is-shown{opacity:1;pointer-events:auto;transform:translate(-50%,0);transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .3s ease, filter .25s ease}
   html.is-locked .quote-fab{opacity:0;pointer-events:none}
   .hero .cta{transition:filter .25s ease, transform .25s ease, opacity .2s ease}
   html.fab-on .hero .cta{animation:none;opacity:0;pointer-events:none}   /* animation fill тримає opacity — вимикаємо */
