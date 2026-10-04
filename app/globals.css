@@ -12,7 +12,10 @@
    ========================================================= */
 :root{
   --vh:100vh;
-  --u: min(calc(100vw / 1920), calc(var(--vh) / 1080));
+  /* масштаб: від ширини, але на звичайному ноуті перший екран влазить по висоті.
+     Низьке вікно (відкрита панель розробника тощо) зменшує сайт максимум на 15% —
+     далі розміри тримаються, а сторінка просто прокручується (як clamp(…, vw, …)). */
+  --u: clamp(0.5px, min(calc(100vw / 1920), max(calc(var(--vh) / 1080), calc(100vw / 1920 * .85))), 1.2px);
   --bg:#f0f1f6;
   --ink:#242527;
   --ink-50:rgba(36,37,39,.5);
@@ -380,7 +383,7 @@ html{scroll-padding-top:var(--hdr-h)}
 
 /* ================= TABLET (768–1279) · макет 834 ================= */
 @media (max-width:1279px){
-  :root{--u:min(calc(100vw / 834), calc(var(--vh) / 1112))}
+  :root{--u:calc(100vw / 834)}
 
   .hero{min-height:calc(1112 * var(--u));max-height:calc(1400 * var(--u))}
   .hero__name{display:none}   /* на планшеті проміжок у букві E завузький для підпису */
@@ -565,9 +568,9 @@ html{scroll-padding-top:var(--hdr-h)}
    тож уся секція (заголовок + кейс + підпис) влазить в один екран
    і на ноуті, і на широкому моніторі.
    ========================================================= */
-:root{--s:min(calc(100vw / 1920), calc(var(--vh) / 1090));--gap-section:calc(250 * var(--s))}
-@media (max-width:1279px){:root{--s:min(calc(100vw / 834), calc(var(--vh) / 880));--gap-section:calc(160 * var(--s))}}
-@media (max-width:767px){:root{--s:min(calc(100vw / 390), calc(var(--vh) / 670));--gap-section:calc(120 * var(--s))}}
+:root{--s:clamp(0.5px, min(calc(100vw / 1920), max(calc(var(--vh) / 1090), calc(100vw / 1920 * .85))), 1.2px);--gap-section:calc(250 * var(--s))}
+@media (max-width:1279px){:root{--s:calc(100vw / 834);--gap-section:calc(160 * var(--s))}}
+@media (max-width:767px){:root{--s:calc(100vw / 390);--gap-section:calc(120 * var(--s))}}
 
 .work{
   position:relative;
@@ -1454,9 +1457,9 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
    --t: власна одиниця секції — вміст (заголовок + колода + стрілки)
    завжди влазить в один екран під хедером.
    ========================================================= */
-:root{--t:min(calc(100vw / 1920), calc(var(--vh) / 1160))}
-@media (max-width:1279px){:root{--t:min(calc(100vw / 834), calc(var(--vh) / 1100))}}
-@media (max-width:767px){:root{--t:min(calc(100vw / 390), calc(var(--vh) / 780))}}
+:root{--t:clamp(0.5px, min(calc(100vw / 1920), max(calc(var(--vh) / 1160), calc(100vw / 1920 * .85))), 1.2px)}
+@media (max-width:1279px){:root{--t:calc(100vw / 834)}}
+@media (max-width:767px){:root{--t:calc(100vw / 390)}}
 
 .tst{
   padding:var(--gap-section) 0 0;
