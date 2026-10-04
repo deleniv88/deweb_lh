@@ -1760,7 +1760,8 @@ textarea.qf__in{height:calc(88 * var(--m));padding:calc(12 * var(--m)) calc(18 *
 html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
 /* кнопка з hero при скролі "з'їжджає" вниз і стає плаваючою (ноут і мобільний) */
 :root{--fab-drop:calc(-27 * var(--u))}
-@media (max-width:767px){:root{--fab-drop:calc(-24 * var(--u))}}
+@media (max-width:767px){:root{--fab-drop:0px}}
+@media (min-width:768px){html.fab-on .hero .cta{visibility:visible;animation:none;opacity:0}}   /* мобільний: кнопка «паркується» в hero без руху */
 @media all{
   /* ховається без руху: спершу гасне на місці, а вже невидимою повертається у стартову позицію */
   .quote-fab{opacity:0;pointer-events:none;transform:translate(-50%,var(--fab-drop));transition:opacity .3s ease, transform 0s linear .3s, filter .25s ease}
@@ -1768,7 +1769,8 @@ html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
   .quote-fab.is-shown{opacity:1;pointer-events:auto;transform:translate(-50%,0);transition:transform .45s cubic-bezier(.2,.8,.2,1), opacity .3s ease, filter .25s ease}
   html.is-locked .quote-fab{opacity:0;pointer-events:none}
   .hero .cta{transition:filter .25s ease, transform .25s ease, opacity .2s ease}
-  html.fab-on .hero .cta{animation:none;opacity:0;pointer-events:none}   /* animation fill тримає opacity — вимикаємо */
+  html.fab-on .hero .cta{visibility:hidden;pointer-events:none}
+  html.fab-instant .quote-fab,html.fab-instant .hero .cta{transition:none!important}
 }
 
 /* ---- Tablet ---- */
@@ -1827,7 +1829,8 @@ html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
   .qf__chips{grid-template-columns:1fr 1fr}
   .qf__in{height:calc(46 * var(--m))}
   textarea.qf__in{height:calc(76 * var(--m))}
-  .quote-fab{width:calc(100% - 40 * var(--u));height:calc(66 * var(--u));bottom:calc(16 * var(--u) + env(safe-area-inset-bottom,0px));border-radius:calc(20 * var(--u));font-size:calc(20 * var(--u));gap:calc(14 * var(--u))}
+  /* такий самий розмір, як кнопка в hero — щоб підміна була непомітною */
+  .quote-fab{width:calc(100% - 40 * var(--u));height:calc(80 * var(--u));bottom:calc(16 * var(--u) + env(safe-area-inset-bottom,0px));border-radius:calc(20 * var(--u));font-size:calc(20 * var(--u));gap:calc(21 * var(--u))}
   .quote-fab svg{width:calc(20 * var(--u));height:calc(20 * var(--u))}
 }
 
