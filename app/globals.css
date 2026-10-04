@@ -496,7 +496,7 @@ html{scroll-padding-top:var(--hdr-h)}
   .hero__title{font-size:calc(44 * var(--u));max-width:none}   /* 3 рядки в EN/PL/UA */
   .locale-en .hero__title{max-width:calc(255 * var(--u))}   /* Websites that / turn visitors / into clients */
   .locale-pl .hero__title em{white-space:nowrap}   /* «w klientów» разом у 3-му рядку */
-  .locale-ua .hero__title{font-size:calc(33 * var(--u))}    /* «перетворюють відвідувачів» довге — інакше 4 рядки */
+  .locale-ua .hero__title{font-size:calc(40 * var(--u))}    /* «перетворюють відвідувачів» довге — інакше 4 рядки */
   .hero__title span{display:inline;white-space:normal}
   .hero__lead{max-width:none;font-size:calc(17 * var(--u))}   /* 3 рядки */
 
