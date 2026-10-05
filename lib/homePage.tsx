@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import client from "../tina/__generated__/client";
 import HomeClient from "../components/HomeClient";
 import { LOCALES, localeOf, type Locale } from "./i18n";
-import { JsonLd, parseSchema, defaultHomeSchema } from "./seo";
+import { JsonLd, parseSchema, defaultHomeSchema, isHidden, NOINDEX } from "./seo";
 
 /* Головна сторінка для кожної мови. Дані — з content/home/<файл мови> (через Tina) під час збірки. */
 async function getHome(locale: Locale) {
@@ -22,6 +22,7 @@ export async function homeMetadata(locale: Locale): Promise<Metadata> {
     description: seo?.description || undefined,
     alternates: { canonical: `${siteUrl}${localeOf(locale).path}`, languages },
     openGraph: { locale: localeOf(locale).htmlLang },
+    robots: (await isHidden({ page: locale })) ? NOINDEX : undefined,
   };
 }
 

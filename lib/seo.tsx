@@ -6,14 +6,30 @@ import client from "../tina/__generated__/client";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
-/* Чи віддавати блог у Google. Якщо налаштувань немає — блог прихований. */
-export async function blogIndexed(): Promise<boolean> {
-  try {
-    const res = await client.queries.settings({ relativePath: "site.json" });
-    return !!res.data.settings.blogIndexed;
-  } catch {
-    return false;
-  }
+/* Налаштування сайту → що сховати від Google. Якщо налаштувань немає — блог прихований. */
+type Visibility = { blogIndexed: boolean; hiddenPages: string[]; hiddenPosts: string[] };
+
+let cached: Promise<Visibility> | null = null;
+function visibility(): Promise<Visibility> {
+  cached ??= client.queries
+    .settings({ relativePath: "site.json" })
+    .then(({ data: { settings: s } }) => ({
+      blogIndexed: !!s.blogIndexed,
+      hiddenPages: (s.hiddenPages || []).filter(Boolean) as string[],
+      // посилання на статтю приходить як документ; беремо назву файлу (= адреса статті)
+      hiddenPosts: (s.hiddenPosts || [])
+        .map((h: any) => h?.post?._sys?.filename || (typeof h?.post === "string" ? h.post.split("/").pop().replace(/\.mdx$/, "") : null))
+        .filter(Boolean) as string[],
+    }))
+    .catch(() => ({ blogIndexed: false, hiddenPages: [], hiddenPosts: [] }));
+  return cached;
+}
+
+/* page: "en" | "pl" | "ua" | "blog"; для статті — post: slug */
+export async function isHidden(target: { page: string } | { post: string }): Promise<boolean> {
+  const v = await visibility();
+  if ("page" in target) return target.page === "blog" ? !v.blogIndexed || v.hiddenPages.includes("blog") : v.hiddenPages.includes(target.page);
+  return !v.blogIndexed || v.hiddenPosts.includes(target.post);
 }
 
 export const NOINDEX = { index: false, follow: false } as const;

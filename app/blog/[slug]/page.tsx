@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import client from "../../../tina/__generated__/client";
 import PostClient from "../../../components/PostClient";
-import { blogIndexed, NOINDEX, JsonLd, parseSchema, defaultPostSchema } from "../../../lib/seo";
+import { isHidden, NOINDEX, JsonLd, parseSchema, defaultPostSchema } from "../../../lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${p.title} — Deweb studio`,
     description: p.excerpt || undefined,
     openGraph: p.cover ? { images: [p.cover] } : undefined,
-    robots: !(await blogIndexed()) || p.seo?.noindex ? NOINDEX : undefined,
+    robots: (await isHidden({ post: slug })) ? NOINDEX : undefined,
   };
 }
 
