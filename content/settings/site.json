@@ -2,5 +2,10 @@
   "blogIndexed": false,
   "hiddenPages": [
     "blog"
+  ],
+  "hiddenPosts": [
+    {
+      "post": "content/posts/welcome.mdx"
+    }
   ]
 }
