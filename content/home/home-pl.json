@@ -4,8 +4,8 @@
     "description": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających."
   },
   "hero": {
-    "titleLine1": "Strony, które zamieniają",
-    "titleLine2": "ruch w klientów",
+    "titleLine1": "Strony, które skutecznie",
+    "titleLine2": "przyciągają klientów",
     "lead": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających.",
     "ctaLabel": "Bezpłatna wycena",
     "ctaHref": "#contact",
@@ -26,7 +26,7 @@
         "label": "mies. wsparcia w cenie"
       }
     ],
-    "titleAccent": "w klientów"
+    "titleAccent": "klientów"
   },
   "work": {
     "titleAccent": "Ostatnie",
