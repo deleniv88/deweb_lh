@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import client from "../../tina/__generated__/client";
 import Header from "../../components/Header";
 import Behaviors from "../../components/Behaviors";
+import { blogIndexed, NOINDEX } from "../../lib/seo";
 
-export const metadata: Metadata = {
-  title: "Blog — Deweb studio",
-  description: "Notes on websites, conversion and design.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Blog — Deweb studio",
+    description: "Notes on websites, conversion and design.",
+    robots: (await blogIndexed()) ? undefined : NOINDEX,
+  };
+}
 
 function formatDate(d?: string | null) {
   if (!d) return "";

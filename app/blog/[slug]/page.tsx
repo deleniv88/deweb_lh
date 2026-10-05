@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import client from "../../../tina/__generated__/client";
 import PostClient from "../../../components/PostClient";
+import { blogIndexed, NOINDEX, JsonLd, parseSchema, defaultPostSchema } from "../../../lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -34,6 +35,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     title: `${p.title} — Deweb studio`,
     description: p.excerpt || undefined,
     openGraph: p.cover ? { images: [p.cover] } : undefined,
+    robots: !(await blogIndexed()) || p.seo?.noindex ? NOINDEX : undefined,
   };
 }
 
@@ -41,5 +43,14 @@ export default async function PostPage({ params }: Params) {
   const { slug } = await params;
   const res = await getPost(slug);
   if (!res) notFound();
-  return <PostClient data={res.data} query={res.query} variables={res.variables} />;
+  const p = res.data.post;
+  const schema =
+    parseSchema(p.seo?.schema) ||
+    defaultPostSchema({ slug, title: p.title, description: p.excerpt, date: p.date, image: p.cover });
+  return (
+    <>
+      <JsonLd data={schema} />
+      <PostClient data={res.data} query={res.query} variables={res.variables} />
+    </>
+  );
 }

@@ -10,6 +10,27 @@ const branch =
 
 const textarea = { component: "textarea" } as const;
 
+/* Поле Schema.org: сирий JSON-LD. Порожнє = сайт підставить стандартну розмітку сам. */
+const schemaField = {
+  type: "string",
+  name: "schema",
+  label: "Schema.org (JSON-LD). Порожньо = стандартна розмітка",
+  description:
+    "Вставте JSON без тегу <script>, напр. {\"@context\":\"https://schema.org\",\"@type\":\"ProfessionalService\",…}. Можна масив з кількох об'єктів. Перевірка: validator.schema.org",
+  ui: {
+    component: "textarea",
+    validate: (value?: string) => {
+      if (!value || !value.trim()) return;
+      try {
+        const v = JSON.parse(value);
+        if (typeof v !== "object" || v === null) return "Має бути JSON-об'єкт або масив";
+      } catch (e) {
+        return `Невалідний JSON: ${(e as Error).message}`;
+      }
+    },
+  },
+} as const;
+
 export default defineConfig({
   branch,
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID, // з Tina Cloud
@@ -50,6 +71,7 @@ export default defineConfig({
             fields: [
               { type: "string", name: "title", label: "Title (вкладка браузера, Google)" },
               { type: "string", name: "description", label: "Description (Google)", ui: textarea },
+              schemaField,
             ],
           },
           {
@@ -359,6 +381,33 @@ export default defineConfig({
           { type: "string", name: "excerpt", label: "Короткий опис (для списку і Google)", ui: textarea },
           { type: "image", name: "cover", label: "Обкладинка" },
           { type: "rich-text", name: "body", label: "Текст статті", isBody: true },
+          {
+            type: "object",
+            name: "seo",
+            label: "SEO",
+            fields: [
+              { type: "boolean", name: "noindex", label: "Сховати цю статтю від Google (noindex)" },
+              schemaField,
+            ],
+          },
+        ],
+      },
+
+      /* ================= НАЛАШТУВАННЯ САЙТУ ================= */
+      {
+        name: "settings",
+        label: "Налаштування сайту",
+        path: "content/settings",
+        format: "json",
+        ui: { allowedActions: { create: false, delete: false } },
+        fields: [
+          {
+            type: "boolean",
+            name: "blogIndexed",
+            label: "Блог видно в Google",
+            description:
+              "Вимкнено: усі сторінки /blog/ отримують noindex, nofollow (Google їх прибере з пошуку). Сторінки лишаються доступні за прямим посиланням.",
+          },
         ],
       },
     ],
