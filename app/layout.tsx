@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Urbanist, Manrope, Inter_Tight, Onest } from "next/font/google";
 import "./globals.css";
+import { AnalyticsHead, AnalyticsNoscript } from "../components/Analytics";
 
 /* Шрифти вантажаться з самого сайту (next/font) — без запитів до Google, швидше і краще для GDPR */
 const urbanist = Urbanist({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-urbanist", display: "swap" });
@@ -15,6 +16,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Deweb studio — Websites that turn visitors into clients",
   description: "Design, code and AI in one place: websites that bring your business clients, not just visitors.",
+  /* Підтвердження власності сайту: Google Search Console і Meta (Facebook) */
+  verification: {
+    google: "JhzTLCQhcL3YUQn5e5YEcFTfKriySW8gzFa52Vv248E",
+    other: { "facebook-domain-verification": "gkz44mdy9j3j7ultc8ddsova15afqo" },
+  },
 };
 
 export const viewport: Viewport = {
@@ -26,7 +32,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${urbanist.variable} ${manrope.variable} ${interTight.variable} ${onest.variable}`}>
-      <body>{children}</body>
+      <head>
+        <AnalyticsHead />
+      </head>
+      <body>
+        <AnalyticsNoscript />
+        {children}
+      </body>
     </html>
   );
 }
