@@ -15,6 +15,9 @@ export const LOCALES: { code: Locale; label: string; name: string; path: string;
 
 export const localeOf = (code: Locale) => LOCALES.find((l) => l.code === code) || LOCALES[0];
 
+/* адреса сторінки «Усі роботи» для мови: /works/, /pl/works/, /ua/works/ */
+export const worksPath = (code: Locale) => `${localeOf(code).path}works/`;
+
 const en = {
   nav: { services: "Services", projects: "Projects", process: "Process", faq: "FAQ" },
   home: "Deweb studio — home",
@@ -42,6 +45,12 @@ const en = {
   unmute: "Unmute",
   social: "Social and contact",
   close: "Close",
+  works: {
+    titleAccent: "Selected",
+    titleRest: "work",
+    metaTitle: "Selected work — Deweb studio",
+    metaDescription: "Websites designed and built by Deweb studio for businesses in different niches.",
+  },
   form: {
     nameLabel: "Your name",
     namePh: "What's your name?",
@@ -92,6 +101,12 @@ const pl: UIStrings = {
   unmute: "Włącz dźwięk",
   social: "Social media i kontakt",
   close: "Zamknij",
+  works: {
+    titleAccent: "Wybrane",
+    titleRest: "realizacje",
+    metaTitle: "Wybrane realizacje — Deweb studio",
+    metaDescription: "Strony internetowe zaprojektowane i wykonane przez Deweb studio dla firm z różnych branż.",
+  },
   form: {
     nameLabel: "Twoje imię",
     namePh: "Jak masz na imię?",
@@ -140,6 +155,12 @@ const ua: UIStrings = {
   unmute: "Увімкнути звук",
   social: "Соцмережі та контакти",
   close: "Закрити",
+  works: {
+    titleAccent: "Вибрані",
+    titleRest: "роботи",
+    metaTitle: "Вибрані роботи — Deweb studio",
+    metaDescription: "Сайти, які Deweb studio спроєктувала і зробила для бізнесів з різних ніш.",
+  },
   form: {
     nameLabel: "Ваше імʼя",
     namePh: "Як вас звати?",

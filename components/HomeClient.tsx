@@ -6,7 +6,7 @@ import Behaviors from "./Behaviors";
 import { featureIcons, stepIcons, HandIcon, ArrowUpRight, CheckCircle, Lines, PlayIcon, SoundOffIcon, SoundOnIcon, socialIcons, RightArrow, Rich } from "./Icons";
 import QuoteModal from "./QuoteModal";
 import { useEffect } from "react";
-import { UI, localeOf, fill, type Locale } from "../lib/i18n";
+import { UI, localeOf, fill, worksPath, type Locale } from "../lib/i18n";
 
 /* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
 function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
@@ -135,6 +135,15 @@ export default function HomeClient(props: Props) {
             );
           })}
         </ul>
+
+        {/* «Усі роботи»: порожнє посилання або старе #projects → сторінка робіт цієї мови */}
+        {work?.buttonLabel && (
+          <div className="work__more">
+            <a className="btn-primary" href={!work.buttonHref || work.buttonHref === "#projects" ? worksPath(locale) : work.buttonHref} data-tina-field={tinaField(work, "buttonLabel")}>
+              <span>{work.buttonLabel}</span><ArrowUpRight />
+            </a>
+          </div>
+        )}
 
         <div className="drag-cursor" aria-hidden="true">{t.viewWebsite}</div>
       </section>

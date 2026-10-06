@@ -32,8 +32,8 @@
     "titleAccent": "Останні",
     "titleRest": "роботи",
     "lead": "Різні ніші, одна мета:\nперетворювати відвідувачів на клієнтів.",
-    "buttonLabel": "See all work",
-    "buttonHref": "#projects",
+    "buttonLabel": "Усі роботи",
+    "buttonHref": "/ua/works/",
     "cases": [
       {
         "image": "/uploads/dieselprog.webp",

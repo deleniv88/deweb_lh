@@ -1203,6 +1203,22 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 .blog-card__excerpt{font-family:var(--f-display);font-size:calc(18 * var(--s));line-height:1.3;color:rgba(36,37,39,.8)}
 .blog-empty{text-align:center;font-family:var(--f-body);font-weight:300;font-size:calc(18 * var(--s));color:rgba(36,37,39,.6)}
 
+/* ---- Сторінка «Усі роботи» (/works/): ті самі картки, що й у Recent work, сіткою по 2 ---- */
+.works-grid{list-style:none;display:grid;grid-template-columns:repeat(2,1fr);gap:calc(60 * var(--s)) calc(40 * var(--s));max-width:calc(1800 * var(--s));margin:0 auto}
+.works-card{display:flex;flex-direction:column;gap:calc(24 * var(--s));height:100%;color:var(--ink)}
+.works-card__media{aspect-ratio:1191 / 669;border-radius:calc(24 * var(--s));overflow:hidden;background:#e4e6ee;border:1px solid rgba(36,37,39,.1);transition:box-shadow .4s ease}
+.works-card__media img{width:100%;height:100%;object-fit:cover;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.works-card:hover .works-card__media{box-shadow:0 calc(30 * var(--s)) calc(60 * var(--s)) calc(-30 * var(--s)) rgba(36,37,39,.25)}
+.works-card:hover .works-card__media img{transform:scale(1.02)}
+.works-card__meta{display:flex;align-items:flex-end;justify-content:space-between;gap:calc(24 * var(--s));padding-bottom:calc(20 * var(--s));border-bottom:1px solid rgba(36,37,39,.2)}
+.works-card__info{display:flex;flex-direction:column;gap:calc(12 * var(--s));min-width:0}
+.works-card__name{font-family:var(--f-display);font-weight:600;font-size:calc(24 * var(--s));line-height:.9}
+.works-card__cat{font-family:var(--f-body);font-weight:300;font-size:calc(16 * var(--s));line-height:1.2}
+.works-card__visit{display:inline-flex;align-items:center;gap:calc(6 * var(--s));font-family:var(--f-display);font-size:calc(20 * var(--s));line-height:.9;white-space:nowrap;flex-shrink:0}
+.works-card:hover .works-card__visit{color:var(--accent-b)}
+/* кнопка «Усі роботи» під каруселлю на головній */
+.work__more{display:flex;justify-content:center;margin-top:calc(40 * var(--s))}
+
 .post{max-width:calc(820 * var(--s));margin:0 auto}
 .post__back{display:inline-flex;align-items:center;gap:calc(6 * var(--s));font-family:var(--f-display);font-size:calc(18 * var(--s));margin-bottom:calc(32 * var(--s))}
 .post__date{font-family:var(--f-body);font-weight:300;font-size:calc(16 * var(--s));color:rgba(36,37,39,.6);margin-bottom:calc(12 * var(--s))}
@@ -1223,12 +1239,29 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 @media (max-width:1279px){
   .page{padding:calc(140 * var(--s)) calc(40 * var(--s)) var(--gap-section)}
   .blog-grid{grid-template-columns:repeat(2,1fr)}
+  .works-grid{gap:calc(40 * var(--s)) calc(24 * var(--s))}
+  .works-card{gap:calc(18 * var(--s))}
+  .works-card__media{border-radius:calc(20 * var(--s))}
+  .works-card__meta{flex-direction:column;align-items:flex-start;gap:calc(14 * var(--s))}
+  .works-card__name{font-size:calc(22 * var(--s))}
+  .works-card__cat{font-size:calc(14 * var(--s))}
+  .works-card__visit{font-size:calc(17 * var(--s))}
+  .work__more{margin-top:calc(32 * var(--s))}
   .page__title{font-size:calc(60 * var(--s))}
   .post__title{font-size:calc(48 * var(--s))}
 }
 @media (max-width:767px){
   .page{padding:calc(110 * var(--s)) calc(20 * var(--s)) var(--gap-section)}
   .blog-grid{grid-template-columns:1fr;gap:calc(28 * var(--s))}
+  .works-grid{grid-template-columns:1fr;gap:calc(32 * var(--s))}
+  .works-card{gap:calc(14 * var(--s))}
+  .works-card__media{border-radius:calc(16 * var(--s))}
+  .works-card__meta{gap:calc(12 * var(--s));padding-bottom:calc(16 * var(--s))}
+  .works-card__info{gap:calc(8 * var(--s))}
+  .works-card__cat{font-size:calc(13 * var(--s))}
+  .works-card__visit{font-size:calc(15 * var(--s))}
+  .work__more{margin-top:calc(24 * var(--s));padding:0 calc(20 * var(--s))}
+  .work__more .btn-primary{width:100%;justify-content:center}
   .page__title{font-size:calc(44 * var(--s))}
   .page__lead{font-size:calc(16 * var(--s))}
   .blog-card__title{font-size:calc(24 * var(--s))}
@@ -1855,10 +1888,10 @@ html.lenis,html.lenis body{height:auto}
 /* українська: Urbanist не має кирилиці → заголовки Onest */
 .locale-ua{--f-display:var(--font-onest), 'Helvetica Neue', Arial, sans-serif}
 .locale-ua .hero__title,.locale-ua .work__title,.locale-ua .svc__title,.locale-ua .feat__title,.locale-ua .pl__title,
-.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title,.locale-ua .ft__h{letter-spacing:-.04em}
+.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title,.locale-ua .ft__h,.locale-ua .page__title{letter-spacing:-.04em}
 /* Onest «щільніший» за Urbanist — тонші накреслення, щоб заголовки виглядали так само легко */
 .locale-ua .hero__title,.locale-ua .work__title,.locale-ua .svc__title,.locale-ua .feat__title,.locale-ua .pl__title,
-.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title{font-weight:300}
+.locale-ua .tst__title,.locale-ua .about__title,.locale-ua .faq__title,.locale-ua .page__title{font-weight:300}
 
 /* ---- латинське слово DEWEB завжди Urbanist (в UA-версії заголовки Onest, але DEWEB — це логотип) ---- */
 .locale-ua .hero__word,.locale-ua .ft__mark{font-family:var(--font-urbanist), 'Helvetica Neue', Arial, sans-serif;font-weight:700}

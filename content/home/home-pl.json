@@ -32,8 +32,8 @@
     "titleAccent": "Ostatnie",
     "titleRest": "realizacje",
     "lead": "Różne branże, jeden cel:\nzamieniać odwiedzających w klientów.",
-    "buttonLabel": "See all work",
-    "buttonHref": "#projects",
+    "buttonLabel": "Zobacz wszystkie realizacje",
+    "buttonHref": "/pl/works/",
     "cases": [
       {
         "image": "/uploads/dieselprog.webp",

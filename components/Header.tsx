@@ -1,8 +1,9 @@
 import { LOCALES, UI, localeOf, type Locale } from "../lib/i18n";
 
 /* Хедер: лого, вибір мови, меню. На головній посилання — якорі (#services),
-   на інших сторінках (блог) — ведуть на головну потрібної мови. */
-export default function Header({ home = true, locale = "en" }: { home?: boolean; locale?: Locale }) {
+   на інших сторінках (блог) — ведуть на головну потрібної мови.
+   subpath — та сама сторінка в інших мовах (напр. "works/" → /pl/works/); без нього вибір мови веде на головну. */
+export default function Header({ home = true, locale = "en", subpath = "" }: { home?: boolean; locale?: Locale; subpath?: string }) {
   const t = UI[locale];
   const cur = localeOf(locale);
   const p = home ? "" : cur.path;
@@ -29,7 +30,7 @@ export default function Header({ home = true, locale = "en" }: { home?: boolean;
           <ul className="lang__menu" id="lang-menu">
             {LOCALES.map((l) => (
               <li key={l.code}>
-                <a className="lang__item" href={l.path} hrefLang={l.htmlLang} lang={l.htmlLang} aria-current={l.code === locale ? "true" : undefined}>
+                <a className="lang__item" href={`${l.path}${subpath}`} hrefLang={l.htmlLang} lang={l.htmlLang} aria-current={l.code === locale ? "true" : undefined}>
                   <span>{l.name}</span>
                   <span className="lang__code">{l.label}</span>
                 </a>
