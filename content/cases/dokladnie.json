@@ -1,0 +1,19 @@
+{
+  "name": "dokŁADNIE.",
+  "url": "https://dokladnie.pl/",
+  "image": "/uploads/dokladnie.webp",
+  "showOnHome": false,
+  "order": 110,
+  "en": {
+    "category": "Renovation · Landing page",
+    "city": "Warsaw"
+  },
+  "pl": {
+    "category": "Remonty · Landing page",
+    "city": "Warszawa"
+  },
+  "ua": {
+    "category": "Ремонт · Лендінг",
+    "city": "Варшава"
+  }
+}

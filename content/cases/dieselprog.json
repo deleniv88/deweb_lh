@@ -1,0 +1,19 @@
+{
+  "name": "DieselProg",
+  "url": "https://dieselprog.pl/",
+  "image": "/uploads/dieselprog.webp",
+  "showOnHome": true,
+  "order": 10,
+  "en": {
+    "category": "Automotive · Corporate website",
+    "city": "Wrocław"
+  },
+  "pl": {
+    "category": "Motoryzacja · Strona firmowa",
+    "city": "Wrocław"
+  },
+  "ua": {
+    "category": "Автосервіс · Корпоративний сайт",
+    "city": "Вроцлав"
+  }
+}

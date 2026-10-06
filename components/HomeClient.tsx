@@ -7,6 +7,7 @@ import { featureIcons, stepIcons, HandIcon, ArrowUpRight, CheckCircle, Lines, Pl
 import QuoteModal from "./QuoteModal";
 import { useEffect } from "react";
 import { UI, localeOf, fill, worksPath, type Locale } from "../lib/i18n";
+import { casesFor } from "../lib/cases";
 
 /* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
 function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
@@ -22,6 +23,7 @@ type Props = {
   query: string;
   variables: Record<string, unknown>;
   data: any;
+  cases: { query: string; variables: Record<string, unknown>; data: any };
 };
 
 /* useTina: на звичайному сайті просто віддає дані,
@@ -29,6 +31,8 @@ type Props = {
    data-tina-field — робить елемент клікабельним в адмінці (відкриває потрібне поле). */
 export default function HomeClient(props: Props) {
   const { data } = useTina({ query: props.query, variables: props.variables, data: props.data });
+  /* кейси живуть у колекції «Кейси»; тут — лише позначені «Показувати на головній» */
+  const { data: casesData } = useTina({ query: props.cases.query, variables: props.cases.variables, data: props.cases.data });
   const locale: Locale = props.locale || "en";
   const t = UI[locale];
   const tx = t; /* службові написи всередині циклів, де змінна t зайнята */
@@ -37,7 +41,7 @@ export default function HomeClient(props: Props) {
   const home = data.home;
   const { hero, work, services, features, projectLine, testimonials, about, faq, footer, quoteForm } = home;
 
-  const cases = (work?.cases || []).filter(Boolean);
+  const cases = casesFor(casesData, locale).filter(({ c }: any) => c.showOnHome);
   const svcItems = (services?.items || []).filter(Boolean);
   const featItems = (features?.items || []).filter(Boolean);
   const steps = (projectLine?.steps || []).filter(Boolean);
@@ -111,7 +115,7 @@ export default function HomeClient(props: Props) {
         </div>
 
         <ul className="work__track" data-work-track data-live-tpl={t.liveTpl} aria-label={t.projects} aria-roledescription="carousel" tabIndex={0} key={depsKey}>
-          {cases.map((c: any, i: number) => {
+          {cases.map(({ c, t: ct }: any, i: number) => {
             const href = c.url || "#";
             return (
               <li className="work__card" key={i}>
@@ -122,8 +126,8 @@ export default function HomeClient(props: Props) {
                   <div className="work__info">
                     <h3 className="work__name" data-tina-field={tinaField(c, "name")}>{c.name}</h3>
                     <p className="work__cat">
-                      <span data-tina-field={tinaField(c, "category")}>{c.category}</span>
-                      {c.city && <> · <span data-tina-field={tinaField(c, "city")}>{c.city}</span></>}
+                      <span data-tina-field={tinaField(c[locale] || c.en || c, "category")}>{ct.category}</span>
+                      {ct.city && <> · <span data-tina-field={tinaField(c[locale] || c.en || c, "city")}>{ct.city}</span></>}
                     </p>
                   </div>
                   <a className="work__visit" href={href} target="_blank" rel="noopener" data-tina-field={tinaField(c, "url")}>

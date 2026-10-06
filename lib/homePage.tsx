@@ -27,7 +27,11 @@ export async function homeMetadata(locale: Locale): Promise<Metadata> {
 }
 
 export async function HomePage({ locale }: { locale: Locale }) {
-  const res = await getHome(locale);
+  const [res, cases] = await Promise.all([
+    getHome(locale),
+    /* кейси для Recent work — з колекції «Кейси» (лише позначені «Показувати на головній») */
+    client.queries.caseConnection({ first: 500 }),
+  ]);
   const home = res.data.home;
   const l = localeOf(locale);
   /* Schema.org: з поля SEO → Schema.org в адмінці, інакше стандартна */
@@ -37,7 +41,7 @@ export async function HomePage({ locale }: { locale: Locale }) {
   return (
     <>
       <JsonLd data={schema} />
-      <HomeClient data={res.data} query={res.query} variables={res.variables} locale={locale} />
+      <HomeClient data={res.data} query={res.query} variables={res.variables} cases={{ data: cases.data, query: cases.query, variables: cases.variables }} locale={locale} />
     </>
   );
 }

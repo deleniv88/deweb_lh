@@ -17,6 +17,8 @@ export const localeOf = (code: Locale) => LOCALES.find((l) => l.code === code) |
 
 /* адреса сторінки «Усі роботи» для мови: /works/, /pl/works/, /ua/works/ */
 export const worksPath = (code: Locale) => `${localeOf(code).path}works/`;
+/* файл сторінки робіт для мови: content/works/works.json, works-pl.json, works-ua.json */
+export const worksFile = (code: Locale) => localeOf(code).file.replace("home", "works");
 
 const en = {
   nav: { services: "Services", projects: "Projects", process: "Process", faq: "FAQ" },
@@ -46,8 +48,7 @@ const en = {
   social: "Social and contact",
   close: "Close",
   works: {
-    titleAccent: "Selected",
-    titleRest: "work",
+    /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Selected work — Deweb studio",
     metaDescription: "Websites designed and built by Deweb studio for businesses in different niches.",
   },
@@ -102,8 +103,7 @@ const pl: UIStrings = {
   social: "Social media i kontakt",
   close: "Zamknij",
   works: {
-    titleAccent: "Wybrane",
-    titleRest: "realizacje",
+    /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Wybrane realizacje — Deweb studio",
     metaDescription: "Strony internetowe zaprojektowane i wykonane przez Deweb studio dla firm z różnych branż.",
   },
@@ -156,8 +156,7 @@ const ua: UIStrings = {
   social: "Соцмережі та контакти",
   close: "Закрити",
   works: {
-    titleAccent: "Вибрані",
-    titleRest: "роботи",
+    /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Вибрані роботи — Deweb studio",
     metaDescription: "Сайти, які Deweb studio спроєктувала і зробила для бізнесів з різних ніш.",
   },

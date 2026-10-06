@@ -1,0 +1,19 @@
+{
+  "name": "Dworek Wilkowscy",
+  "url": "https://dworekwilkowscy.pl/",
+  "image": "/uploads/dworek-wilkowscy.webp",
+  "showOnHome": false,
+  "order": 180,
+  "en": {
+    "category": "Wedding venue · Corporate website",
+    "city": "Radzymin"
+  },
+  "pl": {
+    "category": "Sala weselna · Strona firmowa",
+    "city": "Radzymin"
+  },
+  "ua": {
+    "category": "Весільна зала · Корпоративний сайт",
+    "city": "Радзимін"
+  }
+}

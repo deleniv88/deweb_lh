@@ -1,0 +1,19 @@
+{
+  "name": "Gusarskiy Hotel",
+  "url": "https://gusarskiy.kiev.ua/",
+  "image": "/uploads/Gusarskiy.webp",
+  "showOnHome": true,
+  "order": 70,
+  "en": {
+    "category": "Hotel · Multilingual website",
+    "city": "Kyiv"
+  },
+  "pl": {
+    "category": "Hotel · Strona wielojęzyczna",
+    "city": "Kijów"
+  },
+  "ua": {
+    "category": "Готель · Багатомовний сайт",
+    "city": "Київ"
+  }
+}

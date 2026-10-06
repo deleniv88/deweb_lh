@@ -1,0 +1,19 @@
+{
+  "name": "Metalex",
+  "url": "https://metalexzm.pl/",
+  "image": "/uploads/metalex.webp",
+  "showOnHome": false,
+  "order": 160,
+  "en": {
+    "category": "Metalworking · Corporate website",
+    "city": "Płońsk"
+  },
+  "pl": {
+    "category": "Obróbka metalu · Strona firmowa",
+    "city": "Płońsk"
+  },
+  "ua": {
+    "category": "Металообробка · Корпоративний сайт",
+    "city": "Плоньськ"
+  }
+}

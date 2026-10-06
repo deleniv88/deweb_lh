@@ -1,0 +1,19 @@
+{
+  "name": "Dr. Michał Domaszewski",
+  "url": "https://michaldomaszewski.pl/",
+  "image": "/uploads/porady-lekarskie.webp",
+  "showOnHome": true,
+  "order": 20,
+  "en": {
+    "category": "Medicine · One-page site",
+    "city": "Warsaw"
+  },
+  "pl": {
+    "category": "Medycyna · Strona one-page",
+    "city": "Warszawa"
+  },
+  "ua": {
+    "category": "Медицина · Односторінковий сайт",
+    "city": "Варшава"
+  }
+}

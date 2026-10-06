@@ -1,0 +1,19 @@
+{
+  "name": "Okularnia Kolankiewicz",
+  "url": "https://okularniakolankiewicz.pl/",
+  "image": "/uploads/okularnia.webp",
+  "showOnHome": true,
+  "order": 80,
+  "en": {
+    "category": "Optician · Corporate website",
+    "city": "Legionowo"
+  },
+  "pl": {
+    "category": "Optyk · Strona firmowa",
+    "city": "Legionowo"
+  },
+  "ua": {
+    "category": "Оптика · Корпоративний сайт",
+    "city": "Легіоново"
+  }
+}

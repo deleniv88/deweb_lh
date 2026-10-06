@@ -1,0 +1,19 @@
+{
+  "name": "Blissti Beauty Studio",
+  "url": "https://blissti.pl/",
+  "image": "/uploads/blissti.webp",
+  "showOnHome": true,
+  "order": 50,
+  "en": {
+    "category": "Beauty · Landing page",
+    "city": "Warsaw"
+  },
+  "pl": {
+    "category": "Beauty · Landing page",
+    "city": "Warszawa"
+  },
+  "ua": {
+    "category": "Б'юті · Лендінг",
+    "city": "Варшава"
+  }
+}

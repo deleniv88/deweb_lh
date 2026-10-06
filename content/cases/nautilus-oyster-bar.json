@@ -1,0 +1,19 @@
+{
+  "name": "Nautilus Oyster Bar",
+  "url": "https://thenautilus.ee/",
+  "image": "/uploads/nautilus.webp",
+  "showOnHome": true,
+  "order": 40,
+  "en": {
+    "category": "Restaurant · Landing page",
+    "city": "Tallinn"
+  },
+  "pl": {
+    "category": "Restauracja · Landing page",
+    "city": "Tallinn"
+  },
+  "ua": {
+    "category": "Ресторан · Лендінг",
+    "city": "Таллінн"
+  }
+}

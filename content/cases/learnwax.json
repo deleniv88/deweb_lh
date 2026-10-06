@@ -1,0 +1,19 @@
+{
+  "name": "LearnWax",
+  "url": "https://www.learnwax.eu/",
+  "image": "/uploads/learnwax.webp",
+  "showOnHome": false,
+  "order": 120,
+  "en": {
+    "category": "Waxing course · Online school",
+    "city": "Denmark"
+  },
+  "pl": {
+    "category": "Kurs depilacji woskiem · Szkoła online",
+    "city": "Dania"
+  },
+  "ua": {
+    "category": "Курс депіляції воском · Онлайн-школа",
+    "city": "Данія"
+  }
+}

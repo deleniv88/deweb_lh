@@ -1,0 +1,19 @@
+{
+  "name": "HelixBoost",
+  "url": "https://helixboost.com/",
+  "image": "/uploads/helix.webp",
+  "showOnHome": true,
+  "order": 90,
+  "en": {
+    "category": "Sales - Expert website",
+    "city": "London"
+  },
+  "pl": {
+    "category": "Sprzedaż · Strona eksperta",
+    "city": "Londyn"
+  },
+  "ua": {
+    "category": "Продажі · Сайт експерта",
+    "city": "Лондон"
+  }
+}

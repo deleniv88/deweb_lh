@@ -1,0 +1,19 @@
+{
+  "name": "K&K Consulting Group",
+  "url": "https://kk-group.com.pl/",
+  "image": "/uploads/kk-consulting.webp",
+  "showOnHome": true,
+  "order": 30,
+  "en": {
+    "category": "Accounting · Corporate website",
+    "city": "Wrocław"
+  },
+  "pl": {
+    "category": "Księgowość · Strona firmowa",
+    "city": "Wrocław"
+  },
+  "ua": {
+    "category": "Бухгалтерія · Корпоративний сайт",
+    "city": "Вроцлав"
+  }
+}

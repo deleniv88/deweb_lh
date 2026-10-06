@@ -1,0 +1,19 @@
+{
+  "name": "Moment Business Forum",
+  "url": "https://momentforum.com/",
+  "image": "/uploads/moment-forum.webp",
+  "showOnHome": false,
+  "order": 140,
+  "en": {
+    "category": "Business event · Landing page",
+    "city": "Copenhagen"
+  },
+  "pl": {
+    "category": "Wydarzenie biznesowe · Landing page",
+    "city": "Kopenhaga"
+  },
+  "ua": {
+    "category": "Бізнес-форум · Лендінг",
+    "city": "Копенгаген"
+  }
+}

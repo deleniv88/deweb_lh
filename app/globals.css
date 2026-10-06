@@ -1216,6 +1216,8 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 .works-card__cat{font-family:var(--f-body);font-weight:300;font-size:calc(16 * var(--s));line-height:1.2}
 .works-card__visit{display:inline-flex;align-items:center;gap:calc(6 * var(--s));font-family:var(--f-display);font-size:calc(20 * var(--s));line-height:.9;white-space:nowrap;flex-shrink:0}
 .works-card:hover .works-card__visit{color:var(--accent-b)}
+.works-card__soon{display:grid;place-items:center;width:100%;height:100%;background:linear-gradient(135deg,#fff,#e4e6fb);font-family:var(--f-display);font-size:calc(20 * var(--s));color:rgba(36,37,39,.5)}
+@media (hover:hover) and (pointer:fine){ .works-card__media{cursor:none} }
 /* кнопка «Усі роботи» під каруселлю на головній */
 .work__more{display:flex;justify-content:center;margin-top:calc(40 * var(--s))}
 

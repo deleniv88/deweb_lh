@@ -1,0 +1,19 @@
+{
+  "name": "MASI Parrucchieri",
+  "url": "https://parrucchierirovereto.com/",
+  "image": "/uploads/masi.webp",
+  "showOnHome": false,
+  "order": 150,
+  "en": {
+    "category": "Hair salon · Landing page",
+    "city": "Rovereto"
+  },
+  "pl": {
+    "category": "Salon fryzjerski · Landing page",
+    "city": "Rovereto"
+  },
+  "ua": {
+    "category": "Перукарський салон · Лендінг",
+    "city": "Роверето"
+  }
+}

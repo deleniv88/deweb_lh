@@ -1,0 +1,19 @@
+{
+  "name": "Polkar",
+  "url": "https://polkar.com.pl/",
+  "image": "/uploads/polkar.webp",
+  "showOnHome": false,
+  "order": 170,
+  "en": {
+    "category": "Packaging manufacturer · Corporate website",
+    "city": "Krapkowice"
+  },
+  "pl": {
+    "category": "Producent opakowań · Strona firmowa",
+    "city": "Krapkowice"
+  },
+  "ua": {
+    "category": "Виробник пакування · Корпоративний сайт",
+    "city": "Крапковіце"
+  }
+}

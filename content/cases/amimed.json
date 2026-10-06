@@ -1,0 +1,19 @@
+{
+  "name": "AMIMED",
+  "url": "https://amimed.pl/",
+  "image": "/uploads/Amimed.webp",
+  "showOnHome": true,
+  "order": 100,
+  "en": {
+    "category": "Medical laboratory · Corporate website",
+    "city": "Wołomin"
+  },
+  "pl": {
+    "category": "Laboratorium medyczne · Strona firmowa",
+    "city": "Wołomin"
+  },
+  "ua": {
+    "category": "Медична лабораторія · Корпоративний сайт",
+    "city": "Воломін"
+  }
+}

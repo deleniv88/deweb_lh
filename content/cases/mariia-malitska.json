@@ -1,0 +1,19 @@
+{
+  "name": "Mariia Malitska",
+  "url": "https://mariiamalitska.com/",
+  "image": "/uploads/mariia-malitska.webp",
+  "showOnHome": false,
+  "order": 130,
+  "en": {
+    "category": "Hair styling course · Landing page",
+    "city": "Warsaw"
+  },
+  "pl": {
+    "category": "Kurs stylizacji włosów · Landing page",
+    "city": "Warszawa"
+  },
+  "ua": {
+    "category": "Курс укладок · Лендінг",
+    "city": "Варшава"
+  }
+}

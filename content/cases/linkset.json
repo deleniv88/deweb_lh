@@ -1,0 +1,19 @@
+{
+  "name": "Linkset",
+  "url": "https://linkset.pl/",
+  "image": "/uploads/linkset.webp",
+  "showOnHome": true,
+  "order": 60,
+  "en": {
+    "category": "IT services · Corporate website",
+    "city": "Poland"
+  },
+  "pl": {
+    "category": "Usługi IT · Strona firmowa",
+    "city": "Polska"
+  },
+  "ua": {
+    "category": "IT-послуги · Корпоративний сайт",
+    "city": "Польща"
+  }
+}

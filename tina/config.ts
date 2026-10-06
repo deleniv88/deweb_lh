@@ -104,27 +104,13 @@ export default defineConfig({
           {
             type: "object",
             name: "work",
-            label: "Recent work (кейси)",
+            label: "Recent work (самі кейси — у колекції «Кейси», галочка «Показувати на головній»)",
             fields: [
               { type: "string", name: "titleAccent", label: "Заголовок — синє слово" },
               { type: "string", name: "titleRest", label: "Заголовок — решта" },
               { type: "string", name: "lead", label: "Підзаголовок (Enter = новий рядок)", ui: textarea },
               { type: "string", name: "buttonLabel", label: "Кнопка — текст" },
               { type: "string", name: "buttonHref", label: "Кнопка — посилання" },
-              {
-                type: "object",
-                name: "cases",
-                label: "Кейси",
-                list: true,
-                ui: { itemProps: (item) => ({ label: item?.name || "Новий кейс" }) },
-                fields: [
-                  { type: "image", name: "image", label: "Скрін сайту (16:9)" },
-                  { type: "string", name: "name", label: "Назва" },
-                  { type: "string", name: "category", label: "Категорія (Automotive · Corporate website)" },
-                  { type: "string", name: "city", label: "Місто (Wrocław)" },
-                  { type: "string", name: "url", label: "Посилання на сайт (https://…), відкривається в новій вкладці" },
-                ],
-              },
             ],
           },
           {
@@ -349,6 +335,92 @@ export default defineConfig({
               { type: "string", name: "successTitle", label: "Після відправки — заголовок" },
               { type: "string", name: "successText", label: "Після відправки — текст" },
               { type: "string", name: "fabLabel", label: "Плаваюча кнопка — текст" },
+            ],
+          },
+        ],
+      },
+
+      /* ================= СТОРІНКА РОБІТ ================= */
+      {
+        name: "works",
+        label: "Сторінка робіт (EN · PL · UA) — тексти",
+        path: "content/works",
+        format: "json",
+        ui: {
+          // works (EN), works-pl (PL), works-ua (UA)
+          router: ({ document }) => {
+            const f = document._sys.filename;
+            return f === "works-pl" ? "/pl/works/" : f === "works-ua" ? "/ua/works/" : "/works/";
+          },
+          allowedActions: { create: false, delete: false },
+        },
+        fields: [
+          {
+            type: "object",
+            name: "seo",
+            label: "SEO",
+            fields: [
+              { type: "string", name: "title", label: "Title (вкладка браузера, Google)" },
+              { type: "string", name: "description", label: "Description (опис у Google)", ui: textarea },
+            ],
+          },
+          { type: "string", name: "titleAccent", label: "Заголовок — синє слово" },
+          { type: "string", name: "titleRest", label: "Заголовок — решта" },
+          { type: "string", name: "lead", label: "Підзаголовок (Enter = новий рядок)", ui: textarea },
+        ],
+      },
+
+      /* ================= КЕЙСИ ================= */
+      {
+        // один файл = один кейс, тексти для всіх 3 мов в одній формі
+        name: "case",
+        label: "Кейси (усі роботи)",
+        path: "content/cases",
+        format: "json",
+        ui: {
+          router: () => "/works/",
+          filename: {
+            slugify: (values) =>
+              `${values?.name || "case"}`
+                .toLowerCase()
+                .replace(/ł/g, "l")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, ""),
+          },
+        },
+        fields: [
+          { type: "string", name: "name", label: "Назва", isTitle: true, required: true },
+          { type: "boolean", name: "showOnHome", label: "Показувати на головній (Recent work)" },
+          { type: "number", name: "order", label: "Порядок (менше число = раніше; напр. 10, 20, 30…)" },
+          { type: "image", name: "image", label: "Скрін сайту (16:9)" },
+          { type: "string", name: "url", label: "Посилання на сайт (https://…), відкривається в новій вкладці" },
+          {
+            type: "object",
+            name: "en",
+            label: "EN",
+            fields: [
+              { type: "string", name: "category", label: "Категорія (Automotive · Corporate website)" },
+              { type: "string", name: "city", label: "Місто (Wrocław)" },
+            ],
+          },
+          {
+            type: "object",
+            name: "pl",
+            label: "PL",
+            fields: [
+              { type: "string", name: "category", label: "Kategoria (Motoryzacja · Strona firmowa)" },
+              { type: "string", name: "city", label: "Miasto (Wrocław)" },
+            ],
+          },
+          {
+            type: "object",
+            name: "ua",
+            label: "UA",
+            fields: [
+              { type: "string", name: "category", label: "Категорія (Автосервіс · Корпоративний сайт)" },
+              { type: "string", name: "city", label: "Місто (Вроцлав)" },
             ],
           },
         ],
