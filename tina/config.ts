@@ -31,6 +31,15 @@ const schemaField = {
   },
 } as const;
 
+/* Картинка для посилань (Open Graph / Twitter): що видно, коли сторінку кидають у месенджер чи соцмережу. */
+const shareImageField = {
+  type: "image",
+  name: "shareImage",
+  label: "Картинка для посилань (месенджери, соцмережі)",
+  description:
+    "1200×630 або 1800×945 (≈1.91:1), JPG до 300 КБ (інакше WhatsApp її не покаже). Порожньо = картинка з «Налаштування сайту».",
+} as const;
+
 export default defineConfig({
   branch,
   clientId: process.env.NEXT_PUBLIC_TINA_CLIENT_ID, // з Tina Cloud
@@ -71,6 +80,7 @@ export default defineConfig({
             fields: [
               { type: "string", name: "title", label: "Title (вкладка браузера, Google)" },
               { type: "string", name: "description", label: "Description (Google)", ui: textarea },
+              shareImageField,
               schemaField,
             ],
           },
@@ -362,6 +372,7 @@ export default defineConfig({
             fields: [
               { type: "string", name: "title", label: "Title (вкладка браузера, Google)" },
               { type: "string", name: "description", label: "Description (опис у Google)", ui: textarea },
+              shareImageField,
             ],
           },
           { type: "string", name: "titleAccent", label: "Заголовок — синє слово" },
@@ -470,6 +481,13 @@ export default defineConfig({
         format: "json",
         ui: { allowedActions: { create: false, delete: false } },
         fields: [
+          {
+            type: "image",
+            name: "shareImage",
+            label: "Картинка для посилань — за замовчуванням",
+            description:
+              "Показується, коли посилання на сайт кидають у Telegram, WhatsApp, Facebook, LinkedIn тощо — для всіх сторінок і мов. Окрему картинку для мови/сторінки можна задати в її SEO. 1200×630 або 1800×945, JPG до 300 КБ.",
+          },
           {
             type: "boolean",
             name: "blogIndexed",

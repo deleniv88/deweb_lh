@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import client from "../../tina/__generated__/client";
 import Header from "../../components/Header";
 import Behaviors from "../../components/Behaviors";
-import { isHidden, NOINDEX } from "../../lib/seo";
+import { isHidden, NOINDEX, shareMeta } from "../../lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
+  const title = "Blog — Deweb studio";
+  const description = "Notes on websites, conversion and design.";
   return {
-    title: "Blog — Deweb studio",
-    description: "Notes on websites, conversion and design.",
+    title,
+    description,
+    ...(await shareMeta({ path: "/blog/", title, description })),
     robots: (await isHidden({ page: "blog" })) ? NOINDEX : undefined,
   };
 }

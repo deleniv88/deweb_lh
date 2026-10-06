@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import client from "../../../tina/__generated__/client";
 import PostClient from "../../../components/PostClient";
-import { isHidden, NOINDEX, JsonLd, parseSchema, defaultPostSchema } from "../../../lib/seo";
+import { isHidden, NOINDEX, JsonLd, parseSchema, defaultPostSchema, shareMeta } from "../../../lib/seo";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -34,7 +34,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${p.title} — Deweb studio`,
     description: p.excerpt || undefined,
-    openGraph: p.cover ? { images: [p.cover] } : undefined,
+    /* картинка посилання = обкладинка статті, інакше загальна з налаштувань */
+    ...(await shareMeta({ path: `/blog/${slug}/`, title: p.title, description: p.excerpt, image: p.cover, type: "article" })),
     robots: (await isHidden({ post: slug })) ? NOINDEX : undefined,
   };
 }

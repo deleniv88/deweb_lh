@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import client from "../tina/__generated__/client";
 import HomeClient from "../components/HomeClient";
 import { LOCALES, localeOf, type Locale } from "./i18n";
-import { JsonLd, parseSchema, defaultHomeSchema, isHidden, NOINDEX } from "./seo";
+import { JsonLd, parseSchema, defaultHomeSchema, isHidden, NOINDEX, shareMeta } from "./seo";
 
 /* Головна сторінка для кожної мови. Дані — з content/home/<файл мови> (через Tina) під час збірки. */
 async function getHome(locale: Locale) {
@@ -17,11 +17,12 @@ export async function homeMetadata(locale: Locale): Promise<Metadata> {
   const languages: Record<string, string> = {};
   LOCALES.forEach((l) => { languages[l.htmlLang] = `${siteUrl}${l.path}`; });
   languages["x-default"] = `${siteUrl}/`;
+  const l = localeOf(locale);
   return {
     title: seo?.title || undefined,
     description: seo?.description || undefined,
-    alternates: { canonical: `${siteUrl}${localeOf(locale).path}`, languages },
-    openGraph: { locale: localeOf(locale).htmlLang },
+    alternates: { canonical: `${siteUrl}${l.path}`, languages },
+    ...(await shareMeta({ path: l.path, title: seo?.title, description: seo?.description, lang: l.htmlLang, image: seo?.shareImage })),
     robots: (await isHidden({ page: locale })) ? NOINDEX : undefined,
   };
 }
