@@ -1,0 +1,88 @@
+# Автодеплой на lh.pl: кожен коміт у main (зокрема Save в адмінці Tina)
+# → збірка сайту → заливка готових файлів по FTP.
+name: Deploy to lh.pl
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-lh
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Tina Cloud переіндексовує репозиторій після коміту — кілька спроб з паузою,
+      # щоб не впасти з "schema doesn't match", поки індекс не оновився
+      - name: Build
+        env:
+          NEXT_PUBLIC_TINA_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_TINA_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          NEXT_PUBLIC_TINA_BRANCH: main
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.SITE_URL }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+        run: |
+          for i in 1 2 3 4 5; do
+            npm run build && exit 0
+            echo "Build failed (attempt $i). Waiting 45s for Tina Cloud to finish indexing..."
+            sleep 45
+          done
+          exit 1
+
+      # ключі для форми → out/api/config.php (у репозиторії їх немає)
+      - name: Write form config
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+        run: |
+          node -e '
+            const k=["TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","GMAIL_USER","GMAIL_APP_PASSWORD","NOTIFY_EMAIL","TURNSTILE_SECRET_KEY"];
+            const q=v=>"\x27"+String(v||"").replace(/\\/g,"\\\\").replace(/\x27/g,"\\\x27")+"\x27";
+            const body=k.map(x=>"  "+q(x)+" => "+q(process.env[x])+",").join("\n");
+            require("fs").writeFileSync("out/api/config.php","<?php\nreturn [\n"+body+"\n];\n");
+          '
+          test -f out/api/config.php
+
+      # Заливка через lftp: стабільніша за звичайний FTP-клієнт — сама перепідключається,
+      # якщо сервер обриває з'єднання (ECONNRESET), і дозаливає те, що не дійшло.
+      - name: Upload to lh.pl (lftp)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.FTP_DIR }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          cat > /tmp/upload.lftp <<LFTP
+          set ftp:ssl-allow true
+          set ftp:ssl-force false
+          set ssl:verify-certificate no
+          set ftp:passive-mode true
+          set net:timeout 30
+          set net:max-retries 10
+          set net:reconnect-interval-base 5
+          set net:reconnect-interval-max 30
+          set xfer:clobber on
+          open --user "$FTP_USERNAME" --password "$FTP_PASSWORD" "$FTP_SERVER"
+          mirror --reverse --parallel=2 --verbose=1 out/ "$FTP_DIR"
+          bye
+          LFTP
+          lftp -f /tmp/upload.lftp
+          rm -f /tmp/upload.lftp
