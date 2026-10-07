@@ -4,12 +4,15 @@ import Header from "../../components/Header";
 import Behaviors from "../../components/Behaviors";
 import { isHidden, NOINDEX, shareMeta } from "../../lib/seo";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 export async function generateMetadata(): Promise<Metadata> {
   const title = "Blog — Deweb studio";
   const description = "Notes on websites, conversion and design.";
   return {
     title,
     description,
+    alternates: { canonical: `${siteUrl}/blog/` },
     ...(await shareMeta({ path: "/blog/", title, description })),
     robots: (await isHidden({ page: "blog" })) ? NOINDEX : undefined,
   };
@@ -41,8 +44,8 @@ export default async function BlogPage() {
           <ul className="blog-grid">
             {posts.map((p) => (
               <li key={p!._sys.filename}>
-                <a className="blog-card" href={`/blog/${p!._sys.filename}`}>
-                  <div className="blog-card__media">{p!.cover && <img src={p!.cover} alt="" loading="lazy" decoding="async" />}</div>
+                <a className="blog-card" href={`/blog/${p!._sys.filename}/`}>
+                  <div className="blog-card__media">{p!.cover && <img src={p!.cover} alt={p!.title || ""} loading="lazy" decoding="async" />}</div>
                   <span className="blog-card__date">{formatDate(p!.date)}</span>
                   <h2 className="blog-card__title">{p!.title}</h2>
                   {p!.excerpt && <p className="blog-card__excerpt">{p!.excerpt}</p>}

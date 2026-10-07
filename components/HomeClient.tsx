@@ -120,7 +120,7 @@ export default function HomeClient(props: Props) {
             return (
               <li className="work__card" key={i}>
                 <a className="work__media" href={href} target="_blank" rel="noopener" tabIndex={-1} aria-hidden="true" draggable={false} data-tina-field={tinaField(c, "image")}>
-                  {c.image && <img src={c.image} alt="" width={2690} height={1512} loading="lazy" decoding="async" draggable={false} />}
+                  {c.image && <img src={c.image} alt={c.name || ""} width={2690} height={1512} loading="lazy" decoding="async" draggable={false} />}
                 </a>
                 <div className="work__meta">
                   <div className="work__info">
@@ -236,7 +236,7 @@ export default function HomeClient(props: Props) {
                   <div className="feat__mimg" aria-hidden="true">
                     <div>
                       {f.image ? (
-                        <img src={f.image} alt="" width={1042} height={521} loading="lazy" decoding="async" />
+                        <img src={f.image} alt={f.imageAlt || f.name || ""} width={1042} height={521} loading="lazy" decoding="async" />
                       ) : (
                         <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>{t.previewSoon}</small></div>
                       )}
@@ -352,7 +352,7 @@ export default function HomeClient(props: Props) {
         <div className="tst__deck" tabIndex={0} aria-roledescription="carousel" aria-label={t.storiesAria}>
           {stories.map((t: any, i: number) => (
             <article className="tst__card" key={i} data-pos={i === 0 ? "center" : i === 1 ? "right" : i === stories.length - 1 ? "left" : "hidden"} data-tina-field={tinaField(t)}>
-              {t.poster && <img className="tst__poster" src={t.poster} alt="" loading="lazy" decoding="async" />}
+              {t.poster && <img className="tst__poster" src={t.poster} alt={fill(tx.videoTpl, { name: t.name })} loading="lazy" decoding="async" />}
               {t.video && (
                 <video className="tst__video" data-src={t.video} poster={t.poster || undefined} muted loop playsInline preload="none" aria-label={fill(tx.videoTpl, { name: t.name })} />
               )}

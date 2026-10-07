@@ -4,6 +4,8 @@ import client from "../../../tina/__generated__/client";
 import PostClient from "../../../components/PostClient";
 import { isHidden, NOINDEX, JsonLd, parseSchema, defaultPostSchema, shareMeta } from "../../../lib/seo";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 type Params = { params: Promise<{ slug: string }> };
 
 /* статична збірка: лише статті, що існують на момент build */
@@ -34,6 +36,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${p.title} — Deweb studio`,
     description: p.excerpt || undefined,
+    alternates: { canonical: `${siteUrl}/blog/${slug}/` },
     /* картинка посилання = обкладинка статті, інакше загальна з налаштувань */
     ...(await shareMeta({ path: `/blog/${slug}/`, title: p.title, description: p.excerpt, image: p.cover, type: "article" })),
     robots: (await isHidden({ post: slug })) ? NOINDEX : undefined,
