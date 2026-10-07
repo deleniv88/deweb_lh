@@ -34,14 +34,29 @@ jobs:
       - name: Download current history
         run: |
           mkdir -p stats-data
-          lf() { lftp -c "set ftp:ssl-allow true; set ftp:ssl-force false; set ssl:verify-certificate no; set ftp:passive-mode true; set net:timeout 30; set net:max-retries 5; set cmd:fail-exit yes; open --user \"$FTP_USERNAME\" --password \"$FTP_PASSWORD\" \"$FTP_SERVER\"; $1"; }
+          lf() {
+            {
+              echo 'set ftp:ssl-allow true'
+              echo 'set ftp:ssl-force false'
+              echo 'set ssl:verify-certificate no'
+              echo 'set ftp:passive-mode true'
+              echo 'set net:timeout 30'
+              echo 'set net:max-retries 5'
+              echo 'set cmd:fail-exit yes'
+              echo "open --user \"$FTP_USERNAME\" --password \"$FTP_PASSWORD\" \"$FTP_SERVER\""
+              echo "$1"
+              echo 'bye'
+            } > /tmp/s.lftp
+            lftp -f /tmp/s.lftp; rc=$?; rm -f /tmp/s.lftp; return $rc
+          }
           list=$(lf "cls -1 \"${FTP_DIR}stats/data/\"" 2>&1) && found=1 || found=0
           if [ $found = 1 ] && echo "$list" | grep -q 'history.json'; then
             lf "get \"${FTP_DIR}stats/data/history.json\" -o stats-data/history.json"
             node -e 'JSON.parse(require("fs").readFileSync("stats-data/history.json","utf8"))' || { echo "history.json пошкоджений — зупиняюсь, щоб не затерти історію"; exit 1; }
             cp stats-data/history.json stats-data/history.prev.json
-          elif [ $found = 1 ] || echo "$list" | grep -qiE '550|no such file|not found'; then
+          elif [ $found = 1 ] || echo "$list" | grep -qiE '550|no such file|not found|failed'; then
             echo "Історії ще немає — це перший запуск"
+            echo "$list"
           else
             echo "$list"; echo "Не вдалося підключитися до FTP"; exit 1
           fi
