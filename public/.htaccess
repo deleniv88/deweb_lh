@@ -1,6 +1,16 @@
 RewriteEngine On
+
+# www → адреса без www (одразу на https, одним редиректом)
+RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+# http → https
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# /index.html → / (щоб одна сторінка не відкривалась за двома адресами)
+RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
+RewriteRule ^ /%1 [L,R=301]
 
 ErrorDocument 404 /404.html
 
