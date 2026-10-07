@@ -1,6 +1,6 @@
 # Автодеплой на lh.pl: кожен коміт у main (зокрема Save в адмінці Tina)
 # → збірка сайту → заливка готових файлів по FTP.
-name: Deploy to lh.pl
+name: Stats
 
 on:
   push:
