@@ -124,6 +124,11 @@ $replyTo = ($method === 'email' && filter_var($contact, FILTER_VALIDATE_EMAIL)) 
 $t = sendTelegram($c('TELEGRAM_BOT_TOKEN'), $c('TELEGRAM_CHAT_ID'), $tg);
 $e = smtpSend($c('GMAIL_USER'), $c('GMAIL_APP_PASSWORD'), $c('NOTIFY_EMAIL') ?: $c('GMAIL_USER'), $subject, $html, $text, $replyTo);
 
-if ($t === 'ok' || $e === 'ok') out(200, ['ok' => true]);
+if ($t === 'ok' || $e === 'ok') {
+  /* лічильник заявок для сторінки /stats (без особистих даних) */
+  require_once __DIR__ . '/events.php';
+  dw_log_event('lead', strtolower($lang), isset($labels[$method]) ? $method : 'other');
+  out(200, ['ok' => true]);
+}
 if ($t === 'skip' && $e === 'skip') out(501, ['ok' => false, 'error' => 'not_configured']);
 out(502, ['ok' => false, 'error' => 'delivery']);
