@@ -6,7 +6,7 @@
   var app = document.getElementById('app');
   var H, E, N;
   var st = { P: 28, L: 'all' };
-  try { var s = JSON.parse(localStorage.getItem('dwStats') || '{}'); if ([7, 28, 90].indexOf(s.P) >= 0) st.P = s.P; if (['all', 'en', 'pl', 'ua'].indexOf(s.L) >= 0) st.L = s.L; } catch (e) {}
+  try { var s = JSON.parse(localStorage.getItem('dwStats') || '{}'); if ([7, 28, 90].indexOf(s.P) >= 0) st.P = s.P; if (['all', 'en', 'pl', 'ua'].indexOf(s.L) >= 0) st.L = s.L; if (Array.isArray(s.S)) st.S = s.S.filter(function (k) { return 'scipllor'.indexOf(k) >= 0; }); } catch (e) {}
   var save = function () { try { localStorage.setItem('dwStats', JSON.stringify(st)); } catch (e) {} };
 
   /* ---------- утиліти ---------- */
@@ -103,7 +103,7 @@
 
     app.innerHTML = header() + banner()
       + '<section class="kpis">' + kpiHtml + '</section>'
-      + '<p class="sub">Відвідування, заявки й Clarity: ' + dm(cur[0]) + '–' + dm(gaEnd) + '. Google: ' + dm(gcur[0]) + '–' + dm(gscEnd) + ' (Search Console відстає на 2–3 дні).' + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
+      + '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(gaEnd) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gscEnd) + ', бо Google віддає ці дані із затримкою 2–3 дні.' + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
       + trendPanel(cur, gaEnd)
       + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + '</div>';
     bindHeader(); drawTrend(cur); bindNotes(); bindQueries();
@@ -117,7 +117,8 @@
     return '<header class="top"><div><h1>deweb<b>.</b>studio / stats</h1><p>'
       + (u ? '<span>Оновлено ' + u.toLocaleString('uk-UA', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</span>' : '')
       + dot('Search Console') + dot('GA4') + dot('Clarity')
-      + '<a href="https://clarity.microsoft.com/projects/view/omjbunx06m/dashboard" target="_blank" rel="noopener">Записи Clarity</a>'
+      + '<span>Відкрити:</span><a href="https://clarity.microsoft.com/projects/view/omjbunx06m/dashboard" target="_blank" rel="noopener">Clarity (записи)</a>'
+      + '<a href="https://analytics.google.com/analytics/web/#/p463968236/reports/intelligenthome" target="_blank" rel="noopener">GA4</a>'
       + '<a href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fdeweb.studio%2F" target="_blank" rel="noopener">Search Console</a>'
       + '<button type="button" class="link" id="logout">Вийти</button></p></div>'
       + '<div class="ctrls">' + seg('P', [[7, '7 днів'], [28, '28 днів'], [90, '90 днів']]) + seg('L', [['all', 'Усі'], ['en', 'EN'], ['pl', 'PL'], ['ua', 'UA']]) + '</div></header>';
@@ -132,46 +133,82 @@
     var lo = document.getElementById('logout'); if (lo) lo.onclick = function () { api({ action: 'logout' }).then(function () { location.reload(); }); };
   }
 
-  /* ---------- графік по днях ---------- */
+  /* ---------- графік по днях: кожен показник вмикається окремо ---------- */
+  var SERIES = [
+    { k: 's', n: 'Відвідування', src: 'GA4', c: 'var(--s2)', f: function (d) { return sessions(d); }, fmt: fmt },
+    { k: 'c', n: 'Кліки з Google', src: 'GSC', c: 'var(--accent)', f: function (d) { var g = gsc(d); return g ? g.c : null; }, fmt: fmt },
+    { k: 'i', n: 'Покази в Google', src: 'GSC', c: 'var(--s4)', f: function (d) { var g = gsc(d); return g ? g.i : null; }, fmt: fmt },
+    { k: 'p', n: 'Сер. позиція', src: 'GSC', c: 'var(--s5)', f: function (d) { var g = gsc(d); return g && g.i ? g.p : null; }, fmt: f1, inv: true },
+    { k: 'l', n: 'Заявки', src: 'Форма', c: 'var(--s3)', f: function (d) { return leads(d); }, fmt: fmt, dots: true },
+    { k: 'o', n: 'Відкрили форму', src: 'Сайт', c: 'var(--s6)', f: function (d) { return opens(d); }, fmt: fmt },
+    { k: 'r', n: 'Rage clicks', src: 'Clarity', c: 'var(--bad)', f: function (d) { var c = D(d).cl; return c && c.s ? c.rage : null; }, fmt: function (v) { return v == null ? '—' : f1(v) + '%'; } },
+  ];
+  if (!Array.isArray(st.S)) st.S = ['s', 'c', 'l'];
   function trendPanel(cur, end) {
     var notes = (N || []).filter(function (n) { return n.date >= cur[0] && n.date <= end; });
-    return '<section class="panel"><div class="ph"><h2>Динаміка по днях</h2><div class="legend">'
-      + '<span><i style="background:var(--accent)"></i>Кліки з Google</span><span><i style="background:var(--s2)"></i>Відвідування</span>'
-      + '<span><i style="background:var(--s3);height:8px;width:8px;border-radius:50%"></i>Заявки</span><span><i style="background:var(--muted);width:2px;height:10px"></i>Твої позначки</span></div></div>'
+    return '<section class="panel"><div class="ph"><h2>Динаміка по днях</h2><span class="sub">Натискай на показники, щоб вмикати й вимикати їх</span></div>'
+      + '<div class="toggles" role="group" aria-label="Показники на графіку">' + SERIES.map(function (s) {
+        return '<button type="button" class="tog" data-s="' + s.k + '" aria-pressed="' + (st.S.indexOf(s.k) >= 0) + '"><i style="background:' + s.c + '"></i>' + s.n + ' <span>' + s.src + '</span></button>';
+      }).join('') + '</div>'
       + '<div class="chart" id="trend"></div>'
-      + '<div class="notes">' + (notes.length ? notes.map(function (n) { return '<span class="note">' + dm(n.date) + ' · ' + esc(n.text) + '<button type="button" data-del="' + esc(n.id) + '" aria-label="Видалити позначку">×</button></span>'; }).join('') : '<span class="sub">Познач, що змінилось на сайті чи в рекламі, і буде видно, як це вплинуло.</span>') + '</div>'
+      + '<div class="notes">' + (notes.length ? notes.map(function (n) { return '<span class="note">' + dm(n.date) + ' · ' + esc(n.text) + '<button type="button" data-del="' + esc(n.id) + '" aria-label="Видалити позначку">×</button></span>'; }).join('') : '<span class="sub">Познач, що змінилось на сайті чи в рекламі, і буде видно, як це вплинуло. Позначки — пунктирні лінії на графіку.</span>') + '</div>'
       + '<form class="noteform" id="noteform"><input type="date" id="nf-date" required value="' + end + '"><input type="text" id="nf-text" maxlength="80" placeholder="Напр.: нова сторінка робіт, запустив Google Ads" required><button class="btn" type="submit">Додати позначку</button></form></section>';
+  }
+  function niceMax(v) {
+    v = Math.max(v, 1e-9);
+    var p = Math.pow(10, Math.floor(Math.log10(v / 4)));
+    return ([1, 2, 2.5, 5, 10].map(function (m) { return m * p; }).filter(function (s) { return s * 4 >= v; })[0] || p * 10) * 4;
   }
   function drawTrend(days) {
     var el = document.getElementById('trend'); if (!el) return;
-    var A = days.map(function (d) { var g = gsc(d); return g ? g.c : null; }), B = days.map(sessions), L = days.map(leads);
-    var W = 1000, Hh = 280, l = 40, r = 14, t = 20, b = 30, iw = W - l - r, ih = Hh - t - b;
-    var mxv = Math.max.apply(0, A.concat(B).filter(function (v) { return v != null; }).concat([4]));
-    var stepY = Math.pow(10, Math.floor(Math.log10(mxv / 4))), nice = [1, 2, 2.5, 5, 10].map(function (m) { return m * stepY; }).filter(function (s) { return s * 4 >= mxv; })[0] || stepY * 10;
-    var mx = nice * 4;
-    var x = function (i) { return l + (days.length > 1 ? i / (days.length - 1) : 0.5) * iw; }, y = function (v) { return t + ih - v / mx * ih; };
-    var path = function (a) { var s = '', pen = false; a.forEach(function (v, i) { if (v == null) { pen = false; return; } s += (pen ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1); pen = true; }); return s; };
-    var g = '';
-    for (var k = 0; k <= 4; k++) { var v = nice * k; g += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)"/><text x="' + (l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + v + '</text>'; }
+    app.querySelectorAll('[data-s]').forEach(function (b) {
+      b.onclick = function () {
+        var k = b.getAttribute('data-s'), i = st.S.indexOf(k);
+        if (i >= 0) st.S.splice(i, 1); else st.S.push(k);
+        b.setAttribute('aria-pressed', i < 0); save(); drawTrend(days);
+      };
+    });
+    var on = SERIES.filter(function (s) { return st.S.indexOf(s.k) >= 0; });
+    var W = 1000, Hh = 280, l = 44, r = 14, t = 20, b = 30, iw = W - l - r, ih = Hh - t - b;
+    var x = function (i) { return l + (days.length > 1 ? i / (days.length - 1) : 0.5) * iw; };
+    /* кожна лінія у своєму масштабі; позиція — навпаки (1 місце вгорі) */
+    var data = on.map(function (s) {
+      var v = days.map(s.f), ok = v.filter(function (z) { return z != null; });
+      var lo = s.inv ? Math.max(0, Math.floor(Math.min.apply(0, ok.length ? ok : [1])) - 1) : 0;
+      var hi = s.inv ? Math.ceil(Math.max.apply(0, ok.length ? ok : [10])) + 1 : niceMax(Math.max.apply(0, ok.concat([s.k === 'l' || s.k === 'o' ? 4 : 1])));
+      var y = function (z) { var q = (z - lo) / ((hi - lo) || 1); return s.inv ? t + q * ih : t + ih - q * ih; };
+      return { s: s, v: v, y: y, lo: lo, hi: hi };
+    });
+    var g = '', single = data.length === 1 ? data[0] : null;
+    for (var k = 0; k <= 4; k++) {
+      var yy = t + ih * k / 4;
+      g += '<line x1="' + l + '" x2="' + (W - r) + '" y1="' + yy + '" y2="' + yy + '" stroke="var(--line)"/>';
+      if (single) { var val = single.s.inv ? single.lo + (single.hi - single.lo) * k / 4 : single.hi * (4 - k) / 4; g += '<text x="' + (l - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + (val % 1 ? f1(val) : val) + '</text>'; }
+    }
     var step = Math.ceil(days.length / 8);
     days.forEach(function (d, i) { if (i % step === 0 || i === days.length - 1) g += '<text x="' + x(i) + '" y="' + (Hh - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + dm(d) + '</text>'; });
     (N || []).forEach(function (n) { var i = days.indexOf(n.date); if (i < 0) return; g += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="' + t + '" y2="' + (t + ih) + '" stroke="var(--muted)" stroke-dasharray="3 4"/><text x="' + (x(i) + (i > days.length * 0.8 ? -5 : 5)) + '" y="' + (t - 6) + '" text-anchor="' + (i > days.length * 0.8 ? 'end' : 'start') + '" font-size="11" fill="var(--muted)">' + esc(n.text.length > 28 ? n.text.slice(0, 27) + '…' : n.text) + '</text>'; });
-    var bp = path(B); if (bp) g += '<path d="' + bp + '" fill="none" stroke="var(--s2)" stroke-width="2"/>';
-    var ap = path(A); if (ap) g += '<path d="' + ap + '" fill="none" stroke="var(--accent)" stroke-width="2.4"/>';
-    L.forEach(function (v, i) { if (v) g += '<circle cx="' + x(i) + '" cy="' + y(B[i] || 0) + '" r="' + Math.min(10, 4 + v * 1.5) + '" fill="var(--s3)" stroke="var(--surface)" stroke-width="2"/>'; });
+    data.forEach(function (d) {
+      var s = '', pen = false;
+      d.v.forEach(function (z, i) { if (z == null) { pen = false; return; } s += (pen ? 'L' : 'M') + x(i).toFixed(1) + ',' + d.y(z).toFixed(1); pen = true; });
+      if (s) g += '<path d="' + s + '" fill="none" stroke="' + d.s.c + '" stroke-width="2.2" stroke-linejoin="round"/>';
+      if (d.s.dots) d.v.forEach(function (z, i) { if (z) g += '<circle cx="' + x(i) + '" cy="' + d.y(z) + '" r="4.5" fill="' + d.s.c + '" stroke="var(--surface)" stroke-width="2"/>'; });
+    });
     g += '<line id="tx" x1="0" x2="0" y1="' + t + '" y2="' + (t + ih) + '" stroke="var(--fg)" stroke-opacity=".25" visibility="hidden"/>';
-    g += '<rect id="hit" x="' + l + '" y="' + t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
-    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Кліки з Google, відвідування і заявки по днях">' + g + '</svg><div class="tip" hidden></div>';
+    g += '<rect x="' + l + '" y="' + t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
+    if (!data.length) g += '<text x="' + (W / 2) + '" y="' + (t + ih / 2) + '" text-anchor="middle" font-size="14" fill="var(--muted)">Обери хоча б один показник вище</text>';
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Показники по днях">' + g + '</svg><div class="tip" hidden></div>'
+      + (data.length > 1 ? '<p class="sub" style="margin-top:6px">Кожна лінія у своєму масштабі, щоб було видно форму руху. Точні значення — у підказці при наведенні. Щоб бачити шкалу, залиш один показник.</p>' : '');
 
     var svg = el.querySelector('svg'), tip = el.querySelector('.tip'), tx = el.querySelector('#tx');
     var move = function (ev) {
       var rc = svg.getBoundingClientRect(), px = (ev.clientX - rc.left) / rc.width * W;
-      var i = Math.max(0, Math.min(days.length - 1, Math.round((px - l) / iw * (days.length - 1)))), d = days[i], gg = gsc(d), c = D(d).cl;
+      var i = Math.max(0, Math.min(days.length - 1, Math.round((px - l) / iw * (days.length - 1)))), d = days[i];
       tx.setAttribute('x1', x(i)); tx.setAttribute('x2', x(i)); tx.setAttribute('visibility', 'visible');
       var note = (N || []).filter(function (n) { return n.date === d; }).map(function (n) { return '📌 ' + esc(n.text); }).join('<br>');
-      tip.innerHTML = '<b>' + new Date(d + 'T12:00:00Z').toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'long' }) + '</b><br>'
-        + 'Відвідування: <b>' + fmt(B[i]) + '</b><br>Кліки з Google: <b>' + (gg ? fmt(gg.c) : '—') + '</b> · покази <b>' + (gg ? fmt(gg.i) : '—') + '</b><br>'
-        + 'Позиція: <b>' + (gg ? f1(gg.p) : '—') + '</b> · заявки <b>' + (L[i] == null ? '—' : L[i]) + '</b>' + (c && c.s ? '<br>Clarity: <b>' + fmt(c.s) + '</b> сесій, rage <b>' + f1(c.rage) + '%</b>' : '') + (note ? '<br>' + note : '');
+      tip.innerHTML = '<b>' + new Date(d + 'T12:00:00Z').toLocaleDateString('uk-UA', { weekday: 'short', day: 'numeric', month: 'long' }) + '</b>'
+        + (data.length ? data : SERIES.slice(0, 2).map(function (s) { return { s: s, v: days.map(s.f) }; })).map(function (z) { return '<br><i class="dot" style="background:' + z.s.c + '"></i>' + z.s.n + ': <b>' + z.s.fmt(z.v[i]) + '</b>'; }).join('')
+        + (note ? '<br>' + note : '');
       tip.hidden = false;
       tip.style.left = Math.max(110, Math.min(rc.width - 110, x(i) / W * rc.width)) + 'px';
       tip.style.top = (t / Hh * rc.height + 6) + 'px';
