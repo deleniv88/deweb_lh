@@ -12,6 +12,41 @@ RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html[\s?] [NC]
 RewriteRule ^ /%1 [L,R=301]
 
+# Мова браузера: лише для головної /, лише для людей (боти й прев'ю месенджерів завжди бачать польську).
+# 1) Якщо людина вже обрала мову в перемикачі (cookie dw_lang) — відкриваємо її.
+# 2) Інакше за мовою браузера: українська або російська → /ua/; якщо серед мов браузера є польська — лишається польська /;
+#    будь-яка інша (англійська, німецька…) → /en/. Без мови в запиті — польська.
+# 302 — тимчасовий редирект, тож Google і далі індексує / як польську сторінку.
+RewriteCond %{REQUEST_URI} ^/$
+RewriteCond %{HTTP_USER_AGENT} !(bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegram|preview|lighthouse|headless) [NC]
+RewriteCond %{HTTP_COOKIE} (^|;\s*)dw_lang=ua(;|$)
+RewriteRule ^ /ua/ [L,R=302]
+
+RewriteCond %{REQUEST_URI} ^/$
+RewriteCond %{HTTP_USER_AGENT} !(bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegram|preview|lighthouse|headless) [NC]
+RewriteCond %{HTTP_COOKIE} (^|;\s*)dw_lang=en(;|$)
+RewriteRule ^ /en/ [L,R=302]
+
+RewriteCond %{REQUEST_URI} ^/$
+RewriteCond %{HTTP_USER_AGENT} !(bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegram|preview|lighthouse|headless) [NC]
+RewriteCond %{HTTP_COOKIE} !(^|;\s*)dw_lang=
+RewriteCond %{HTTP:Accept-Language} ^\s*(uk|ru)\b [NC]
+RewriteRule ^ /ua/ [L,R=302]
+
+RewriteCond %{REQUEST_URI} ^/$
+RewriteCond %{HTTP_USER_AGENT} !(bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegram|preview|lighthouse|headless) [NC]
+RewriteCond %{HTTP_COOKIE} !(^|;\s*)dw_lang=
+RewriteCond %{HTTP:Accept-Language} .
+RewriteCond %{HTTP:Accept-Language} !\bpl\b [NC]
+RewriteRule ^ /en/ [L,R=302]
+
+# Польська тепер основна (/), тому старі адреси /pl/... → ті самі сторінки без /pl (назавжди, 301).
+# Польські роботи — на /realizacje/ (старі /pl/works/ теж туди). Старі /works/ були англійськими → /en/works/.
+RewriteRule ^pl/works/?$ /realizacje/ [L,R=301]
+RewriteRule ^works/?$ /en/works/ [L,R=301]
+RewriteRule ^pl/?$ / [L,R=301]
+RewriteRule ^pl/(.*)$ /$1 [L,R=301]
+
 ErrorDocument 404 /404.html
 
 <IfModule mod_deflate.c>
@@ -28,6 +63,10 @@ ErrorDocument 404 /404.html
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-Frame-Options "SAMEORIGIN"
+  # головна залежить від мови браузера й cookie — кеші не мають віддавати одну версію всім
+  <If "%{REQUEST_URI} == '/' || %{REQUEST_URI} == '/index.html'">
+    Header append Vary "Accept-Language, Cookie"
+  </If>
 </IfModule>
 
 Options -Indexes

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import client from "../tina/__generated__/client";
 import HomeClient from "../components/HomeClient";
-import { LOCALES, localeOf, type Locale } from "./i18n";
+import { DEFAULT_LOCALE, LOCALES, localeOf, type Locale } from "./i18n";
 import { JsonLd, parseSchema, defaultHomeSchema, isHidden, NOINDEX, shareMeta } from "./seo";
 
 /* Головна сторінка для кожної мови. Дані — з content/home/<файл мови> (через Tina) під час збірки. */
@@ -16,7 +16,7 @@ export async function homeMetadata(locale: Locale): Promise<Metadata> {
   const seo = res.data.home.seo;
   const languages: Record<string, string> = {};
   LOCALES.forEach((l) => { languages[l.htmlLang] = `${siteUrl}${l.path}`; });
-  languages["x-default"] = `${siteUrl}/`;
+  languages["x-default"] = `${siteUrl}${localeOf(DEFAULT_LOCALE).path}`;
   const l = localeOf(locale);
   return {
     title: seo?.title || undefined,

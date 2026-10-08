@@ -14,7 +14,7 @@ export default function PostClient(props: { query: string; variables: Record<str
 
   return (
     <>
-      <Header home={false} />
+      <Header home={false} locale="en" />
       <main className="page">
         <article className="post">
           <a className="post__back" href="/blog/">← All posts</a>

@@ -68,7 +68,7 @@ export default defineConfig({
           // кожна мова — окремий документ: home (EN), home-pl (PL), home-ua (UA)
           router: ({ document }) => {
             const f = document._sys.filename;
-            return f === "home-pl" ? "/pl/" : f === "home-ua" ? "/ua/" : "/";
+            return f === "home-pl" ? "/" : f === "home-ua" ? "/ua/" : "/en/";
           },
           allowedActions: { create: false, delete: false },
         },
@@ -360,7 +360,7 @@ export default defineConfig({
           // works (EN), works-pl (PL), works-ua (UA)
           router: ({ document }) => {
             const f = document._sys.filename;
-            return f === "works-pl" ? "/pl/works/" : f === "works-ua" ? "/ua/works/" : "/works/";
+            return f === "works-pl" ? "/realizacje/" : f === "works-ua" ? "/ua/works/" : "/en/works/";
           },
           allowedActions: { create: false, delete: false },
         },
@@ -389,7 +389,7 @@ export default defineConfig({
         path: "content/cases",
         format: "json",
         ui: {
-          router: () => "/works/",
+          router: () => "/realizacje/",
           filename: {
             slugify: (values) =>
               `${values?.name || "case"}`
@@ -502,12 +502,12 @@ export default defineConfig({
             description: "Позначені сторінки отримують noindex, nofollow. За прямим посиланням вони відкриваються.",
             list: true,
             options: [
-              { value: "en", label: "Головна EN (/)" },
-              { value: "pl", label: "Головна PL (/pl/)" },
+              { value: "en", label: "Головна EN (/en/)" },
+              { value: "pl", label: "Головна PL (/)" },
               { value: "ua", label: "Головна UA (/ua/)" },
               { value: "blog", label: "Список статей (/blog/)" },
-              { value: "works", label: "Роботи EN (/works/)" },
-              { value: "works-pl", label: "Роботи PL (/pl/works/)" },
+              { value: "works", label: "Роботи EN (/en/works/)" },
+              { value: "works-pl", label: "Роботи PL (/realizacje/)" },
               { value: "works-ua", label: "Роботи UA (/ua/works/)" },
             ],
             ui: { component: "checkbox-group" },

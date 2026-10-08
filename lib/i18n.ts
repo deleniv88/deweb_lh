@@ -7,16 +7,20 @@
 
 export type Locale = "en" | "pl" | "ua";
 
+/* Основна мова — польська: вона відкривається на / (і /realizacje/), англійська — на /en/, українська — на /ua/.
+   Старі адреси /pl/... ведуть на / 301-редиректом (public/.htaccess). */
 export const LOCALES: { code: Locale; label: string; name: string; path: string; htmlLang: string; file: string }[] = [
-  { code: "en", label: "EN", name: "English", path: "/", htmlLang: "en", file: "home.json" },
-  { code: "pl", label: "PL", name: "Polski", path: "/pl/", htmlLang: "pl", file: "home-pl.json" },
+  { code: "en", label: "EN", name: "English", path: "/en/", htmlLang: "en", file: "home.json" },
+  { code: "pl", label: "PL", name: "Polski", path: "/", htmlLang: "pl", file: "home-pl.json" },
   { code: "ua", label: "UA", name: "Українська", path: "/ua/", htmlLang: "uk", file: "home-ua.json" },
 ];
 
-export const localeOf = (code: Locale) => LOCALES.find((l) => l.code === code) || LOCALES[0];
+export const DEFAULT_LOCALE: Locale = "pl";
 
-/* адреса сторінки «Усі роботи» для мови: /works/, /pl/works/, /ua/works/ */
-export const worksPath = (code: Locale) => `${localeOf(code).path}works/`;
+export const localeOf = (code: Locale) => LOCALES.find((l) => l.code === code) || LOCALES.find((l) => l.code === DEFAULT_LOCALE)!;
+
+/* адреса сторінки «Усі роботи» для мови: /realizacje/ (PL), /en/works/, /ua/works/ */
+export const worksPath = (code: Locale) => (code === "pl" ? "/realizacje/" : `${localeOf(code).path}works/`);
 /* файл сторінки робіт для мови: content/works/works.json, works-pl.json, works-ua.json */
 export const worksFile = (code: Locale) => localeOf(code).file.replace("home", "works");
 

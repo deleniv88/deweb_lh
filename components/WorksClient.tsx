@@ -22,7 +22,7 @@ export default function WorksClient(props: Q & { locale: Locale; cases: Q }) {
   const cases = casesFor(casesData, locale);
   return (
     <div className={`locale locale-${locale}`}>
-      <Header home={false} locale={locale} subpath="works/" />
+      <Header home={false} locale={locale} page="works" />
       <main className="page">
         <div className="page__head">
           <h1 className="page__title">

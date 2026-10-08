@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import client from "../tina/__generated__/client";
-import { LOCALES, worksPath, type Locale } from "../lib/i18n";
+import { DEFAULT_LOCALE, LOCALES, worksPath, type Locale } from "../lib/i18n";
 import { isHidden } from "../lib/seo";
 
 /* sitemap.xml: збирається автоматично під час build.
@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   async function addLocalized(pathOf: (code: Locale) => string, hiddenKey: (code: Locale) => string, priority: number) {
     const languages: Record<string, string> = {};
     LOCALES.forEach((l) => { languages[l.htmlLang] = `${siteUrl}${pathOf(l.code)}`; });
-    languages["x-default"] = `${siteUrl}${pathOf("en")}`;
+    languages["x-default"] = `${siteUrl}${pathOf(DEFAULT_LOCALE)}`;
     for (const l of LOCALES) {
       if (await isHidden({ page: hiddenKey(l.code) })) continue;
       entries.push({ url: `${siteUrl}${pathOf(l.code)}`, lastModified: now, changeFrequency: "monthly", priority, alternates: { languages } });

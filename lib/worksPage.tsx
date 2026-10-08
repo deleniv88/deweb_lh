@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import client from "../tina/__generated__/client";
 import WorksClient from "../components/WorksClient";
-import { LOCALES, UI, localeOf, worksPath, worksFile, type Locale } from "./i18n";
+import { DEFAULT_LOCALE, LOCALES, UI, localeOf, worksPath, worksFile, type Locale } from "./i18n";
 import { isHidden, NOINDEX, shareMeta } from "./seo";
 
-/* Сторінка «Усі роботи» (/works/, /pl/works/, /ua/works/).
+/* Сторінка «Усі роботи» (/realizacje/ — PL, /en/works/, /ua/works/).
    Тексти — документ «Сторінка робіт» (works / works-pl / works-ua), кейси — усі з колекції «Кейси».
    На головній (Recent work) — лише кейси з галочкою «Показувати на головній». */
 async function getWorks(locale: Locale) {
@@ -18,7 +18,7 @@ export async function worksMetadata(locale: Locale): Promise<Metadata> {
   const t = UI[locale].works;
   const languages: Record<string, string> = {};
   LOCALES.forEach((l) => { languages[l.htmlLang] = `${siteUrl}${worksPath(l.code)}`; });
-  languages["x-default"] = `${siteUrl}${worksPath("en")}`;
+  languages["x-default"] = `${siteUrl}${worksPath(DEFAULT_LOCALE)}`;
   const title = seo?.title || t.metaTitle;
   const description = seo?.description || t.metaDescription;
   return {

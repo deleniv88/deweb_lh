@@ -25,7 +25,8 @@ const yesterday = addDays(today, -1);
 
 /* ---------- мова за адресою сторінки ---------- */
 const toPath = (u) => { try { return new URL(u, "https://x").pathname || "/"; } catch { return String(u || "/"); } };
-const langOf = (u) => { const p = toPath(u); return p.startsWith("/pl/") || p === "/pl" ? "pl" : p.startsWith("/ua/") || p === "/ua" ? "ua" : "en"; };
+/* з 2026-10-08 польська на /, англійська на /en/ (і блог англійською); старі /pl/ теж рахуємо як PL */
+const langOf = (u) => { const p = toPath(u); return p.startsWith("/ua/") || p === "/ua" ? "ua" : p.startsWith("/en/") || p === "/en" || p.startsWith("/blog") ? "en" : "pl"; };
 const r1 = (n) => Math.round(n * 10) / 10;
 
 /* ---------- Google: токен сервісного акаунта ---------- */
