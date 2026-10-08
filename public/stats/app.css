@@ -113,3 +113,35 @@ tr:last-child td{border-bottom:0}
 .chip.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
 .empty{color:var(--muted);font-size:13px;padding:8px 0}
 @media (prefers-reduced-motion:no-preference){.bar span{transition:width .4s ease}}
+
+/* дії: Telegram і PDF */
+.acts{display:flex;gap:8px}
+.act{font:600 13px var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.act:hover{border-color:var(--accent)}
+.act:disabled{color:var(--muted);cursor:default}
+
+/* звіт PDF: друк сторінки, лише світла тема, без кнопок і форм */
+.print-head{display:none}
+@media print{
+  :root{--bg:#FFFFFF;--surface:#FFFFFF;--fg:#14162B;--muted:#5E6380;--line:#DDE0EC;--accent:#5E6CFF;--accent-soft:rgba(94,108,255,.12);--s2:#1FA98A;--s3:#E89A2C;--s4:#9AA3FF;--s5:#B05BD6;--s6:#C9A21A;--good:#16935F;--bad:#D04545;--warn:#B9770E;color-scheme:light}
+  @page{size:A4;margin:12mm}
+  body{padding:0;background:#fff;font-size:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .wrap{gap:12px;max-width:none}
+  .print-head{display:block}
+  .print-head h1{font-size:22px}
+  .print-head p{margin:4px 0 0;color:var(--muted)}
+  .top,.banner,.noteform,.note button,.tools,.tip,.no-print,.tog[aria-pressed="false"]{display:none!important}
+  .tog{border:0!important;padding:0 10px 0 0!important;background:none!important;cursor:default}
+  .panel{break-inside:avoid;padding:12px;border-radius:10px}
+  .panel.full{break-inside:auto}
+  tr{break-inside:avoid}
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .grid2{grid-template-columns:1fr}
+  .chart{overflow:visible}
+  .chart svg,table{min-width:0}
+  table{font-size:10px}
+  th{font-size:8px;padding:5px 4px;white-space:normal}
+  td{padding:5px 4px}
+  td:first-child{max-width:150px}
+  .tbl{overflow:visible}
+}

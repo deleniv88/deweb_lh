@@ -7,6 +7,7 @@
   var H, E, N;
   var st = { P: 28, L: 'all' };
   try { var s = JSON.parse(localStorage.getItem('dwStats') || '{}'); if ([7, 28, 90].indexOf(s.P) >= 0) st.P = s.P; if (['all', 'en', 'pl', 'ua'].indexOf(s.L) >= 0) st.L = s.L; if (Array.isArray(s.S)) st.S = s.S.filter(function (k) { return 'scipllor'.indexOf(k) >= 0; }); } catch (e) {}
+  var rep = {};
   var save = function () { try { localStorage.setItem('dwStats', JSON.stringify(st)); } catch (e) {} };
 
   /* ---------- утиліти ---------- */
@@ -101,7 +102,10 @@
       return '<div class="panel kpi"><div class="lbl"><span>' + k[0] + '</span><span class="src">' + k[1] + '</span></div><div class="val num">' + k[8](k[2]) + '</div><div class="d num">' + delta(k[2], k[3], k[4], k[5], k[9]) + '</div>' + spark(k[6], k[7]) + '</div>';
     }).join('');
 
-    app.innerHTML = header() + banner()
+    var LN = { all: 'усі мови', en: 'англійська версія', pl: 'польська версія', ua: 'українська версія' };
+    rep.title = 'deweb.studio — звіт ' + dm(cur[0]) + '–' + dm(gaEnd) + '.' + gaEnd.slice(0, 4);
+    app.innerHTML = '<div class="print-head"><h1>deweb<b>.</b>studio — звіт про сайт</h1><p>Період ' + dm(cur[0]) + '–' + dm(gaEnd) + '.' + gaEnd.slice(0, 4) + ' (' + P + ' днів), ' + LN[st.L] + '. Зміни — порівняно з попередніми ' + P + ' днями. Дані: Google Analytics 4, Google Search Console, Microsoft Clarity і форма заявок на сайті.</p></div>'
+      + header() + banner()
       + '<section class="kpis">' + kpiHtml + '</section>'
       + '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(gaEnd) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gscEnd) + ', бо Google віддає ці дані із затримкою 2–3 дні.' + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
       + trendPanel(cur, gaEnd)
@@ -121,7 +125,8 @@
       + '<a href="https://analytics.google.com/analytics/web/#/p463968236/reports/intelligenthome" target="_blank" rel="noopener">GA4</a>'
       + '<a href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fdeweb.studio%2F" target="_blank" rel="noopener">Search Console</a>'
       + '<button type="button" class="link" id="logout">Вийти</button></p></div>'
-      + '<div class="ctrls">' + seg('P', [[7, '7 днів'], [28, '28 днів'], [90, '90 днів']]) + seg('L', [['all', 'Усі'], ['en', 'EN'], ['pl', 'PL'], ['ua', 'UA']]) + '</div></header>';
+      + '<div class="ctrls">' + seg('P', [[7, '7 днів'], [28, '28 днів'], [90, '90 днів']]) + seg('L', [['all', 'Усі'], ['en', 'EN'], ['pl', 'PL'], ['ua', 'UA']])
+      + (H && H.daily ? '<div class="acts"><button type="button" class="act" id="tg">Надіслати в Telegram</button><button type="button" class="act" id="pdf">Звіт PDF</button></div>' : '') + '</div></header>';
   }
   function banner() {
     var e = (H && H.errors) || [];
@@ -131,6 +136,17 @@
     app.querySelectorAll('[data-P]').forEach(function (b) { b.onclick = function () { st.P = +b.getAttribute('data-P'); save(); render(); }; });
     app.querySelectorAll('[data-L]').forEach(function (b) { b.onclick = function () { st.L = b.getAttribute('data-L'); save(); render(); }; });
     var lo = document.getElementById('logout'); if (lo) lo.onclick = function () { api({ action: 'logout' }).then(function () { location.reload(); }); };
+    var tg = document.getElementById('tg');
+    if (tg) tg.onclick = function () {
+      var said = function (t) { tg.textContent = t; setTimeout(function () { tg.textContent = 'Надіслати в Telegram'; tg.disabled = false; }, 4000); };
+      tg.disabled = true; tg.textContent = 'Надсилаю…';
+      api({ action: 'tg_send', period: st.P }).then(function (r) {
+        said(r.ok ? 'Надіслано ✓' : { rate: 'Зачекай 20 секунд', tg_config: 'Бот не налаштований', no_data: 'Даних ще немає' }[r.error] || 'Не вдалося надіслати');
+      }).catch(function () { said('Не вдалося надіслати'); });
+    };
+    /* PDF: звіт друкується з тієї ж сторінки, print-стилі в app.css; назва файлу — з заголовка */
+    var pdf = document.getElementById('pdf');
+    if (pdf) pdf.onclick = function () { var t = document.title; document.title = rep.title || t; window.print(); document.title = t; };
   }
 
   /* ---------- графік по днях: кожен показник вмикається окремо ---------- */
@@ -146,12 +162,12 @@
   if (!Array.isArray(st.S)) st.S = ['s', 'c', 'l'];
   function trendPanel(cur, end) {
     var notes = (N || []).filter(function (n) { return n.date >= cur[0] && n.date <= end; });
-    return '<section class="panel"><div class="ph"><h2>Динаміка по днях</h2><span class="sub">Натискай на показники, щоб вмикати й вимикати їх</span></div>'
+    return '<section class="panel"><div class="ph"><h2>Динаміка по днях</h2><span class="sub no-print">Натискай на показники, щоб вмикати й вимикати їх</span></div>'
       + '<div class="toggles" role="group" aria-label="Показники на графіку">' + SERIES.map(function (s) {
         return '<button type="button" class="tog" data-s="' + s.k + '" aria-pressed="' + (st.S.indexOf(s.k) >= 0) + '"><i style="background:' + s.c + '"></i>' + s.n + ' <span>' + s.src + '</span></button>';
       }).join('') + '</div>'
       + '<div class="chart" id="trend"></div>'
-      + '<div class="notes">' + (notes.length ? notes.map(function (n) { return '<span class="note">' + dm(n.date) + ' · ' + esc(n.text) + '<button type="button" data-del="' + esc(n.id) + '" aria-label="Видалити позначку">×</button></span>'; }).join('') : '<span class="sub">Познач, що змінилось на сайті чи в рекламі, і буде видно, як це вплинуло. Позначки — пунктирні лінії на графіку.</span>') + '</div>'
+      + '<div class="notes">' + (notes.length ? notes.map(function (n) { return '<span class="note">' + dm(n.date) + ' · ' + esc(n.text) + '<button type="button" data-del="' + esc(n.id) + '" aria-label="Видалити позначку">×</button></span>'; }).join('') : '<span class="sub no-print">Познач, що змінилось на сайті чи в рекламі, і буде видно, як це вплинуло. Позначки — пунктирні лінії на графіку.</span>') + '</div>'
       + '<form class="noteform" id="noteform"><input type="date" id="nf-date" required value="' + end + '"><input type="text" id="nf-text" maxlength="80" placeholder="Напр.: нова сторінка робіт, запустив Google Ads" required><button class="btn" type="submit">Додати позначку</button></form></section>';
   }
   function niceMax(v) {
@@ -198,7 +214,7 @@
     g += '<rect x="' + l + '" y="' + t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
     if (!data.length) g += '<text x="' + (W / 2) + '" y="' + (t + ih / 2) + '" text-anchor="middle" font-size="14" fill="var(--muted)">Обери хоча б один показник вище</text>';
     el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Показники по днях">' + g + '</svg><div class="tip" hidden></div>'
-      + (data.length > 1 ? '<p class="sub" style="margin-top:6px">Кожна лінія у своєму масштабі, щоб було видно форму руху. Точні значення — у підказці при наведенні. Щоб бачити шкалу, залиш один показник.</p>' : '');
+      + (data.length > 1 ? '<p class="sub no-print" style="margin-top:6px">Кожна лінія у своєму масштабі, щоб було видно форму руху. Точні значення — у підказці при наведенні. Щоб бачити шкалу, залиш один показник.</p>' : '');
 
     var svg = el.querySelector('svg'), tip = el.querySelector('.tip'), tx = el.querySelector('#tx');
     var move = function (ev) {

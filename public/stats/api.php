@@ -2,6 +2,7 @@
 /* Дані для /stats (тільки після входу).
    GET                     → історія з workflow + лічильники заявок + нотатки
    POST {action:"note_add", date, text} / {action:"note_del", id} → нотатки на графіку
+   POST {action:"tg_send", period} → короткий звіт за період у Telegram
    POST {action:"logout"}  → вихід */
 declare(strict_types=1);
 require __DIR__ . '/_lib.php';
@@ -23,6 +24,19 @@ $d = json_decode(substr((string)file_get_contents('php://input'), 0, 5000), true
 $action = is_array($d) ? (string)($d['action'] ?? '') : '';
 
 if ($action === 'logout') { dw_set_cookie(0); out(200, ['ok' => true]); }
+
+if ($action === 'tg_send') {
+  require __DIR__ . '/_digest.php';
+  /* не частіше разу на 20 секунд, щоб випадкові кліки не засипали чат */
+  $lock = dw_data('tg_last.txt');
+  if (is_file($lock) && (int)file_get_contents($lock) > time() - 20) out(429, ['error' => 'rate']);
+  @file_put_contents($lock, (string)time());
+  $P = in_array((int)($d['period'] ?? 7), [7, 28, 90], true) ? (int)$d['period'] : 7;
+  $text = dw_digest($P, 'https://' . ($_SERVER['HTTP_HOST'] ?? 'deweb.studio'));
+  if ($text === null) out(409, ['error' => 'no_data']);
+  $r = dw_tg_send($text);
+  out($r === 'ok' ? 200 : 502, $r === 'ok' ? ['ok' => true] : ['error' => $r]);
+}
 
 if ($action === 'note_add' || $action === 'note_del') {
   $fp = fopen(dw_data('notes.json'), 'c+');
