@@ -1930,7 +1930,7 @@ html.lenis,html.lenis body{height:auto}
   line-height:normal;
   text-align:left;
 }
-.fp__in{position:absolute;left:0;top:0;width:var(--dw);height:var(--dh, calc(var(--dw) / 2));transform-origin:0 0;transform:scale(tan(atan2(100cqw, var(--dw))))}
+.fp__in{position:absolute;left:0;top:0;width:var(--dw);height:var(--dh, calc(var(--dw) / 2));transform-origin:0 0;transform:scale(var(--fpk, tan(atan2(100cqw, var(--dw)))))}
 .fp__g{position:absolute}
 .fp__g *{box-sizing:border-box}
 .fp svg{display:block}
@@ -2351,7 +2351,7 @@ html.lenis,html.lenis body{height:auto}
   .fp .fp__wires--h{display:none}
   .fp .fp__wires--v{display:block}
   .fp--ml .fpm-win{left:var(--mx);top:var(--my)}
-  .fp__in{transform:scale(tan(atan2(100cqw, var(--dw))))}
+  .fp__in{transform:scale(var(--fpk, tan(atan2(100cqw, var(--dw)))))}
 
   /* заявки: картка зверху, отримувачі стовпчиком */
   .fp--lead{--dw:400px;--dh:624px;--ar:400 / 624}
