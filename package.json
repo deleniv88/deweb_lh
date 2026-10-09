@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tinacms dev -c \"next dev\"",
-    "build": "tinacms build && next build && node scripts/set-html-lang.mjs",
-    "build:local": "tinacms build --local --skip-cloud-checks -c \"next build\" && node scripts/set-html-lang.mjs"
+    "build": "tinacms build && next build && node scripts/set-html-lang.mjs && node scripts/build-knowledge.mjs",
+    "build:local": "tinacms build --local --skip-cloud-checks -c \"next build\" && node scripts/set-html-lang.mjs && node scripts/build-knowledge.mjs"
   },
   "dependencies": {
     "lenis": "1.3.26",

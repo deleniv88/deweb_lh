@@ -5,6 +5,7 @@ import Header from "./Header";
 import Behaviors from "./Behaviors";
 import Footer from "./Footer";
 import QuoteModal from "./QuoteModal";
+import ChatAgent from "./ChatAgent";
 import { ArrowUpRight, Lines } from "./Icons";
 import { useEffect } from "react";
 import { UI, localeOf, type Locale } from "../lib/i18n";
@@ -65,6 +66,7 @@ export default function WorksClient(props: Q & { locale: Locale; cases: Q; home:
       </main>
       <Footer footer={homeData.home?.footer} t={t} />
       <QuoteModal form={homeData.home?.quoteForm} t={t} locale={locale} />
+      <ChatAgent locale={locale} />
       <Behaviors page="works" depsKey={String(cases.length)} />
     </div>
   );

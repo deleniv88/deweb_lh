@@ -5,6 +5,7 @@ import Header from "./Header";
 import Behaviors from "./Behaviors";
 import { featureIcons, stepIcons, HandIcon, ArrowUpRight, CheckCircle, Lines, PlayIcon, SoundOffIcon, SoundOnIcon, Rich } from "./Icons";
 import QuoteModal from "./QuoteModal";
+import ChatAgent from "./ChatAgent";
 import Footer from "./Footer";
 import { useEffect } from "react";
 import { UI, localeOf, fill, worksPath, type Locale } from "../lib/i18n";
@@ -461,6 +462,7 @@ export default function HomeClient(props: Props) {
       <Footer footer={footer} t={t} />
 
       <QuoteModal form={quoteForm} t={t} locale={locale} />
+      <ChatAgent locale={locale} />
 
       <Behaviors depsKey={depsKey} page="home" />
     </div>
