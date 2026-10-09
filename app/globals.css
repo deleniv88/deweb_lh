@@ -1575,7 +1575,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 .tst__play{position:absolute;z-index:3;left:50%;top:50%;width:calc(120 * var(--t));height:calc(120 * var(--t));margin:calc(-60 * var(--t)) 0 0 calc(-60 * var(--t));border-radius:50%;
   display:grid;place-items:center;background:#fff;color:var(--accent-b);box-shadow:0 calc(16 * var(--t)) calc(40 * var(--t)) calc(-12 * var(--t)) rgba(36,37,39,.35);
   transition:transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease}
-.tst__play svg{width:calc(40 * var(--t));height:calc(40 * var(--t));margin-left:calc(4 * var(--t))}
+.tst__play svg{width:calc(40 * var(--t));height:calc(40 * var(--t))}
 .tst__card[data-pos="center"] .tst__play:hover{transform:scale(1.06)}
 .tst__card:not([data-pos="center"]) .tst__play{pointer-events:none}
 .tst__card.is-sound.is-playing .tst__play{opacity:0;transform:scale(.8);pointer-events:none}
