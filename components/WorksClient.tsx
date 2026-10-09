@@ -3,6 +3,8 @@
 import { useTina, tinaField } from "tinacms/dist/react";
 import Header from "./Header";
 import Behaviors from "./Behaviors";
+import Footer from "./Footer";
+import QuoteModal from "./QuoteModal";
 import { ArrowUpRight, Lines } from "./Icons";
 import { useEffect } from "react";
 import { UI, localeOf, type Locale } from "../lib/i18n";
@@ -12,9 +14,11 @@ import { casesFor } from "../lib/cases";
    кейси — усі з колекції «Кейси» (content/cases/*.json).
    useTina + data-tina-field: в /admin сторінка оновлюється наживо, клік по елементу відкриває поле. */
 type Q = { query: string; variables: Record<string, unknown>; data: any };
-export default function WorksClient(props: Q & { locale: Locale; cases: Q }) {
+export default function WorksClient(props: Q & { locale: Locale; cases: Q; home: Q }) {
   const { data } = useTina({ query: props.query, variables: props.variables, data: props.data });
   const { data: casesData } = useTina({ query: props.cases.query, variables: props.cases.variables, data: props.cases.data });
+  /* Футер і форма заявки — з документа головної тієї ж мови (редагуються там). */
+  const { data: homeData } = useTina({ query: props.home.query, variables: props.home.variables, data: props.home.data });
   const { locale } = props;
   const t = UI[locale];
   useEffect(() => { document.documentElement.lang = localeOf(locale).htmlLang; }, [locale]);
@@ -59,6 +63,8 @@ export default function WorksClient(props: Q & { locale: Locale; cases: Q }) {
         </ul>
         <div className="drag-cursor" aria-hidden="true">{t.viewWebsite}</div>
       </main>
+      <Footer footer={homeData.home?.footer} t={t} />
+      <QuoteModal form={homeData.home?.quoteForm} t={t} locale={locale} />
       <Behaviors page="works" depsKey={String(cases.length)} />
     </div>
   );

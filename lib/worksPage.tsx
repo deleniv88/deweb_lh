@@ -31,11 +31,16 @@ export async function worksMetadata(locale: Locale): Promise<Metadata> {
 }
 
 export async function WorksPage({ locale }: { locale: Locale }) {
-  const [res, cases] = await Promise.all([getWorks(locale), client.queries.caseConnection({ first: 500 })]);
+  const [res, cases, home] = await Promise.all([
+    getWorks(locale),
+    client.queries.caseConnection({ first: 500 }),
+    client.queries.home({ relativePath: localeOf(locale).file }),
+  ]);
   return (
     <WorksClient
       data={res.data} query={res.query} variables={res.variables}
       cases={{ data: cases.data, query: cases.query, variables: cases.variables }}
+      home={{ data: home.data, query: home.query, variables: home.variables }}
       locale={locale}
     />
   );

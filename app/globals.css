@@ -1188,6 +1188,8 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
    BLOG
    ========================================================= */
 .page{padding:calc(180 * var(--s)) calc(60 * var(--s)) var(--gap-section);min-height:100vh;background:var(--bg);color:var(--ink)}
+/* Сторінка робіт з футером: відступ до футера дає сам футер */
+.page:has(+ .ft){padding-bottom:0}
 .page__head{max-width:calc(900 * var(--s));margin:0 auto calc(60 * var(--s));text-align:center;display:flex;flex-direction:column;gap:calc(12 * var(--s))}
 .page__title{font-family:var(--f-display);font-weight:400;font-size:calc(72 * var(--s));line-height:.9;letter-spacing:-.05em}
 .page__title em{font-style:normal;color:var(--accent-b)}
