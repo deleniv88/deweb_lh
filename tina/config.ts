@@ -473,6 +473,36 @@ export default defineConfig({
         ],
       },
 
+      /* ================= ЗНАННЯ ДЛЯ AI-ЧАТУ ================= */
+      {
+        name: "ai",
+        label: "Знання для AI-чату",
+        path: "content/ai",
+        format: "json",
+        ui: { allowedActions: { create: false, delete: false } },
+        fields: [
+          {
+            type: "object",
+            name: "topics",
+            label: "Теми",
+            description:
+              "Те, що AI-асистент має знати, але чого немає на сайті: орієнтовні ціни, технології, як проходить робота, деталі кейсів, що відповідати на заперечення. Пишіть будь-якою мовою, асистент відповідатиме мовою відвідувача. Тексти сайту він і так знає. Зміни діють після деплою (2–4 хв).",
+            list: true,
+            ui: { itemProps: (item) => ({ label: item?.title || "Нова тема" }) },
+            fields: [
+              { type: "string", name: "title", label: "Тема", description: "Напр. «Ціни», «Технології», «Кейс AMIMED»" },
+              { type: "string", name: "text", label: "Що асистент має знати", ui: { component: "textarea" } },
+            ],
+          },
+          {
+            type: "string",
+            name: "rules",
+            label: "Чого не казати / не обіцяти",
+            description: "Напр. «не називати точну ціну без брифу», «не обіцяти запуск швидше ніж за 2 тижні».",
+            ui: { component: "textarea" },
+          },
+        ],
+      },
       /* ================= НАЛАШТУВАННЯ САЙТУ ================= */
       {
         name: "settings",

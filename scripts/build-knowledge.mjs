@@ -63,6 +63,17 @@ for (const l of LANGS) {
   }
 }
 
+/* додаткові знання з адмінки: «Знання для AI-чату» (content/ai/knowledge.json) */
+try {
+  const ai = readJson("content/ai/knowledge.json");
+  const topics = (ai.topics || []).filter((t) => t?.text?.trim());
+  if (topics.length || ai.rules?.trim()) {
+    md += "\n\n## Extra knowledge from Andrew (not shown on the site, use it in answers)\n";
+    for (const t of topics) md += `\n### ${t.title || "Note"}\n${t.text.trim()}\n`;
+    if (ai.rules?.trim()) md += `\n### Do not say or promise\n${ai.rules.trim()}\n`;
+  }
+} catch {}
+
 mkdirSync(OUT_DIR, { recursive: true });
 writeFileSync(join(OUT_DIR, "knowledge.md"), md);
 /* файли бази й лічильників не віддаються браузеру */
