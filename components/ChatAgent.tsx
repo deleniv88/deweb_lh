@@ -52,6 +52,40 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
   const tsId = useRef<any>(null);
   const list = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
+  const orb = useRef<HTMLButtonElement>(null);
+
+  /* мобільний: сфера стоїть унизу, а коли знизу з'являється кнопка заявки (у hero або плаваюча) —
+     піднімається й тримається над нею, щоб вони не накладались */
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    let raf = 0;
+    const upd = () => {
+      raf = 0;
+      const el = orb.current;
+      if (!el) return;
+      if (!mq.matches) { el.style.removeProperty("--orb-lift"); return; }
+      const h = window.innerHeight;
+      let top = h;
+      const fab = document.querySelector<HTMLElement>(".quote-fab.is-shown");
+      const hero = document.querySelector<HTMLElement>(".hero .cta");
+      for (const b of [fab, hero]) {
+        if (!b || getComputedStyle(b).visibility === "hidden") continue;
+        const r = b.getBoundingClientRect();
+        if (r.bottom > 0 && r.top < h) top = Math.min(top, r.top);
+      }
+      el.style.setProperty("--orb-lift", `${Math.max(0, h - top + 12)}px`);
+    };
+    const req = () => { if (!raf) raf = requestAnimationFrame(upd); };
+    upd();
+    /* кнопка в hero з'являється з анімацією — перераховуємо ще кілька разів після завантаження */
+    const timers = [300, 900, 1800, 3000].map((ms) => setTimeout(req, ms));
+    window.addEventListener("scroll", req, { passive: true });
+    window.addEventListener("resize", req);
+    const mo = new MutationObserver(req);
+    const fabEl = document.querySelector(".quote-fab");
+    if (fabEl) mo.observe(fabEl, { attributes: true, attributeFilter: ["class"] });
+    return () => { timers.forEach(clearTimeout); window.removeEventListener("scroll", req); window.removeEventListener("resize", req); mo.disconnect(); if (raf) cancelAnimationFrame(raf); };
+  }, []);
 
   /* відновлення розмови після переходу на іншу сторінку */
   useEffect(() => {
@@ -143,7 +177,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
 
   return (
     <>
-      <button className={`ai-orb${open ? " is-open" : ""}`} type="button" aria-label={t.open} aria-expanded={open} aria-controls="ai-chat" onClick={() => setOpen((o) => !o)}>
+      <button ref={orb} className={`ai-orb${open ? " is-open" : ""}`} type="button" aria-label={t.open} aria-expanded={open} aria-controls="ai-chat" onClick={() => setOpen((o) => !o)}>
         <span className="ai-orb__core" aria-hidden="true"><i></i><i></i><i></i></span>
         <span className="ai-orb__x" aria-hidden="true"><CloseIcon /></span>
       </button>
