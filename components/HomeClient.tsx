@@ -8,6 +8,7 @@ import QuoteModal from "./QuoteModal";
 import { useEffect } from "react";
 import { UI, localeOf, fill, worksPath, type Locale } from "../lib/i18n";
 import { casesFor } from "../lib/cases";
+import { FeaturePreview, hasFeaturePreview } from "./FeaturePreviews";
 
 /* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
 function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
@@ -237,6 +238,8 @@ export default function HomeClient(props: Props) {
                     <div>
                       {f.image ? (
                         <img src={f.image} alt={f.imageAlt || f.name || ""} width={1042} height={521} loading="lazy" decoding="async" />
+                      ) : hasFeaturePreview(f.icon) ? (
+                        <FeaturePreview icon={f.icon} locale={locale} />
                       ) : (
                         <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>{t.previewSoon}</small></div>
                       )}
@@ -259,6 +262,8 @@ export default function HomeClient(props: Props) {
                 >
                   {f.image ? (
                     <img src={f.image} alt={f.imageAlt || f.name || ""} width={1042} height={521} loading="lazy" decoding="async" />
+                  ) : hasFeaturePreview(f.icon) ? (
+                    <FeaturePreview icon={f.icon} locale={locale} />
                   ) : (
                     <div className="feat__ph">
                       {featureIcons[f.icon] || featureIcons.fast}
