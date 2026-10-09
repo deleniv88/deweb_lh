@@ -1,4 +1,4 @@
-/* Після next build: база знань для AI-чату → out/api/chat-data/knowledge.md.
+/* Після next build: база знань для AI-чату → out/api/chat-data/knowledge-{pl,en,ua}.md (+ knowledge.md з усіма мовами).
    Збирає тексти головної (усі три мови), сторінки робіт і кейсів з content/ у звичайний текст,
    який api/chat.php кладе в системний промпт. Змінили щось у Tina → після деплою чат уже знає нове.
    Картинки, відео, іконки й технічні поля пропускаються. */
@@ -45,36 +45,49 @@ const cases = readdirSync("content/cases")
   .map((f) => readJson(join("content/cases", f)))
   .sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
-let md = "# Deweb studio: site content\n\nAll prices on the site are in EUR. Content below is the live website text in three languages.\n";
-
+/* текст сайту окремо для кожної мови */
+const sections = {};
 for (const l of LANGS) {
   const home = readJson(join("content/home", l.home));
   delete home.seo?.schema;
-  md += `\n\n## Website in ${l.name} (${l.code.toUpperCase()}), address ${l.url}\n\n`;
+  let s = `\n\n## Website in ${l.name} (${l.code.toUpperCase()}), address ${l.url}\n\n`;
   for (const [section, value] of Object.entries(home)) {
     if (!value || typeof value !== "object") continue;
     const lines = render(value);
-    if (lines.length) md += `### ${title(section)}\n${lines.join("\n")}\n\n`;
+    if (lines.length) s += `### ${title(section)}\n${lines.join("\n")}\n\n`;
   }
-  md += `### Portfolio (all work page ${l.worksUrl})\n`;
+  s += `### Portfolio (all work page ${l.worksUrl})\n`;
   for (const c of cases) {
     const t = c[l.code] || c.en || {};
-    md += `- ${c.name}: ${[t.category, t.city].filter(Boolean).join(", ")} · ${c.url}\n`;
+    s += `- ${c.name}: ${[t.category, t.city].filter(Boolean).join(", ")} · ${c.url}\n`;
   }
+  sections[l.code] = s;
 }
 
 /* додаткові знання з адмінки: «Знання для AI-чату» (content/ai/knowledge.json) */
+let extra = "";
 try {
   const ai = readJson("content/ai/knowledge.json");
   const topics = (ai.topics || []).filter((t) => t?.text?.trim());
   if (topics.length || ai.rules?.trim()) {
-    md += "\n\n## Extra knowledge from Andrew (not shown on the site, use it in answers)\n";
-    for (const t of topics) md += `\n### ${t.title || "Note"}\n${t.text.trim()}\n`;
-    if (ai.rules?.trim()) md += `\n### Do not say or promise\n${ai.rules.trim()}\n`;
+    extra += "\n\n## Extra knowledge from Andrew (not shown on the site, use it in answers)\n";
+    for (const t of topics) extra += `\n### ${t.title || "Note"}\n${t.text.trim()}\n`;
+    if (ai.rules?.trim()) extra += `\n### Do not say or promise\n${ai.rules.trim()}\n`;
   }
 } catch {}
 
+const head = "# Deweb studio: site content\n\nAll prices on the site are in EUR.";
+const allWorks = LANGS.map((l) => `${l.code.toUpperCase()} ${l.worksUrl}`).join(", ");
 mkdirSync(OUT_DIR, { recursive: true });
+/* чат бере базу мовою сторінки (утричі менший запит, швидша відповідь);
+   тексти однакові, тож агент перекладає, якщо відвідувач пише іншою мовою */
+for (const l of LANGS) {
+  const md = `${head} Content below is the live website text in ${l.name}; the same site exists in Polish (/), English (/en/) and Ukrainian (/ua/), with the all-work page at ${allWorks}. Translate facts when the visitor writes in another language.\n${sections[l.code]}${extra}`;
+  writeFileSync(join(OUT_DIR, `knowledge-${l.code}.md`), md);
+  console.log(`knowledge-${l.code}.md: ${(md.length / 1024).toFixed(1)} KB`);
+}
+/* усі мови разом — запасний варіант */
+const md = `${head} Content below is the live website text in three languages.\n${LANGS.map((l) => sections[l.code]).join("")}${extra}`;
 writeFileSync(join(OUT_DIR, "knowledge.md"), md);
 /* файли бази й лічильників не віддаються браузеру */
 writeFileSync(

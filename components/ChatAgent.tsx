@@ -40,12 +40,38 @@ function Text({ text }: { text: string }) {
   );
 }
 
+/* потокова відповідь api/chat.php: рядки {"t":"d","x":"шматок"} і фінальний {"t":"end",...} */
+async function readStream(body: ReadableStream<Uint8Array>, onDelta: (x: string) => void) {
+  const reader = body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let end: any = null;
+  for (;;) {
+    const { value, done } = await reader.read();
+    buf += dec.decode(value || new Uint8Array(), { stream: !done });
+    let i;
+    while ((i = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, i).trim();
+      buf = buf.slice(i + 1);
+      if (!line) continue;
+      try {
+        const e = JSON.parse(line);
+        if (e.t === "d") onDelta(e.x);
+        else if (e.t === "end") end = e;
+      } catch {}
+    }
+    if (done) break;
+  }
+  return end || { ok: false, error: "api" };
+}
+
 export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
   const t = UI[locale].chat;
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [live, setLive] = useState(false);
   const session = useRef("");
   const tsToken = useRef("");
   const tsBox = useRef<HTMLDivElement>(null);
@@ -96,7 +122,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
   }, []);
   useEffect(() => {
     try { sessionStorage.setItem(STORE, JSON.stringify({ msgs, session: session.current })); } catch {}
-    list.current?.scrollTo({ top: list.current.scrollHeight, behavior: "smooth" });
+    list.current?.scrollTo({ top: list.current.scrollHeight, behavior: live ? "auto" : "smooth" });
   }, [msgs, busy]);
 
   /* Esc закриває; сфера ховається, коли відкрита форма заявки */
@@ -140,6 +166,15 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
     setInput("");
     setBusy(true);
     let res: any = null;
+    /* текст з'являється по мірі генерації: перший шматок додає відповідь, далі вона дописується */
+    let acc = "";
+    let started = false;
+    const onDelta = (x: string) => {
+      acc += x;
+      const text = acc;
+      if (!started) { started = true; setLive(true); setMsgs((m) => [...m, { role: "assistant", content: text }]); }
+      else setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: text }]);
+    };
     try {
       for (let attempt = 0; attempt < 2; attempt++) {
         const r = await fetch("/api/chat.php", {
@@ -153,7 +188,9 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
             turnstile: await waitToken(),
           }),
         });
-        res = await r.json().catch(() => ({ ok: false, error: r.status === 429 ? "rate" : "api" }));
+        res = (r.headers.get("content-type") || "").includes("ndjson") && r.body
+          ? await readStream(r.body, onDelta)
+          : await r.json().catch(() => ({ ok: false, error: r.status === 429 ? "rate" : "api" }));
         if (res?.session) session.current = res.session;
         /* токен Turnstile одноразовий: якщо не пройшов — беремо новий і пробуємо ще раз */
         if (res?.error === "captcha" && window.turnstile && tsId.current !== null && attempt === 0) {
@@ -163,13 +200,16 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
       }
     } catch { res = { ok: false, error: "api" }; }
     setBusy(false);
-    if (res?.ok) setMsgs((m) => [...m, { role: "assistant", content: res.reply }]);
+    setLive(false);
+    /* недописана відповідь при помилці прибирається — замість неї повідомлення про помилку */
+    const base = (m: Msg[]) => (started ? m.slice(0, -1) : m);
+    if (res?.ok) setMsgs((m) => [...base(m), { role: "assistant", content: res.reply }]);
     else {
       const e = res?.error;
       const off = e === "budget" || e === "not_configured" || e === "too_long";
       const text = off ? t.errOff : e === "rate" ? t.errRate : e === "busy" ? t.errBusy : t.errGeneric;
       /* код помилки дрібним шрифтом — щоб було зрозуміло, що саме сталося */
-      setMsgs((m) => [...m, { role: "assistant", content: text, error: true, form: !["rate", "busy"].includes(e), code: e || "unknown" }]);
+      setMsgs((m) => [...base(m), { role: "assistant", content: text, error: true, form: !["rate", "busy"].includes(e), code: e || "unknown" }]);
     }
   }
 
@@ -211,7 +251,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
               {m.form && <button className="ai-msg__form" type="button" data-open-quote onClick={() => setOpen(false)}>{t.openForm}</button>}
             </div>
           ))}
-          {busy && <div className="ai-msg ai-msg--bot ai-msg--typing" aria-label="…"><i></i><i></i><i></i></div>}
+          {busy && !live && <div className="ai-msg ai-msg--bot ai-msg--typing" aria-label="…"><i></i><i></i><i></i></div>}
         </div>
 
         <form className="ai-chat__form" onSubmit={(e) => { e.preventDefault(); send(input); }}>
