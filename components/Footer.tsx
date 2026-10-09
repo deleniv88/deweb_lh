@@ -1,7 +1,7 @@
 "use client";
 
 import { tinaField } from "tinacms/dist/react";
-import { ArrowUpRight, RightArrow, socialIcons } from "./Icons";
+import { ArrowUpRight, Lines, RightArrow, socialIcons } from "./Icons";
 
 /* Футер (блок «Футер» документа головної своєї мови) — спільний для головної і сторінки робіт.
    Кнопка з data-open-quote відкриває QuoteModal, який має бути на тій самій сторінці. */
@@ -15,7 +15,7 @@ export default function Footer({ footer, t }: { footer: any; t: { social: string
             <RightArrow />
             <span data-tina-field={tinaField(footer, "chipTo")}>{footer?.chipTo}</span>
           </span>
-          <h2 className="ft__h" data-tina-field={tinaField(footer, "headline")}>{footer?.headline}</h2>
+          <h2 className="ft__h" data-tina-field={tinaField(footer, "headline")}><Lines text={footer?.headline} /></h2>
           <button className="ft__cta" type="button" data-open-quote data-tina-field={tinaField(footer, "buttonLabel")}>
             {footer?.buttonLabel}<ArrowUpRight />
           </button>

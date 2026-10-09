@@ -1690,7 +1690,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
   background:radial-gradient(closest-side,rgba(94,108,255,.55),rgba(94,108,255,0));filter:blur(calc(30 * var(--s)));pointer-events:none}
 .ft__chip{position:relative;display:inline-flex;align-items:center;gap:calc(6 * var(--s));padding:calc(7 * var(--s)) calc(14 * var(--s));border-radius:100px;background:var(--accent-b);font-family:var(--f-body);font-weight:500;font-size:calc(15 * var(--s))}
 .ft__chip svg{width:calc(13 * var(--s));height:calc(13 * var(--s))}
-.ft__h{position:relative;margin-top:calc(24 * var(--s));max-width:calc(840 * var(--s));font-family:var(--f-display);font-weight:600;font-size:calc(80 * var(--s));line-height:1.02;letter-spacing:-.045em;
+.ft__h{position:relative;margin-top:calc(24 * var(--s));max-width:calc(1100 * var(--s));font-family:var(--f-display);font-weight:600;font-size:calc(80 * var(--s));line-height:1.02;letter-spacing:-.045em;
   background:linear-gradient(180deg,#fff 30%,#b9b9c4);-webkit-background-clip:text;background-clip:text;color:transparent}
 .ft__cta{position:relative;margin-top:calc(40 * var(--s));display:inline-flex;align-items:center;gap:calc(10 * var(--s));padding:calc(18 * var(--s)) calc(32 * var(--s));border-radius:100px;
   background:#fff;color:var(--ink);font-family:var(--f-display);font-weight:600;font-size:calc(20 * var(--s));line-height:1.2;transition:background-color .25s, color .25s}
@@ -1855,6 +1855,8 @@ html.is-locked .quote-fab{transform:translate(-50%,calc(100% + 40px))}
   .ft__in{width:calc(358 * var(--s));--ftw:calc(358 * var(--s))}
   .ft__card{padding:calc(64 * var(--s)) calc(6 * var(--s)) calc(6 * var(--s));border-radius:calc(24 * var(--s))}
   .ft__h{font-size:calc(38 * var(--s));padding:0 calc(14 * var(--s))}
+  .ft__h br{display:none}
+  .ft__h > span:not(:last-child)::after{content:" "}
   .ft__cta{font-size:calc(17 * var(--s))}
   .ft__links{margin-top:calc(56 * var(--s));display:grid;grid-template-columns:1fr 1fr;gap:calc(18 * var(--s));padding:calc(22 * var(--s));border-radius:calc(18 * var(--s))}
   .ft__links a{font-size:calc(15 * var(--s))}
