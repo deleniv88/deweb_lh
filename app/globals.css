@@ -2206,12 +2206,12 @@ html.lenis,html.lenis body{height:auto}
 .fpf-ag{display:flex;align-items:center;gap:10px;height:34px;margin:14px 0 2px;padding:0 20px;border-radius:17px;background:#fff1e6;color:#c33300;font-family:'Roboto Mono',ui-monospace,Menlo,monospace;font-size:16px}
 .fpf-ag i{width:11px;height:11px;background:#ffa400}
 .fpf-hr{left:0;top:131px;width:1040px;height:1px;background:#e0e0e0}
-.fpf-main{left:16px;top:226px;width:440px;display:flex;flex-direction:column;align-items:center}
+.fpf-main{left:16px;top:182px;width:440px;display:flex;flex-direction:column;align-items:center}
 .fpf-main__l{margin-top:12px;font-size:26px;color:#212121}
 .fpf-main__p{margin:16px 0 0;font-size:15px;line-height:1.6;color:#5f6368;text-align:center}
 .fpf-main__p a{color:#1a73e8}
-.fpf-vr{left:522px;top:315px;width:1px;height:110px;background:#e0e0e0}
-.fpf-shot{left:614px;top:233px;width:386px;height:274px;padding:5px;border:1px solid #dadce0;background:#fff;overflow:hidden}
+.fpf-vr{left:522px;top:271px;width:1px;height:110px;background:#e0e0e0}
+.fpf-shot{left:614px;top:189px;width:386px;height:274px;padding:5px;border:1px solid #dadce0;background:#fff;overflow:hidden}
 .fpf-shot img{display:block;width:376px;height:265px}
 .fpf-shot__sk{position:absolute;inset:5px;display:flex;flex-direction:column;gap:12px;padding:20px 26px;background:#f4f5fb;opacity:0}
 .fpf-shot__sk i{display:block;height:10px;border-radius:5px;background:#e3e5f0}
@@ -2352,14 +2352,14 @@ html.lenis,html.lenis body{height:auto}
   .fp__in{transform:scale(tan(atan2(100cqw, var(--dw))))}
 
   /* заявки: картка зверху, отримувачі стовпчиком */
-  .fp--lead{--dw:400px;--dh:600px;--ar:2 / 3}
-  .fp--lead .fp__g{left:0;top:0;width:400px;height:600px}
+  .fp--lead{--dw:400px;--dh:624px;--ar:400 / 624}
+  .fp--lead .fp__g{left:0;top:0;width:400px;height:624px}
   .fp--lead .fpl-card{left:72px;top:24px}
   .fp--lead .fpl-dest{left:125px}
-  .fp--lead .fpl-mail{top:262px}
-  .fp--lead .fpl-crm{top:314px}
-  .fp--lead .fpl-sheet{top:419px}
-  .fp--lead .fpl-tg{top:522px}
+  .fp--lead .fpl-mail{top:286px}
+  .fp--lead .fpl-crm{top:338px}
+  .fp--lead .fpl-sheet{top:443px}
+  .fp--lead .fpl-tg{top:546px}
 
   /* аналітика: дашборд зверху, сервіси стовпчиком */
   .fp--ana{--dw:480px;--dh:712px;--ar:480 / 712}
