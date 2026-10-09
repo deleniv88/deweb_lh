@@ -123,13 +123,17 @@ const Ico = {
 
 /* =============== No lost requests =============== */
 /* мобільна (вертикальна) схема: [x виходу з картки заявки, y центру картки-отримувача] */
-const V_LEAD = [[116, 305.3], [106, 383.9], [96, 487.8], [86, 572.9]];
+const V_LEAD = [[120, 305.3], [107, 383.9], [94, 487.8], [81, 572.9]];
+/* низ картки заявки: лінії виходять з точок на її краю, як у Clear analytics */
+const V_LEAD_Y = 233.4;
 function Leads({ c }: { c: Copy }) {
   /* виходи з картки заявки → входи в картки-отримувачі (координати групи з Figma) */
-  const lines = [link(270, 128, 504, 19), link(270, 144, 504, 99), link(270, 162, 504, 204), link(270, 179, 504, 290)];
+  /* виходять з точок біля правого краю картки, як у Clear analytics */
+  const outs = [128, 144, 162, 179];
+  const lines = outs.map((y, i) => link(264.8, y, 504, [19, 99, 204, 290][i]));
   const ends = [[504, 19], [504, 99], [504, 204], [504, 290]];
   const mids = [[387, 73.5], [387, 121.5], [387, 183], [387, 234.5]];
-  const vLines = V_LEAD.map(([x, yc]) => vlink(x, 246, yc, 125));
+  const vLines = V_LEAD.map(([x, yc]) => vlink(x, V_LEAD_Y, yc, 125));
   return (
     <div className="fp fp--lead">
       <div className="fp__in">
@@ -146,9 +150,9 @@ function Leads({ c }: { c: Copy }) {
           </div>
 
           <Wires cls="fp__wires--h" view="0 0 757.5 317.3" lines={lines}
-            nodes={[...mids.map(([x, y], i) => ({ x, y, r: 3.4, i, at: ".45s" })), ...ends.map(([x, y], i) => ({ x, y, r: 3, i, at: ".9s" }))]} />
+            nodes={[...outs.map((y, i) => ({ x: 264.8, y, r: 3.6, i, at: "0s" })), ...mids.map(([x, y], i) => ({ x, y, r: 3.4, i, at: ".45s" })), ...ends.map(([x, y], i) => ({ x, y, r: 3, i, at: ".9s" }))]} />
           <Wires cls="fp__wires--v" view="0 0 400 624" lines={vLines}
-            nodes={[...V_LEAD.map(([x, yc], i) => ({ x, y: (246 + yc) / 2, r: 3.4, i, at: ".45s" })), ...V_LEAD.map(([, yc], i) => ({ x: 125, y: yc, r: 3, i, at: ".9s" }))]} />
+            nodes={[...V_LEAD.map(([x], i) => ({ x, y: V_LEAD_Y, r: 3.6, i, at: "0s" })), ...V_LEAD.map(([, yc], i) => ({ x: 125, y: yc, r: 3, i, at: ".9s" }))]} />
 
           <div className="fpl-dest fpl-mail" style={st({ "--i": 0 })}>
             <span className="fpl-mail__logo"><Gmail /></span>
