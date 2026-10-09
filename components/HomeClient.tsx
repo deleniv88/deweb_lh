@@ -236,10 +236,10 @@ export default function HomeClient(props: Props) {
                   {/* на мобільному фото з'являється під пунктом, як акордеон */}
                   <div className="feat__mimg" aria-hidden="true">
                     <div>
-                      {f.image ? (
+                      {hasFeaturePreview(f.icon) ? (
+                        <FeaturePreview icon={f.icon} locale={locale} hero={hero} label={f.imageAlt || f.name} />
+                      ) : f.image ? (
                         <img src={f.image} alt={f.imageAlt || f.name || ""} width={1042} height={521} loading="lazy" decoding="async" />
-                      ) : hasFeaturePreview(f.icon) ? (
-                        <FeaturePreview icon={f.icon} locale={locale} />
                       ) : (
                         <div className="feat__ph">{featureIcons[f.icon] || featureIcons.fast}<span>{f.name}</span><small>{t.previewSoon}</small></div>
                       )}
@@ -260,10 +260,10 @@ export default function HomeClient(props: Props) {
                   key={i}
                   data-tina-field={tinaField(f, "image")}
                 >
-                  {f.image ? (
+                  {hasFeaturePreview(f.icon) ? (
+                    <FeaturePreview icon={f.icon} locale={locale} hero={hero} label={f.imageAlt || f.name} />
+                  ) : f.image ? (
                     <img src={f.image} alt={f.imageAlt || f.name || ""} width={1042} height={521} loading="lazy" decoding="async" />
-                  ) : hasFeaturePreview(f.icon) ? (
-                    <FeaturePreview icon={f.icon} locale={locale} />
                   ) : (
                     <div className="feat__ph">
                       {featureIcons[f.icon] || featureIcons.fast}

@@ -43,7 +43,7 @@ const COPY: Record<Locale, Copy> = {
     avgPos: "Śr. pozycja: 6.2", welcome: "Witamy na stronie", recording: "Nagrania sesji",
   },
   ua: {
-    lead: "Нова заявка", sent: "Надіслано", name: "Ім'я:", phone: "Телефон:", message: "Запит:", person: "Анна К.", msg: "Потрібен сайт для моєї клініки",
+    lead: "Заявка", sent: "Надіслано", name: "Ім'я:", phone: "Телефон:", message: "Запит:", person: "Анна К.", msg: "Потрібен сайт для моєї клініки",
     mail: "Нова заявка з сайту", crmCol: "Нові заявки", status: "Статус", cols: ["дата", "ім'я", "телефон", "джерело"], source: "сайт",
     tg: "Заявка: Анна К., +48 600...",
     dash: "Уся аналітика в одній панелі", users: "Користувачі:", clicks: "Кліки:", engage: "Залученість:", visitors: "Відвідувачі",
@@ -71,6 +71,20 @@ const link = (x1: number, y1: number, x2: number, y2: number) => {
   const m = (x1 + x2) / 2;
   return `M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`;
 };
+/* вертикальна версія (мобільний): вниз від картки, потім поворот праворуч до картки-отримувача */
+const vlink = (x: number, y1: number, yc: number, xe: number) => {
+  const r = Math.min(9, xe - x);
+  return `M${x},${y1} L${x},${yc - r} Q${x},${yc} ${x + r},${yc} L${xe},${yc}`;
+};
+function Wires({ cls, view, lines, nodes }: { cls: string; view: string; lines: string[]; nodes: { x: number; y: number; r: number; i: number; at: string }[] }) {
+  return (
+    <svg className={`fp__wires ${cls}`} viewBox={view} aria-hidden="true">
+      {lines.map((d, i) => <path key={i} className="fp-wire" d={d} pathLength={1} style={st({ "--i": i })} />)}
+      {lines.map((d, i) => <path key={"p" + i} className="fp-pulse" d={d} pathLength={1} style={st({ "--i": i })} />)}
+      {nodes.map((n, k) => <circle key={"n" + k} className="fp-node" cx={n.x} cy={n.y} r={n.r} style={st({ "--i": n.i, "--at": n.at })} />)}
+    </svg>
+  );
+}
 const st = (o: Record<string, string | number>) => o as React.CSSProperties;
 
 /* ---------- Лого (спрощені, щоб не тягнути зовнішні файли) ---------- */
@@ -108,11 +122,14 @@ const Ico = {
 };
 
 /* =============== No lost requests =============== */
+/* мобільна (вертикальна) схема: [x виходу з картки заявки, y центру картки-отримувача] */
+const V_LEAD = [[116, 281.3], [106, 359.9], [96, 463.8], [86, 548.9]];
 function Leads({ c }: { c: Copy }) {
   /* виходи з картки заявки → входи в картки-отримувачі (координати групи з Figma) */
   const lines = [link(270, 128, 504, 19), link(270, 144, 504, 99), link(270, 162, 504, 204), link(270, 179, 504, 290)];
   const ends = [[504, 19], [504, 99], [504, 204], [504, 290]];
   const mids = [[387, 73.5], [387, 121.5], [387, 183], [387, 234.5]];
+  const vLines = V_LEAD.map(([x, yc]) => vlink(x, 225, yc, 125));
   return (
     <div className="fp fp--lead">
       <div className="fp__in">
@@ -128,12 +145,10 @@ function Leads({ c }: { c: Copy }) {
             <div className="fpl-row"><span>{c.message}</span><b className="fp-type fp-type--2" style={st({ "--d": "1.05s", "--n": 14 })}>{c.msg}</b></div>
           </div>
 
-          <svg className="fp__wires" viewBox="0 0 757.5 317.3" aria-hidden="true">
-            {lines.map((d, i) => <path key={i} className="fp-wire" d={d} pathLength={1} style={st({ "--i": i })} />)}
-            {lines.map((d, i) => <path key={"p" + i} className="fp-pulse" d={d} pathLength={1} style={st({ "--i": i })} />)}
-            {mids.map(([x, y], i) => <circle key={"m" + i} className="fp-node" cx={x} cy={y} r={3.4} style={st({ "--i": i, "--at": ".45s" })} />)}
-            {ends.map(([x, y], i) => <circle key={"e" + i} className="fp-node" cx={x} cy={y} r={3} style={st({ "--i": i, "--at": ".9s" })} />)}
-          </svg>
+          <Wires cls="fp__wires--h" view="0 0 757.5 317.3" lines={lines}
+            nodes={[...mids.map(([x, y], i) => ({ x, y, r: 3.4, i, at: ".45s" })), ...ends.map(([x, y], i) => ({ x, y, r: 3, i, at: ".9s" }))]} />
+          <Wires cls="fp__wires--v" view="0 0 400 600" lines={vLines}
+            nodes={[...V_LEAD.map(([x, yc], i) => ({ x, y: (225 + yc) / 2, r: 3.4, i, at: ".45s" })), ...V_LEAD.map(([, yc], i) => ({ x: 125, y: yc, r: 3, i, at: ".9s" }))]} />
 
           <div className="fpl-dest fpl-mail" style={st({ "--i": 0 })}>
             <span className="fpl-mail__logo"><Gmail /></span>
@@ -193,6 +208,7 @@ function Leads({ c }: { c: Copy }) {
 }
 
 /* =============== Clear analytics =============== */
+const V_ANA = [[230, 416], [215, 522.6], [200, 637.7]];
 const CHART = [[10.9, 76.7], [76.9, 52.7], [143.9, 60.7], [210.9, 54.7], [277.9, 35.7], [343.9, 61.7], [411.9, 33.7]];
 function Analytics({ c }: { c: Copy }) {
   const line = smooth(CHART);
@@ -256,11 +272,10 @@ function Analytics({ c }: { c: Copy }) {
             </div>
           </div>
 
-          <svg className="fp__wires" viewBox="0 0 696.3 315.4" aria-hidden="true">
-            {wires.map((d, i) => <path key={i} className="fp-wire" d={d} pathLength={1} style={st({ "--i": i })} />)}
-            {wires.map((d, i) => <path key={"p" + i} className="fp-pulse" d={d} pathLength={1} style={st({ "--i": i })} />)}
-            {[128, 153, 179].map((y, i) => <circle key={y} className="fp-node" cx={458} cy={y} r={3.6} style={st({ "--i": i, "--at": "0s" })} />)}
-          </svg>
+          <Wires cls="fp__wires--h" view="0 0 696.3 315.4" lines={wires}
+            nodes={[128, 153, 179].map((y, i) => ({ x: 458, y, r: 3.6, i, at: "0s" }))} />
+          <Wires cls="fp__wires--v" view="0 0 480 712" lines={V_ANA.map(([x, yc]) => vlink(x, 335.4, yc, 250))}
+            nodes={V_ANA.map(([x], i) => ({ x, y: 335.4, r: 3.6, i, at: "0s" }))} />
 
           <div className="fpa-card fpa-ga" style={st({ "--i": 0 })}>
             <div className="fpa-card__logo" style={st({ top: 12.3, width: 53.2 })}><span style={st({ width: 29.7, height: 31.7 })}><GA /></span><small>Google<br />Analytics</small></div>
@@ -324,14 +339,14 @@ const WINDOWS = [
   { code: "PL", url: "deweb.studio/pl/", nav: ["Strona główna", "Usługi", "Cennik", "Kontakt"], navL: 127, title: ["Strony, które zamieniają", "odwiedzających w klientów"], sub: "Strony, które zamieniają odwiedzających w klientów", btn: "Darmowa konsultacja" },
   { code: "EN", url: "deweb.studio/en/", nav: ["Home", "Services", "Blog", "Resources"], navL: 142.3, title: ["Websites that", "turn visitors into", "clients"], sub: "Websites that turn visitors into clients", btn: "Get a free quote", front: true },
 ];
-const WIN_POS = [[0, 0, 429.1, 270.3], [206.3, 42.5, 431.1, 269.8], [425, 85, 429.6, 267.3]];
+const WIN_POS = [[0, 0, 429.1, 205], [206.3, 42.5, 431.1, 205], [425, 85, 429.6, 205]];
 function Multilingual() {
   return (
     <div className="fp fp--ml">
       <div className="fp__in">
         <div className="fp__g">
           {WINDOWS.map((w, k) => (
-            <div key={w.code} className={`fpm-win${w.front ? " is-front" : ""}`} style={st({ left: WIN_POS[k][0], top: WIN_POS[k][1], width: WIN_POS[k][2], height: WIN_POS[k][3], "--i": k })}>
+            <div key={w.code} className={`fpm-win${w.front ? " is-front" : ""}`} style={st({ "--x": `${WIN_POS[k][0]}px`, "--y": `${WIN_POS[k][1]}px`, "--mx": `${k * 40}px`, "--my": `${k * 175}px`, width: WIN_POS[k][2], height: WIN_POS[k][3], "--i": k })}>
               <span className="fpm-win__dots"><i /><i /><i /></span>
               <span className="fpm-win__url"><span>{Ico.lock}</span>{w.url}</span>
               <div className="fpm-page">
@@ -375,12 +390,167 @@ function Multilingual() {
   );
 }
 
-/* прев'ю за іконкою пункту; null — якщо для пункту немає анімованого прев'ю */
-export function FeaturePreview({ icon, locale }: { icon?: string | null; locale: Locale }) {
-  const c = COPY[locale] || COPY.en;
-  if (icon === "inbox") return <Leads c={c} />;
-  if (icon === "chart") return <Analytics c={c} />;
-  if (icon === "globe") return <Multilingual />;
-  return null;
+/* =============== Fast loading (Lighthouse) =============== */
+type Extra = {
+  lh: string[]; agentic: string; perf: string; note: [string, string, string, string, string];
+  devices: [string, string, string];
+  admin: { back: string; page: string; items: string[]; reset: string; save: string; saved: string; l1: string; l2: string; lead: string; old: string };
+};
+const EXTRA: Record<Locale, Extra> = {
+  en: {
+    lh: ["Performance", "Accessibility", "Best Practices", "SEO"], agentic: "Agentic Browsing", perf: "Performance",
+    note: ["Values are estimated and may vary. The ", "performance score is calculated", " directly from these metrics. ", "See calculator", "."],
+    devices: ["Laptop", "Tablet", "Mobile"],
+    admin: { back: "Home page", page: "home", items: ["SEO", "Hero (first screen)", "Recent work", "Services", "Every site includes"], reset: "Reset", save: "Save", saved: "Saved", l1: "Title, line 1", l2: "Title, line 2", lead: "Lead", old: "Your new website" },
+  },
+  pl: {
+    lh: ["Wydajność", "Dostępność", "Dobre praktyki", "SEO"], agentic: "Agentic Browsing", perf: "Wydajność",
+    note: ["Wartości są szacunkowe i mogą się różnić. ", "Wynik wydajności jest obliczany", " bezpośrednio na podstawie tych danych. ", "Zobacz kalkulator", "."],
+    devices: ["Laptop", "Tablet", "Telefon"],
+    admin: { back: "Strona główna", page: "home", items: ["SEO", "Hero (pierwszy ekran)", "Realizacje", "Usługi", "Co zawiera każda strona"], reset: "Cofnij", save: "Zapisz", saved: "Zapisano", l1: "Tytuł, linia 1", l2: "Tytuł, linia 2", lead: "Opis", old: "Twoja nowa strona" },
+  },
+  ua: {
+    lh: ["Швидкодія", "Доступність", "Практики", "SEO"], agentic: "Agentic Browsing", perf: "Швидкодія",
+    note: ["Значення приблизні й можуть відрізнятися. ", "Оцінка продуктивності обчислюється", " безпосередньо з цих показників. ", "Переглянути калькулятор", "."],
+    devices: ["Ноутбук", "Планшет", "Телефон"],
+    admin: { back: "Головна сторінка", page: "home", items: ["SEO", "Hero (перший екран)", "Recent work (кейси)", "Services (послуги)", "Every site includes"], reset: "Скинути", save: "Зберегти", saved: "Збережено", l1: "Заголовок, рядок 1", l2: "Заголовок, рядок 2", lead: "Опис", old: "Ваш новий сайт" },
+  },
+};
+
+function Gauge({ v, r, cls, delay }: { v: number; r: number; cls: string; delay: number }) {
+  const c = r + 6;
+  return (
+    <span className={`fpf-g ${cls}`} style={st({ "--d": `${delay}s` })}>
+      <svg viewBox={`0 0 ${c * 2} ${c * 2}`} aria-hidden="true">
+        <circle className="fpf-g__bg" cx={c} cy={c} r={r} />
+        <circle className="fpf-g__arc" cx={c} cy={c} r={r} pathLength={100} strokeDasharray={`${v} 100`} />
+      </svg>
+      <b data-count={v} data-fmt="int" data-delay={delay * 1000} data-dur="1100">{v}</b>
+    </span>
+  );
 }
-export const hasFeaturePreview = (icon?: string | null) => icon === "inbox" || icon === "chart" || icon === "globe";
+function Fast({ x }: { x: Extra }) {
+  return (
+    <div className="fp fp--fast">
+      <div className="fp__in">
+        <div className="fpf-top">
+          {[95, 95, 100, 100].map((v, k) => (
+            <span className="fpf-cat" key={k} style={st({ "--k": k })}>
+              <Gauge v={v} r={25} cls="is-s" delay={0.25 + k * 0.12} />
+              <span className="fpf-cat__l">{x.lh[k]}</span>
+            </span>
+          ))}
+          <span className="fpf-cat is-ag">
+            <span className="fpf-ag"><i />1/2</span>
+            <span className="fpf-cat__l">{x.agentic}</span>
+          </span>
+        </div>
+        <span className="fpf-hr" />
+        <div className="fpf-main">
+          <Gauge v={95} r={66} cls="is-l" delay={0.55} />
+          <span className="fpf-main__l">{x.perf}</span>
+          <p className="fpf-main__p">{x.note[0]}<a>{x.note[1]}</a>{x.note[2]}<a>{x.note[3]}</a>{x.note[4]}</p>
+        </div>
+        <span className="fpf-vr" />
+        <div className="fpf-shot">
+          <span className="fpf-shot__sk" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+          <img src="/uploads/fp-fast-site.webp" alt="" width={752} height={530} loading="lazy" decoding="async" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* =============== Looks right everywhere =============== */
+function Responsive({ x }: { x: Extra }) {
+  const dev = [
+    { k: "laptop", src: "/uploads/fp-resp-laptop.webp", w: 770, h: 632 },
+    { k: "tablet", src: "/uploads/fp-resp-tablet.webp", w: 410, h: 482 },
+    { k: "mobile", src: "/uploads/fp-resp-mobile.webp", w: 150, h: 330 },
+  ];
+  return (
+    <div className="fp fp--resp">
+      <div className="fp__in">
+        {dev.map((d, i) => (
+          <Fragment key={d.k}>
+            <span className={`fpr-ruler is-${d.k}`} style={st({ "--i": i })}><i /><span>{x.devices[i]}</span><i /></span>
+            <span className={`fpr-dev is-${d.k}`} style={st({ "--i": i })}>
+              <img src={d.src} alt="" width={d.w} height={d.h} loading="lazy" decoding="async" />
+            </span>
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* =============== Edit it yourself (Tina) =============== */
+type Hero = { titleLine1?: string | null; titleLine2?: string | null; lead?: string | null; ctaLabel?: string | null; name?: string | null; photo?: string | null; stats?: any[] | null };
+const Llama = () => (
+  <svg viewBox="0 0 16 18" aria-hidden="true"><path fill="#ec4815" d="M9.6 1.2c.6-.7 1.5-.9 1.9-.4.3.4.1 1-.2 1.5l.8.2c.9.3 1.5 1.1 1.5 2v.9c0 .4-.3.7-.7.7h-1.2l-.4 4.3c-.1 1.1.4 2.2 1.3 2.9l.6.5c.3.3.4.7.2 1l-1.1 2.5c-.2.4-.6.6-1 .5l-.6-.2.4-2.4-1.5-1.4-1.1 3.7c-.1.4-.5.6-.9.5l-.7-.2.2-3.6-2.6.3-.9 3.1c-.1.4-.5.6-.9.5l-.6-.2.6-4.4C2.4 12 2 10.6 2.3 9.3l.6-2.6c.2-.9 1-1.5 1.9-1.5h3.6l.7-2.6c.1-.5.3-1 .5-1.4z" /></svg>
+);
+const Pencil = () => <svg viewBox="0 0 12 12" {...I} strokeWidth={1}><path d="M2 10h2l5.5-5.5-2-2L2 8z" /><path d="M6.8 3.2l2 2" /></svg>;
+function Edit({ x, hero }: { x: Extra; hero?: Hero | null }) {
+  const a = x.admin;
+  const l1 = hero?.titleLine1 || "", l2 = hero?.titleLine2 || "";
+  const stats = (hero?.stats || []).filter(Boolean).slice(0, 3);
+  return (
+    <div className="fp fp--edit">
+      <div className="fp__in">
+        <div className="fpe-side">
+          <div className="fpe-side__top"><i>{Ico.menu}</i><span className="fpe-llama"><Llama /></span><i className="is-r"><svg viewBox="0 0 12 12" {...I} strokeWidth={1}><rect x="1.5" y="2" width="9" height="8" rx="1.5" /><path d="M4.5 2v8" /></svg></i></div>
+          <div className="fpe-list">
+            <span className="fpe-crumb">← {a.back} / <b>{a.page}</b></span><i className="fpe-dot" />
+            {a.items.map((it, k) => <span key={k} className={`fpe-item${k === 1 ? " is-hero" : ""}`} style={st({ "--i": k })}>{it}<Pencil /></span>)}
+          </div>
+          <div className="fpe-form">
+            <span className="fpe-crumb">← {a.items[1]}</span>
+            <span className="fpe-lbl" style={st({ top: 66 })}>{a.l1}</span>
+            <span className="fpe-in" style={st({ top: 80 })}><span data-type={l1} data-from={a.old} data-at="1950" data-dur="750">{l1}</span></span>
+            <span className="fpe-lbl" style={st({ top: 118 })}>{a.l2}</span>
+            <span className="fpe-in" style={st({ top: 132 })}><span data-type={l2} data-from="" data-at="2750" data-dur="700">{l2}</span></span>
+            <span className="fpe-lbl" style={st({ top: 170 })}>{a.lead}</span>
+            <span className="fpe-in is-area" style={st({ top: 184 })}>{hero?.lead}</span>
+          </div>
+          <div className="fpe-btns"><span>{a.reset}</span><span className="fpe-save">{a.save}</span></div>
+          <span className="fpe-toast">✓ {a.saved}</span>
+          <span className="fpe-cursor">{Ico.cursor}</span>
+        </div>
+        <div className="fpe-site">
+          <div className="fpe-site__in">
+            <span className="fpe-logo">Deweb<small>studio</small></span>
+            <span className="fpe-pill">PL <span>{Ico.chev}</span></span>
+            <span className="fpe-nav"><span>Services</span><span>Projects</span><span>Process</span><span>FAQ</span></span>
+            <span className="fpe-word" aria-hidden="true">DEWEB</span>
+            <span className="fpe-photo">{hero?.photo && <img src={hero.photo} alt="" width={1684} height={1876} loading="lazy" decoding="async" />}</span>
+            <span className="fpe-name">{hero?.name}</span>
+            <span className="fpe-title">
+              <span className="fpe-f"><span data-type={l1} data-from={a.old} data-at="1950" data-dur="750">{l1}</span></span>
+              <span className="fpe-f"><span data-type={l2} data-from="" data-at="2750" data-dur="700">{l2}</span></span>
+            </span>
+            <span className="fpe-lead fpe-f">{hero?.lead}</span>
+            <span className="fpe-cta">{hero?.ctaLabel}<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 7 7 17M7 17V9M7 17h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
+            <span className="fpe-stats">{stats.map((s: any, k: number) => <span key={k} className="fpe-stat"><b>{s.value}</b><small>{s.label}</small></span>)}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* прев'ю за іконкою пункту; null — якщо для пункту немає анімованого прев'ю */
+export function FeaturePreview({ icon, locale, hero, label }: { icon?: string | null; locale: Locale; hero?: Hero | null; label?: string | null }) {
+  const c = COPY[locale] || COPY.en;
+  const x = EXTRA[locale] || EXTRA.en;
+  const view =
+    icon === "fast" ? <Fast x={x} /> :
+    icon === "devices" ? <Responsive x={x} /> :
+    icon === "edit" ? <Edit x={x} hero={hero} /> :
+    icon === "inbox" ? <Leads c={c} /> :
+    icon === "chart" ? <Analytics c={c} /> :
+    icon === "globe" ? <Multilingual /> : null;
+  if (!view) return null;
+  /* для скрінрідерів це одна картинка з підписом, а не купа дрібного тексту */
+  return <div className="fp-wrap" role="img" aria-label={label || ""}><div aria-hidden="true" className="fp-wrap__in">{view}</div></div>;
+}
+export const hasFeaturePreview = (icon?: string | null) => ["fast", "devices", "edit", "inbox", "chart", "globe"].includes(icon || "");
