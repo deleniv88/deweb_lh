@@ -1,7 +1,8 @@
 {
   "seo": {
     "title": "Вибрані роботи — Deweb studio",
-    "description": "Сайти, які Deweb studio спроєктувала і зробила для бізнесів з різних ніш."
+    "description": "Сайти, які Deweb studio спроєктувала і зробила для бізнесів з різних ніш.",
+    "shareImage": "/uploads/share/cover-ua.jpg"
   },
   "titleAccent": "Останні",
   "titleRest": "роботи",

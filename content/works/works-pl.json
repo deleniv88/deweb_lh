@@ -1,7 +1,8 @@
 {
   "seo": {
     "title": "Wybrane realizacje — Deweb studio",
-    "description": "Strony internetowe zaprojektowane i wykonane przez Deweb studio dla firm z różnych branż."
+    "description": "Strony internetowe zaprojektowane i wykonane przez Deweb studio dla firm z różnych branż.",
+    "shareImage": "/uploads/share/cover-pl.jpg"
   },
   "titleAccent": "Ostatnie",
   "titleRest": "realizacje",

@@ -1,7 +1,8 @@
 {
   "seo": {
     "title": "Deweb studio — Strony, które zamieniają odwiedzających w klientów",
-    "description": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających."
+    "description": "Design, kod i AI w jednym miejscu: strony, które przynoszą Twojej firmie klientów, a nie tylko odwiedzających.",
+    "shareImage": "/uploads/share/cover-pl.jpg"
   },
   "hero": {
     "titleLine1": "Strony, które skutecznie",
