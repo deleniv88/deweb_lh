@@ -9,7 +9,7 @@ import { UI, type Locale } from "../lib/i18n";
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const STORE = "dw_chat";
 
-type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean };
+type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean; code?: string };
 
 declare global {
   interface Window { turnstile?: any }
@@ -133,7 +133,9 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
     else {
       const e = res?.error;
       const off = e === "budget" || e === "not_configured" || e === "too_long";
-      setMsgs((m) => [...m, { role: "assistant", content: off ? t.errOff : e === "rate" ? t.errRate : e === "busy" ? t.errBusy : t.errGeneric, error: true, form: off || e === "api" }]);
+      const text = off ? t.errOff : e === "rate" ? t.errRate : e === "busy" ? t.errBusy : t.errGeneric;
+      /* код помилки дрібним шрифтом — щоб було зрозуміло, що саме сталося */
+      setMsgs((m) => [...m, { role: "assistant", content: text, error: true, form: !["rate", "busy"].includes(e), code: e || "unknown" }]);
     }
   }
 
@@ -171,6 +173,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
           {msgs.map((m, i) => (
             <div key={i} className={`ai-msg ai-msg--${m.role === "user" ? "me" : "bot"}${m.error ? " ai-msg--err" : ""}`}>
               <Text text={m.content} />
+              {m.code && <small className="ai-msg__code">{m.code}</small>}
               {m.form && <button className="ai-msg__form" type="button" data-open-quote onClick={() => setOpen(false)}>{t.openForm}</button>}
             </div>
           ))}

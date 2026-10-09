@@ -89,28 +89,35 @@ function post(string $url, $body, array $headers = [], int $timeout = 15): array
   return [$code, (string)$res];
 }
 
-/* ---- сесія розмови: Turnstile перевіряється один раз, далі — підписаний токен на 3 год ---- */
+/* ---- сесія розмови: Turnstile перевіряється один раз, далі — підписаний токен на 3 год.
+   Якщо перевірка не вдалася (блокувальник, мережа), чат усе одно працює, але з жорсткішими лімітами. ---- */
 $secret = hash('sha256', 'deweb-chat|' . $apiKey);
 $sign = fn(string $p): string => rtrim(strtr(base64_encode(hash_hmac('sha256', $p, $secret, true)), '+/', '-_'), '=');
 $session = null;
 $tok = clean($d['session'] ?? '', 200);
-if (preg_match('/^([a-f0-9]{16})\.(\d+)\.([\w-]+)$/', $tok, $mm) && hash_equals($sign("$mm[1].$mm[2]"), $mm[3]) && (int)$mm[2] > time()) {
-  $session = ['id' => $mm[1], 'token' => $tok];
+if (preg_match('/^([a-f0-9]{16})\.(\d+)\.([vu])\.([\w-]+)$/', $tok, $mm) && hash_equals($sign("$mm[1].$mm[2].$mm[3]"), $mm[4]) && (int)$mm[2] > time()) {
+  $session = ['id' => $mm[1], 'token' => $tok, 'verified' => $mm[3] === 'v'];
 }
 $newSession = false;
 if (!$session) {
+  $verified = true;
   if ($c('TURNSTILE_SECRET_KEY') !== '') {
     $ts = clean($d['turnstile'] ?? '', 4000);
-    if ($ts === '') out(400, ['ok' => false, 'error' => 'captcha']);
-    [, $res] = post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
-      http_build_query(['secret' => $c('TURNSTILE_SECRET_KEY'), 'response' => $ts, 'remoteip' => $ip]));
-    $j = json_decode($res, true);
-    if (empty($j['success'])) out(400, ['ok' => false, 'error' => 'captcha']);
+    $verified = false;
+    if ($ts !== '') {
+      [, $res] = post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        http_build_query(['secret' => $c('TURNSTILE_SECRET_KEY'), 'response' => $ts, 'remoteip' => $ip]));
+      $j = json_decode($res, true);
+      $verified = !empty($j['success']);
+    }
   }
-  $id = bin2hex(random_bytes(8)); $exp = time() + 3 * 3600;
-  $session = ['id' => $id, 'token' => "$id.$exp." . $sign("$id.$exp")];
+  $id = bin2hex(random_bytes(8)); $exp = time() + 3 * 3600; $v = $verified ? 'v' : 'u';
+  $session = ['id' => $id, 'token' => "$id.$exp.$v." . $sign("$id.$exp.$v"), 'verified' => $verified];
   $newSession = true;
 }
+/* без перевірки Turnstile: не більше 8 питань за розмову і 12 повідомлень з IP за 10 хв */
+if (!$session['verified'] && ($userTurns > 8 || count(array_filter($hits, fn($t) => $t > time() - 600)) > 12))
+  out(200, ['ok' => false, 'error' => 'too_long', 'session' => $session['token']]);
 
 /* ---- місячний бюджет ---- */
 function usage_update(string $dir, float $add = 0.0): float {
