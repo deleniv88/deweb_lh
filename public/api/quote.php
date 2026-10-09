@@ -54,7 +54,7 @@ function post(string $url, $body, array $headers = []): array {
   $ch = curl_init($url);
   curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body, CURLOPT_RETURNTRANSFER => true,
     CURLOPT_TIMEOUT => 12, CURLOPT_HTTPHEADER => $headers]);
-  $res = curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+  $res = curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
   return [$code, $res];
 }
 
