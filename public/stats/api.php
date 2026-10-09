@@ -2,7 +2,7 @@
 /* Дані для /stats (тільки після входу).
    GET                     → історія з workflow + лічильники заявок + нотатки
    POST {action:"note_add", date, text} / {action:"note_del", id} → нотатки на графіку
-   POST {action:"tg_send", period} → короткий звіт за період у Telegram
+   POST {action:"tg_send", period | from, to} → короткий звіт за період у Telegram
    POST {action:"logout"}  → вихід */
 declare(strict_types=1);
 require __DIR__ . '/_lib.php';
@@ -12,6 +12,8 @@ function out(int $code, $data): void { http_response_code($code); echo json_enco
 if (!dw_authed()) out(401, ['error' => 'auth']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+  /* історія по днях велика — стискаємо, якщо браузер уміє */
+  if (!ini_get('zlib.output_compression') && extension_loaded('zlib')) ob_start('ob_gzhandler');
   out(200, ['history' => dw_read_json('history.json'), 'events' => dw_read_json('events.json'), 'notes' => dw_read_json('notes.json') ?? []]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, ['error' => 'method']);
@@ -31,8 +33,11 @@ if ($action === 'tg_send') {
   $lock = dw_data('tg_last.txt');
   if (is_file($lock) && (int)file_get_contents($lock) > time() - 20) out(429, ['error' => 'rate']);
   @file_put_contents($lock, (string)time());
-  $P = in_array((int)($d['period'] ?? 7), [7, 28, 90], true) ? (int)$d['period'] : 7;
-  $text = dw_digest($P, 'https://' . ($_SERVER['HTTP_HOST'] ?? 'deweb.studio'));
+  $P = in_array((int)($d['period'] ?? 7), [7, 30, 90], true) ? (int)$d['period'] : 7;
+  /* свій період з календаря: обидві дати, не довше року */
+  $from = (string)($d['from'] ?? ''); $to = (string)($d['to'] ?? '');
+  $ok = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) && $from <= $to && strtotime($to) - strtotime($from) <= 400 * 86400;
+  $text = dw_digest($P, 'https://' . ($_SERVER['HTTP_HOST'] ?? 'deweb.studio'), $ok ? $from : null, $ok ? $to : null);
   if ($text === null) out(409, ['error' => 'no_data']);
   $r = dw_tg_send($text);
   out($r === 'ok' ? 200 : 502, $r === 'ok' ? ['ok' => true] : ['error' => $r]);

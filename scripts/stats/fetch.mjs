@@ -1,6 +1,7 @@
 /* Збір статистики для закритої сторінки /stats (запускає .github/workflows/stats.yml щодня).
    Search Console і GA4 щоразу перечитуються за останні DAYS днів (API віддають історію),
    Clarity віддає лише останню добу, тому її дані накопичуються в історії день за днем.
+   Усе зберігається по днях (і розбивки: запити, сторінки, джерела), тож сторінка рахує будь-який період сама.
    Без залежностей: тільки Node 22 (fetch + crypto).
 
    node scripts/stats/fetch.mjs <history.json>   — оновлює файл на місці
@@ -91,28 +92,17 @@ async function fetchGsc(store) {
     for (const [l, a] of Object.entries(langs)) d.gsc[l] = { c: a.c, i: a.i, p: a.i ? r1(a.pi / a.i) : null };
   }
 
-  /* таблиці за періоди: поточний і попередній відрізок однакової довжини */
-  const lastDate = byDate.map((r) => r.keys[0]).sort().pop();
-  store.gscLast = lastDate;
-  for (const P of [7, 28, 90]) {
-    const cur = { startDate: addDays(lastDate, -(P - 1)), endDate: lastDate };
-    const prev = { startDate: addDays(lastDate, -(2 * P - 1)), endDate: addDays(lastDate, -P) };
-    const [q, qp, pg, pgp] = await Promise.all([
-      gscAll(token, site, { ...cur, dimensions: ["query"], rowLimit: 200 }),
-      gscAll(token, site, { ...prev, dimensions: ["query"] }),
-      gscAll(token, site, { ...cur, dimensions: ["page"], rowLimit: 200 }),
-      gscAll(token, site, { ...prev, dimensions: ["page"] }),
-    ]);
-    const prevMap = (rows) => Object.fromEntries(rows.map((r) => [r.keys[0], r]));
-    const qpm = prevMap(qp), pgpm = prevMap(pgp);
-    const row = (r, pm) => { const p = pm[r.keys[0]]; return { k: r.keys[0], c: r.clicks, i: r.impressions, p: r1(r.position), pc: p?.clicks ?? null, pp: p ? r1(p.position) : null }; };
-    const per = (store.periods[P] ||= {});
-    per.gsc = {
-      range: cur, prev,
-      queries: q.slice(0, 200).map((r) => row(r, qpm)),
-      pages: pg.slice(0, 200).map((r) => ({ ...row(r, pgpm), k: toPath(r.keys[0]) })),
-    };
+  /* розбивки по днях: запити і сторінки {ключ: [кліки, покази, позиція]} */
+  const byDateQuery = await gscAll(token, site, { startDate: start, endDate: end, dimensions: ["date", "query"] });
+  for (const r of byDate) { const d = day(store, r.keys[0]); d.gq = {}; d.gp = {}; }
+  for (const r of byDateQuery) { const d = day(store, r.keys[0]); (d.gq ||= {})[r.keys[1]] = [r.clicks, r.impressions, r1(r.position)]; }
+  for (const r of byDatePage) {
+    const d = day(store, r.keys[0]), k = toPath(r.keys[1]), o = (d.gp ||= {})[k];
+    /* одна сторінка з різними адресами (?параметри) — зводимо */
+    if (!o) d.gp[k] = [r.clicks, r.impressions, r1(r.position)];
+    else { const i = o[1] + r.impressions; d.gp[k] = [o[0] + r.clicks, i, i ? r1((o[2] * o[1] + r.position * r.impressions) / i) : o[2]]; }
   }
+  store.gscLast = byDate.map((r) => r.keys[0]).sort().pop();
 }
 
 /* ---------- GA4 ---------- */
@@ -145,19 +135,16 @@ async function fetchGa(store) {
   });
   for (const { d: [dt, ev], m: [n] } of events) ((day(store, gaDate(dt)).ga ||= {}).ev ||= {})[ev] = n;
 
-  for (const P of [7, 28, 90]) {
-    const dr = [{ startDate: addDays(yesterday, -(P - 1)), endDate: yesterday }];
-    const top = (dim, metrics = ["sessions"]) => report({ dateRanges: dr, dimensions: [{ name: dim }], metrics: metrics.map((name) => ({ name })), orderBys: [{ metric: { metricName: metrics[0] }, desc: true }], limit: 50 });
-    const [ch, co, dev, pages] = await Promise.all([
-      top("sessionDefaultChannelGroup"), top("country"), top("deviceCategory"),
-      top("pagePath", ["screenPageViews", "activeUsers", "userEngagementDuration", "sessions"]),
-    ]);
-    const kv = (rows) => rows.map((r) => ({ k: r.d[0], s: r.m[0] }));
-    (store.periods[P] ||= {}).ga = {
-      range: dr[0], channels: kv(ch), countries: kv(co), devices: kv(dev),
-      pages: pages.map((r) => ({ k: r.d[0], v: r.m[0], u: r.m[1], eng: r.m[1] ? Math.round(r.m[2] / r.m[1]) : 0, s: r.m[3] })),
-    };
-  }
+  /* розбивки по днях: канали, країни, пристрої {назва: сесії}; сторінки {шлях: [перегляди, користувачі, сек. залученості, сесії]} */
+  const perDay = (dim, metrics = ["sessions"]) => report({ dateRanges: [range], dimensions: [{ name: "date" }, { name: dim }], metrics: metrics.map((name) => ({ name })) });
+  const [ch, co, dev, pg] = await Promise.all([
+    perDay("sessionDefaultChannelGroup"), perDay("country"), perDay("deviceCategory"),
+    perDay("pagePath", ["screenPageViews", "activeUsers", "userEngagementDuration", "sessions"]),
+  ]);
+  for (const { d: [dt] } of daily) { const g = day(store, gaDate(dt)); g.gch = {}; g.gco = {}; g.gdv = {}; g.gpg = {}; }
+  const put = (rows, key, f) => { for (const r of rows) { const g = day(store, gaDate(r.d[0])); (g[key] ||= {})[r.d[1]] = f(r.m); } };
+  put(ch, "gch", (m) => m[0]); put(co, "gco", (m) => m[0]); put(dev, "gdv", (m) => m[0]);
+  put(pg, "gpg", (m) => [m[0], m[1], Math.round(m[2]), m[3]]);
 }
 
 /* ---------- Microsoft Clarity (Data Export API: остання доба, до 10 запитів на день) ---------- */
@@ -189,9 +176,12 @@ async function fetchClarity(store) {
     }
     return out;
   };
+  const d = day(store, yesterday);
+  /* за вчора вже є (workflow запускався сьогодні) — не витрачаємо ліміт і не зсуваємо вікно доби */
+  if (d.cl && d.clAt === today) { console.log("Clarity: за вчора вже є"); return; }
   const total = parse(await get("numOfDays=1"), () => "_");
   if (!total._ || total._.s == null) throw new Error("відповідь без даних про трафік");
-  const d = day(store, yesterday);
+  d.clAt = today;
   d.cl = total._;
   try {
     const urlKey = (info) => { const k = Object.keys(info).find((x) => /^url$/i.test(x)); return toPath(k ? info[k] : "/"); };
@@ -205,8 +195,7 @@ async function fetchClarity(store) {
 function day(store, date) { return (store.daily[date] ||= {}); }
 
 const store = existsSync(file) ? JSON.parse(readFileSync(file, "utf8") || "{}") : {};
-const prevPeriods = store.periods || {};
-store.v = 1; store.daily ||= {}; store.periods = {};
+store.v = 2; store.daily ||= {}; delete store.periods;
 
 const jobs = [["Search Console", fetchGsc, !!env("GOOGLE_SA_JSON")], ["GA4", fetchGa, !!env("GOOGLE_SA_JSON")], ["Clarity", fetchClarity, true]];
 const ok = {};
@@ -215,12 +204,7 @@ for (const [name, fn, can] of jobs) {
   try { await fn(store); ok[name] = true; console.log("✓", name); }
   catch (e) { warn(name, e); }
 }
-/* якщо джерело впало — лишаємо таблиці з минулого запуску, щоб сторінка не спорожніла */
-for (const P of [7, 28, 90]) {
-  const p = (store.periods[P] ||= {});
-  if (!p.gsc && prevPeriods[P]?.gsc) p.gsc = prevPeriods[P].gsc;
-  if (!p.ga && prevPeriods[P]?.ga) p.ga = prevPeriods[P].ga;
-}
+/* якщо джерело впало, у днях лишаються дані з минулого запуску */
 store.updated = new Date().toISOString();
 store.errors = errors;
 store.sources = ok;

@@ -21,7 +21,8 @@ function dw_tg_send(string $html): string {
   return $code === 200 ? 'ok' : 'tg_http_' . $code;
 }
 
-function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
+/* $P — 7/30/90 останніх днів (Search Console — до останнього дня з даними); або свій період $from…$to для всіх джерел */
+function dw_digest(int $P, string $site = 'https://deweb.studio', ?string $from = null, ?string $to = null): ?string {
   $H = dw_read_json('history.json'); $E = dw_read_json('events.json'); $N = dw_read_json('notes.json') ?? [];
   $daily = $H['daily'] ?? [];
   if (!$daily) return null;
@@ -72,8 +73,14 @@ function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
 
   $gaEnd = $lastWith('ga') ?? gmdate('Y-m-d', time() - 86400);
   $gscEnd = $H['gscLast'] ?? $lastWith('gsc') ?? $gaEnd;
-  $cur = $range($gaEnd, $P); $prev = $range($add($gaEnd, -$P), $P);
-  $gcur = $range($gscEnd, $P); $gprev = $range($add($gscEnd, -$P), $P);
+  if ($from !== null && $to !== null) {
+    $P = (int)round((strtotime("$to 12:00 UTC") - strtotime("$from 12:00 UTC")) / 86400) + 1;
+    $cur = $gcur = $range($to, $P); $prev = $gprev = $range($add($from, -1), $P);
+  } else {
+    $cur = $range($gaEnd, $P); $prev = $range($add($gaEnd, -$P), $P);
+    $gcur = $range($gscEnd, $P); $gprev = $range($add($gscEnd, -$P), $P);
+  }
+  $end = end($cur); $gend = end($gcur);
 
   $L = $total($cur, $leads); $Lp = $total($prev, $leads);
   $S = $total($cur, $sessions); $Sp = $total($prev, $sessions);
@@ -82,18 +89,18 @@ function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
   $R = $rage($cur); $Rp = $rage($prev);
 
   $m = [];
-  $m[] = '📊 <b>deweb.studio · ' . $P . ' днів</b>';
-  $m[] = $dm($cur[0]) . '–' . $dm($gaEnd) . ', порівняно з попередніми ' . $P . ' днями';
+  $m[] = '📊 <b>deweb.studio · ' . $dm($cur[0]) . '–' . $dm($end) . '</b>';
+  $m[] = $P . ' дн., порівняно з попередніми ' . $P . ' дн.';
   $m[] = '';
   $m[] = '🎯 Заявки: <b>' . $n0($L) . '</b>' . $pct($L, $Lp);
   /* відкриття форми рахує сайт; до запуску лічильника цього рядка немає */
   $since = (string)($E['since'] ?? '');
-  if ($since !== '' && $since <= $gaEnd) $m[] = '📝 Відкрили форму: <b>' . $n0($O) . '</b>' . ($since > $cur[0] ? ' (рахуємо з ' . $dm($since) . ')' : '');
+  if ($since !== '' && $since <= $end) $m[] = '📝 Відкрили форму: <b>' . $n0($O) . '</b>' . ($since > $cur[0] ? ' (рахуємо з ' . $dm($since) . ')' : '');
   $m[] = '👥 Відвідування: <b>' . $n0($S) . '</b>' . $pct($S, $Sp);
   if ($S) $m[] = '↳ конверсія в заявку: <b>' . number_format(($L ?? 0) / $S * 100, 2, ',', ' ') . '%</b>';
   if ($G) {
     $m[] = '';
-    $m[] = '🔎 Google (' . $dm($gcur[0]) . '–' . $dm($gscEnd) . ')';
+    $m[] = '🔎 Google (' . $dm($gcur[0]) . '–' . $dm(min($gend, $gscEnd)) . ($gend > $gscEnd ? ', далі Google ще не віддав дані' : '') . ')';
     $m[] = 'Кліки <b>' . $n0($G['c']) . '</b>' . $pct($G['c'], $Gp['c'] ?? null) . ' · покази <b>' . $n0($G['i']) . '</b>' . $pct($G['i'], $Gp['i'] ?? null);
     if ($G['p'] !== null) $m[] = 'Сер. позиція <b>' . $n1($G['p']) . '</b>' . $better($G['p'], $Gp['p'] ?? null);
   }
@@ -102,8 +109,15 @@ function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
   /* звідки приходять */
   $CH = ['Organic Search' => 'Пошук', 'Direct' => 'Пряме', 'Paid Search' => 'Google Ads', 'Organic Social' => 'Соцмережі', 'Paid Social' => 'Реклама в соцмережах',
          'Referral' => 'Посилання', 'Unassigned' => 'Без джерела', 'Cross-network' => 'Google Ads (кілька мереж)', 'Email' => 'Email', 'Display' => 'Медійна реклама'];
-  $per = $H['periods'][(string)$P] ?? [];
-  $ch = $per['ga']['channels'] ?? [];
+  /* розбивки по днях → за період */
+  $sumDays = function (array $days, string $key) use ($D) { $o = []; foreach ($days as $d) foreach (($D($d)[$key] ?? []) as $k => $v) $o[$k] = ($o[$k] ?? 0) + $v; arsort($o); return $o; };
+  $cipDays = function (array $days, string $key) use ($D) {
+    $o = [];
+    foreach ($days as $d) foreach (($D($d)[$key] ?? []) as $k => $v) { $a = $o[$k] ?? ['k' => (string)$k, 'c' => 0, 'i' => 0, 'pi' => 0]; $a['c'] += $v[0]; $a['i'] += $v[1]; $a['pi'] += $v[2] * $v[1]; $o[$k] = $a; }
+    foreach ($o as &$a) $a['p'] = $a['i'] ? $a['pi'] / $a['i'] : null;
+    return array_values($o);
+  };
+  $ch = []; foreach ($sumDays($cur, 'gch') as $k => $v) if ($v > 0) $ch[] = ['k' => $k, 's' => $v];
   if ($ch) {
     $t = array_sum(array_column($ch, 's')) ?: 1;
     $m[] = '';
@@ -111,7 +125,7 @@ function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
   }
 
   /* запити: найкращі й «можливості» (позиції 4–20, багато показів) */
-  $q = $per['gsc']['queries'] ?? [];
+  $q = $cipDays($gcur, 'gq');
   $top = array_values(array_filter($q, fn($r) => $r['c'] > 0));
   usort($top, fn($a, $b) => $b['c'] <=> $a['c']);
   $top = array_slice($top, 0, 3);
@@ -140,7 +154,7 @@ function dw_digest(int $P, string $site = 'https://deweb.studio'): ?string {
   }
   if ($bad) $m[] = '⚠️ Глянути записи Clarity: ' . implode(', ', array_slice($bad, 0, 3));
 
-  $notes = array_filter($N, fn($n) => ($n['date'] ?? '') >= $cur[0] && ($n['date'] ?? '') <= $gaEnd);
+  $notes = array_filter($N, fn($n) => ($n['date'] ?? '') >= $cur[0] && ($n['date'] ?? '') <= $end);
   if ($notes) $m[] = '📌 ' . implode('; ', array_map(fn($n) => $dm($n['date']) . ' ' . $e($n['text']), $notes));
 
   $m[] = '';

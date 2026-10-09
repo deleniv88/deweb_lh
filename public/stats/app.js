@@ -5,8 +5,10 @@
   'use strict';
   var app = document.getElementById('app');
   var H, E, N;
-  var st = { P: 28, L: 'all' };
-  try { var s = JSON.parse(localStorage.getItem('dwStats') || '{}'); if ([7, 28, 90].indexOf(s.P) >= 0) st.P = s.P; if (['all', 'en', 'pl', 'ua'].indexOf(s.L) >= 0) st.L = s.L; if (Array.isArray(s.S)) st.S = s.S.filter(function (k) { return 'scipllor'.indexOf(k) >= 0; }); } catch (e) {}
+  /* P: 7 / 30 / 90 днів або 0 — свій період з календаря (F…T) */
+  var st = { P: 30, L: 'all' };
+  var R = {}; // поточний період: cur/prev (GA4, форма, Clarity), gcur/gprev (Search Console), n — днів
+  try { var s = JSON.parse(localStorage.getItem('dwStats') || '{}'); if (s.P === 28) s.P = 30; if ([7, 30, 90, 0].indexOf(s.P) >= 0) st.P = s.P; if (/^\d{4}-\d\d-\d\d$/.test(s.F) && /^\d{4}-\d\d-\d\d$/.test(s.T) && s.F <= s.T) { st.F = s.F; st.T = s.T; } else if (st.P === 0) st.P = 30; if (['all', 'en', 'pl', 'ua'].indexOf(s.L) >= 0) st.L = s.L; if (Array.isArray(s.S)) st.S = s.S.filter(function (k) { return 'scipllor'.indexOf(k) >= 0; }); } catch (e) {}
   var rep = {};
   var save = function () { try { localStorage.setItem('dwStats', JSON.stringify(st)); } catch (e) {} };
 
@@ -19,7 +21,8 @@
   var fmt = function (n) { if (n == null || isNaN(n)) return '—'; n = Math.round(n); return n >= 10000 ? (n / 1000).toFixed(1).replace('.', ',') + 'k' : n.toLocaleString('uk-UA'); };
   var f1 = function (n) { return n == null || isNaN(n) ? '—' : n.toFixed(1).replace('.', ','); };
   var mmss = function (s) { s = Math.round(s || 0); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
-  var langOf = function (p) { return /^\/pl(\/|$)/.test(p) ? 'pl' : /^\/ua(\/|$)/.test(p) ? 'ua' : 'en'; };
+  /* як у fetch.mjs: з 08.10.2026 польська на /, англійська на /en/ і в блозі */
+  var langOf = function (p) { return /^\/ua(\/|$)/.test(p) ? 'ua' : /^\/(en|blog)(\/|$)/.test(p) ? 'en' : 'pl'; };
   var api = function (body) {
     return fetch('/stats/api.php', body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})
       .then(function (r) { if (r.status === 401) { location.reload(); throw new Error('auth'); } return r.json(); });
@@ -75,7 +78,7 @@
     if (Math.abs(ch) < (mode === 'pct' ? 0.5 : 0.05)) return '<b class="flat">без змін</b>';
     var good = better === 'down' ? ch < 0 : ch > 0;
     var txt = mode === 'pct' ? Math.abs(ch).toFixed(0) + '%' : f1(Math.abs(ch)) + (unit || '');
-    return '<b class="' + (good ? 'up' : 'down') + '">' + (ch > 0 ? '▲ ' : '▼ ') + txt + '</b> <span>vs попер. ' + st.P + ' дн.</span>';
+    return '<b class="' + (good ? 'up' : 'down') + '">' + (ch > 0 ? '▲ ' : '▼ ') + txt + '</b> <span>vs попер. ' + R.n + ' дн.</span>';
   }
 
   function render() {
@@ -83,11 +86,20 @@
       app.innerHTML = header() + '<section class="panel"><h2>Даних ще немає</h2><p class="sub" style="margin-top:6px">Вони з’являться після першого запуску workflow <b>Stats</b>: GitHub → deweb_lh → Actions → Stats → Run workflow. Далі він оновлює дані щодня о 06:00.</p></section>';
       bindHeader(); return;
     }
-    var P = st.P;
     var gaEnd = lastWith('ga') || addDays(new Date().toISOString().slice(0, 10), -1);
     var gscEnd = H.gscLast || lastWith('gsc') || gaEnd;
-    var cur = range(gaEnd, P), prev = range(addDays(gaEnd, -P), P);
-    var gcur = range(gscEnd, P), gprev = range(addDays(gscEnd, -P), P);
+    var P, cur, prev, gcur, gprev;
+    if (st.P === 0 && st.F && st.T) {
+      /* свій період: ті самі дати для всіх джерел; порівнюємо з такою ж кількістю днів перед ним */
+      P = Math.round((new Date(st.T) - new Date(st.F)) / 864e5) + 1;
+      cur = gcur = range(st.T, P); prev = gprev = range(addDays(st.F, -1), P);
+    } else {
+      P = st.P || 30;
+      cur = range(gaEnd, P); prev = range(addDays(gaEnd, -P), P);
+      gcur = range(gscEnd, P); gprev = range(addDays(gscEnd, -P), P);
+    }
+    R = { cur: cur, prev: prev, gcur: gcur, gprev: gprev, n: P };
+    var end = cur[P - 1], gend = gcur[P - 1];
     var G = gscAgg(gcur), Gp = gscAgg(gprev), C = clarity(cur), Cp = clarity(prev);
 
     var kpis = [
@@ -103,12 +115,14 @@
     }).join('');
 
     var LN = { all: 'усі мови', en: 'англійська версія', pl: 'польська версія', ua: 'українська версія' };
-    rep.title = 'deweb.studio — звіт ' + dm(cur[0]) + '–' + dm(gaEnd) + '.' + gaEnd.slice(0, 4);
-    app.innerHTML = '<div class="print-head"><h1>deweb<b>.</b>studio — звіт про сайт</h1><p>Період ' + dm(cur[0]) + '–' + dm(gaEnd) + '.' + gaEnd.slice(0, 4) + ' (' + P + ' днів), ' + LN[st.L] + '. Зміни — порівняно з попередніми ' + P + ' днями. Дані: Google Analytics 4, Google Search Console, Microsoft Clarity і форма заявок на сайті.</p></div>'
+    rep.title = 'deweb.studio — звіт ' + dm(cur[0]) + '–' + dm(end) + '.' + end.slice(0, 4);
+    app.innerHTML = '<div class="print-head"><h1>deweb<b>.</b>studio — звіт про сайт</h1><p>Період ' + dm(cur[0]) + '–' + dm(end) + '.' + end.slice(0, 4) + ' (' + P + ' дн.), ' + LN[st.L] + '. Зміни — порівняно з попередніми ' + P + ' дн. Дані: Google Analytics 4, Google Search Console, Microsoft Clarity і форма заявок на сайті.</p></div>'
       + header() + banner()
       + '<section class="kpis">' + kpiHtml + '</section>'
-      + '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(gaEnd) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gscEnd) + ', бо Google віддає ці дані із затримкою 2–3 дні.' + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
-      + trendPanel(cur, gaEnd)
+      + (cur === gcur
+        ? '<p class="sub">Період ' + dm(cur[0]) + '–' + dm(end) + ' для всіх джерел.' + (end > gaEnd ? ' GA4 і форма мають дані до ' + dm(gaEnd) + '.' : '') + (end > gscEnd ? ' <b>Search Console</b> має дані лише до ' + dm(gscEnd) + ' (Google віддає їх із затримкою 2–3 дні).' : '')
+        : '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(end) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gend) + ', бо Google віддає ці дані із затримкою 2–3 дні.') + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
+      + trendPanel(cur, end)
       + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + '</div>';
     bindHeader(); drawTrend(cur); bindNotes(); bindQueries();
   }
@@ -125,22 +139,42 @@
       + '<a href="https://analytics.google.com/analytics/web/#/p463968236/reports/intelligenthome" target="_blank" rel="noopener">GA4</a>'
       + '<a href="https://search.google.com/search-console?resource_id=https%3A%2F%2Fdeweb.studio%2F" target="_blank" rel="noopener">Search Console</a>'
       + '<button type="button" class="link" id="logout">Вийти</button></p></div>'
-      + '<div class="ctrls">' + seg('P', [[7, '7 днів'], [28, '28 днів'], [90, '90 днів']]) + seg('L', [['all', 'Усі'], ['en', 'EN'], ['pl', 'PL'], ['ua', 'UA']])
+      + '<div class="ctrls">' + seg('P', [[7, '7 днів'], [30, '30 днів'], [90, '90 днів'], [0, 'Свій період']]) + dates() + seg('L', [['all', 'Усі'], ['en', 'EN'], ['pl', 'PL'], ['ua', 'UA']])
       + (H && H.daily ? '<div class="acts"><button type="button" class="act" id="tg">Надіслати в Telegram</button><button type="button" class="act" id="pdf">Звіт PDF</button></div>' : '') + '</div></header>';
+  }
+  /* календар: з першого дня в історії до вчора */
+  function dates() {
+    if (st.P !== 0 || !H || !H.daily) return '';
+    var ks = Object.keys(H.daily).sort(), mn = ks[0], mx = addDays(new Date().toISOString().slice(0, 10), -1);
+    return '<div class="dates"><label>з <input type="date" id="df" min="' + mn + '" max="' + mx + '" value="' + st.F + '"></label><label>по <input type="date" id="dt" min="' + mn + '" max="' + mx + '" value="' + st.T + '"></label></div>';
   }
   function banner() {
     var e = (H && H.errors) || [];
     return e.length ? '<div class="banner"><b>Під час останнього оновлення частина даних не завантажилась</b> (показую попередні):<ul>' + e.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '';
   }
   function bindHeader() {
-    app.querySelectorAll('[data-P]').forEach(function (b) { b.onclick = function () { st.P = +b.getAttribute('data-P'); save(); render(); }; });
+    app.querySelectorAll('[data-P]').forEach(function (b) {
+      b.onclick = function () {
+        st.P = +b.getAttribute('data-P');
+        /* «Свій період» вперше — стартуємо з поточного вибору */
+        if (st.P === 0 && !(st.F && st.T)) { st.F = R.cur ? R.cur[0] : addDays(new Date().toISOString().slice(0, 10), -30); st.T = R.cur ? R.cur[R.n - 1] : addDays(st.F, 29); }
+        save(); render();
+      };
+    });
+    var df = document.getElementById('df'), dt = document.getElementById('dt');
+    var setDates = function () {
+      if (!df.value || !dt.value) return;
+      if (df.value > dt.value) { if (this === df) dt.value = df.value; else df.value = dt.value; }
+      st.F = df.value; st.T = dt.value; save(); render();
+    };
+    if (df) { df.onchange = setDates; dt.onchange = setDates; }
     app.querySelectorAll('[data-L]').forEach(function (b) { b.onclick = function () { st.L = b.getAttribute('data-L'); save(); render(); }; });
     var lo = document.getElementById('logout'); if (lo) lo.onclick = function () { api({ action: 'logout' }).then(function () { location.reload(); }); };
     var tg = document.getElementById('tg');
     if (tg) tg.onclick = function () {
       var said = function (t) { tg.textContent = t; setTimeout(function () { tg.textContent = 'Надіслати в Telegram'; tg.disabled = false; }, 4000); };
       tg.disabled = true; tg.textContent = 'Надсилаю…';
-      api({ action: 'tg_send', period: st.P }).then(function (r) {
+      api(st.P === 0 ? { action: 'tg_send', from: st.F, to: st.T } : { action: 'tg_send', period: st.P }).then(function (r) {
         said(r.ok ? 'Надіслано ✓' : { rate: 'Зачекай 20 секунд', tg_config: 'Бот не налаштований', no_data: 'Даних ще немає' }[r.error] || 'Не вдалося надіслати');
       }).catch(function () { said('Не вдалося надіслати'); });
     };
@@ -202,7 +236,7 @@
       if (single) { var val = single.s.inv ? single.lo + (single.hi - single.lo) * k / 4 : single.hi * (4 - k) / 4; g += '<text x="' + (l - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + (val % 1 ? f1(val) : val) + '</text>'; }
     }
     var step = Math.ceil(days.length / 8);
-    days.forEach(function (d, i) { if (i % step === 0 || i === days.length - 1) g += '<text x="' + x(i) + '" y="' + (Hh - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + dm(d) + '</text>'; });
+    days.forEach(function (d, i) { if ((i % step === 0 && days.length - 1 - i >= step / 2) || i === days.length - 1) g += '<text x="' + x(i) + '" y="' + (Hh - 8) + '" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Inter Tight,sans-serif">' + dm(d) + '</text>'; });
     (N || []).forEach(function (n) { var i = days.indexOf(n.date); if (i < 0) return; g += '<line x1="' + x(i) + '" x2="' + x(i) + '" y1="' + t + '" y2="' + (t + ih) + '" stroke="var(--muted)" stroke-dasharray="3 4"/><text x="' + (x(i) + (i > days.length * 0.8 ? -5 : 5)) + '" y="' + (t - 6) + '" text-anchor="' + (i > days.length * 0.8 ? 'end' : 'start') + '" font-size="11" fill="var(--muted)">' + esc(n.text.length > 28 ? n.text.slice(0, 27) + '…' : n.text) + '</text>'; });
     data.forEach(function (d) {
       var s = '', pen = false;
@@ -264,8 +298,18 @@
     var t = sum(rows.map(function (r) { return r.s; })) || 1, top = rows.slice(0, 6), mx = top[0].s || 1;
     return '<div class="hb">' + top.map(function (r) { return '<div class="hrow"><span title="' + esc(r.k) + '">' + esc((map && map[r.k]) || r.k) + '</span><div class="bar"><span style="width:' + (r.s / mx * 100) + '%"></span></div><span class="num" style="text-align:right">' + Math.round(r.s / t * 100) + '%</span></div>'; }).join('') + '</div>';
   }
+  /* розбивки по днях → за період */
+  function sumDays(days, key) { var o = {}; days.forEach(function (d) { var x = D(d)[key]; if (x) Object.keys(x).forEach(function (k) { o[k] = (o[k] || 0) + x[k]; }); }); return o; }
+  function kv(o) { return Object.keys(o).map(function (k) { return { k: k, s: o[k] }; }).filter(function (r) { return r.s > 0; }).sort(function (a, b) { return b.s - a.s; }); }
+  /* {ключ: [кліки, покази, позиція]} → {ключ: {c, i, p}} з позицією, зваженою за показами */
+  function cipDays(days, key) {
+    var o = {};
+    days.forEach(function (d) { var x = D(d)[key]; if (x) Object.keys(x).forEach(function (k) { var v = x[k], a = (o[k] = o[k] || { k: k, c: 0, i: 0, pi: 0 }); a.c += v[0]; a.i += v[1]; a.pi += v[2] * v[1]; }); });
+    Object.keys(o).forEach(function (k) { o[k].p = o[k].i ? o[k].pi / o[k].i : null; });
+    return o;
+  }
   function sourcesPanel() {
-    var g = ((H.periods || {})[st.P] || {}).ga || {};
+    var g = { channels: kv(sumDays(R.cur, 'gch')), countries: kv(sumDays(R.cur, 'gco')), devices: kv(sumDays(R.cur, 'gdv')) };
     return '<section class="panel"><div class="ph"><h2>Звідки приходять</h2><span class="src">GA4 · усі мови</span></div>' + bars(g.channels, CH)
       + '<div class="cols3" style="grid-template-columns:1fr 1fr;margin-top:18px"><div><h2 style="margin-bottom:8px">Країни</h2>' + bars(g.countries, CO) + '</div><div><h2 style="margin-bottom:8px">Пристрої</h2>' + bars(g.devices, DV) + '</div></div></section>';
   }
@@ -277,10 +321,11 @@
       + '<p class="sub" style="margin-top:8px">«Можливість»: запит на позиціях 4–20 з помітною кількістю показів. Покращений заголовок або текст під нього дає найбільший приріст кліків. Зміна позиції ▲ означає, що сайт піднявся.</p></section>';
   }
   function queriesTable() {
-    var g = ((H.periods || {})[st.P] || {}).gsc;
-    if (!g || !g.queries || !g.queries.length) return '<p class="empty">Немає даних за цей період</p>';
+    var cq = cipDays(R.gcur, 'gq'), pq = cipDays(R.gprev, 'gq');
+    var g = { queries: Object.keys(cq).map(function (k) { var r = cq[k], p = pq[k]; r.pc = p ? p.c : null; r.pp = p ? p.p : null; return r; }).sort(function (a, b) { return b.c - a.c || b.i - a.i; }) };
+    if (!g.queries.length) return '<p class="empty">Немає даних за цей період</p>';
     var imps = g.queries.map(function (r) { return r.i; }).sort(function (a, b) { return b - a; });
-    var thr = Math.max(st.P, imps[Math.floor(imps.length * 0.3)] || 0);
+    var thr = Math.max(R.n, imps[Math.floor(imps.length * 0.3)] || 0);
     var rows = g.queries.map(function (r) { r.opp = r.p >= 4 && r.p <= 20 && r.i >= thr; return r; })
       .filter(function (r) { return (!qState.q || r.k.toLowerCase().indexOf(qState.q.toLowerCase()) >= 0) && (!qState.opp || r.opp); }).slice(0, 40);
     if (!rows.length) return '<p class="empty">Нічого не знайдено</p>';
@@ -297,10 +342,13 @@
 
   /* ---------- сторінки: GA4 + GSC + Clarity ---------- */
   function pagesPanel(cur) {
-    var per = (H.periods || {})[st.P] || {}, m = {};
+    var m = {}, ga = {};
     var row = function (k) { k = k || '/'; return (m[k] = m[k] || { k: k }); };
-    ((per.ga || {}).pages || []).forEach(function (r) { var o = row(r.k); o.v = r.v; o.eng = r.eng; });
-    ((per.gsc || {}).pages || []).forEach(function (r) { var o = row(r.k); o.c = (o.c || 0) + r.c; o.i = (o.i || 0) + r.i; o.p = r.p; });
+    /* GA4: [перегляди, користувачі, сек. залученості, сесії] по днях */
+    cur.forEach(function (d) { var x = D(d).gpg; if (x) Object.keys(x).forEach(function (k) { var v = x[k], a = (ga[k] = ga[k] || [0, 0, 0]); a[0] += v[0]; a[1] += v[1]; a[2] += v[2]; }); });
+    Object.keys(ga).forEach(function (k) { var a = ga[k], o = row(k); o.v = a[0]; o.eng = a[1] ? a[2] / a[1] : 0; });
+    var gp = cipDays(R.gcur, 'gp');
+    Object.keys(gp).forEach(function (k) { var r = gp[k], o = row(k); o.c = r.c; o.i = r.i; o.p = r.p; });
     var cl = {};
     cur.forEach(function (d) { var p = D(d).clp; if (!p) return; Object.keys(p).forEach(function (k) { var v = p[k], a = (cl[k] = cl[k] || { s: 0, scroll: 0, rage: 0, dead: 0 }); a.s += v.s; ['scroll', 'rage', 'dead'].forEach(function (f) { a[f] += (v[f] || 0) * v.s; }); }); });
     Object.keys(cl).forEach(function (k) { var a = cl[k], o = row(k); o.cs = a.s; o.scroll = a.scroll / a.s; o.rage = a.rage / a.s; o.dead = a.dead / a.s; });

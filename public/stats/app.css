@@ -114,6 +114,11 @@ tr:last-child td{border-bottom:0}
 .empty{color:var(--muted);font-size:13px;padding:8px 0}
 @media (prefers-reduced-motion:no-preference){.bar span{transition:width .4s ease}}
 
+/* свій період */
+.dates{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dates label{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.dates input{padding:6px 10px}
+
 /* дії: Telegram і PDF */
 .acts{display:flex;gap:8px}
 .act{font:600 13px var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;white-space:nowrap}

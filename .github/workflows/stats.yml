@@ -5,8 +5,16 @@ name: Stats
 
 on:
   schedule:
-    - cron: "0 4 * * *"   # 06:00 за Варшавою влітку, 05:00 взимку
-  workflow_dispatch: {}
+    # GitHub запускає розклад із запізненням (буває на години), тому основний запуск рано вночі,
+    # а запасний — вранці; повторний запуск безпечний (Clarity за вчора не перечитується)
+    - cron: "17 1 * * *"
+    - cron: "47 5 * * *"
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: "Надіслати звіт за тиждень у Telegram"
+        type: boolean
+        default: false
 
 concurrency:
   group: stats
@@ -111,3 +119,18 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' "$base/stats/data/history.json")
           echo "history.json напряму → HTTP $code"
           [ "$code" != "200" ]
+
+      # щопонеділка (або вручну з галочкою) — короткий звіт за останні 7 днів у Telegram
+      - name: Weekly Telegram report
+        if: github.event_name == 'schedule' || inputs.digest
+        env:
+          STATS_PASSWORD: ${{ secrets.STATS_PASSWORD }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%u)" != "1" ]; then echo "Сьогодні не понеділок — звіт не надсилаю"; exit 0; fi
+          key=$(node -e 'process.stdout.write(require("crypto").createHmac("sha256", process.env.STATS_PASSWORD).update("deweb-stats-cron").digest("hex"))')
+          echo "::add-mask::$key"
+          base=$(printf '%s' "${SITE_URL:-https://deweb.studio}" | tr -d '\r\n'); base="${base%/}"
+          # вручну з галочкою — надсилає завжди; за розкладом — раз на тиждень (сервер пам'ятає, що вже надіслав)
+          q=""; [ "${{ github.event_name }}" = "workflow_dispatch" ] && q="?force=1"
+          curl -sS --fail-with-body -X POST -H "X-Stats-Key: $key" "$base/stats/cron.php$q"
