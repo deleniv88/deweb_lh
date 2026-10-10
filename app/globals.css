@@ -2491,6 +2491,7 @@ html.is-locked .ai-orb{opacity:0;pointer-events:none}
 }
 .ai-chat.is-open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .25s ease, transform .35s cubic-bezier(.2,.8,.2,1)}
 html.is-locked .ai-chat{opacity:0;pointer-events:none}
+.ai-chat__backdrop{display:none}
 
 .ai-chat__head{display:flex;align-items:center;gap:8px;padding:16px 16px 14px 18px;border-bottom:1px solid #eef0f6}
 .ai-chat__ava{width:40px;height:40px;flex-shrink:0;margin-right:4px}
@@ -2538,12 +2539,15 @@ html.is-locked .ai-chat{opacity:0;pointer-events:none}
 .ai-chat__note{font-size:11.5px;line-height:1.35;color:#9a9db0;text-align:center;padding:8px 16px 12px}
 .ai-chat__ts{display:flex;justify-content:center}
 
-/* мобільний: сфера менша і стоїть над плаваючою кнопкою заявки (та на всю ширину); чат на весь екран знизу */
+/* мобільний: сфера менша і стоїть над плаваючою кнопкою заявки (та на всю ширину); чат по центру екрана */
 @media (max-width:767px){
   /* на рівні кнопки cookies зліва; над кнопкою заявки — піднімається (--orb-lift рахує ChatAgent.tsx) */
   .ai-orb{width:52px;height:52px;right:14px;bottom:max(calc(14px + env(safe-area-inset-bottom,0px)), var(--orb-lift,0px));transition:transform .35s cubic-bezier(.2,.8,.2,1), opacity .25s ease, bottom .2s ease-out}
   html.chat-open .ai-orb{opacity:0;pointer-events:none}
-  .ai-chat{left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));width:auto;height:calc(var(--vh) - 70px);border-radius:22px;transform-origin:50% 100%}
+  /* вікно чату по центру екрана, сторінка під ним притемнена; тап по фону закриває */
+  .ai-chat{left:12px;right:12px;top:0;bottom:0;margin:auto 0;width:auto;height:min(640px,calc(var(--vh) - 96px));border-radius:24px;transform-origin:50% 50%;transform:scale(.94)}
+  .ai-chat__backdrop{display:block;position:fixed;inset:0;z-index:85;background:rgba(20,22,52,.32);opacity:0;visibility:hidden;transition:opacity .25s ease, visibility 0s linear .25s}
+  html.chat-open .ai-chat__backdrop{opacity:1;visibility:visible;transition:opacity .25s ease}
   html.chat-open .quote-fab{opacity:0;pointer-events:none}
 }
 

@@ -222,6 +222,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
         <span className="ai-orb__x" aria-hidden="true"><CloseIcon /></span>
       </button>
 
+      <div className="ai-chat__backdrop" aria-hidden="true" onClick={() => setOpen(false)}></div>
       <div className={`ai-chat${open ? " is-open" : ""}`} id="ai-chat" role="dialog" aria-label={t.title} aria-hidden={!open} data-lenis-prevent>
         <div className="ai-chat__head">
           <span className="ai-orb__core ai-chat__ava" aria-hidden="true"><i></i><i></i><i></i></span>
