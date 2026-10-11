@@ -121,6 +121,17 @@ $html = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5
       . '<p style="color:#888;font-size:13px">Сторінка: ' . esc($page ?: '—') . '</p></div>';
 $replyTo = ($method === 'email' && filter_var($contact, FILTER_VALIDATE_EMAIL)) ? $contact : null;
 
+/* заявка — одразу клієнтом у CRM (/crm); якщо CRM недоступна, форма все одно працює */
+$crmSaved = false;
+try {
+  require_once dirname(__DIR__) . '/crm/_lib.php';
+  $isEmail = (bool)filter_var($contact, FILTER_VALIDATE_EMAIL);
+  crm_client_upsert(['name' => $name] + ($isEmail ? ['email' => $contact] : ['contact' => "$via: $contact"]), 'form', strtolower($lang),
+    "Заявка з форми ($via): " . ($message !== '' ? $message : '—'));
+  $crmSaved = true;
+} catch (Throwable $e) { error_log('deweb quote: crm ' . $e->getMessage()); }
+if ($crmSaved) $tg .= "\n\n🗂 " . crm_site() . '/crm/#clients';
+
 $t = sendTelegram($c('TELEGRAM_BOT_TOKEN'), $c('TELEGRAM_CHAT_ID'), $tg);
 $e = smtpSend($c('GMAIL_USER'), $c('GMAIL_APP_PASSWORD'), $c('NOTIFY_EMAIL') ?: $c('GMAIL_USER'), $subject, $html, $text, $replyTo);
 

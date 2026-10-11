@@ -31,14 +31,15 @@ $c = fn(string $k, string $def = ''): string => trim((string)($cfg[$k] ?? '')) ?
 $apiKey = $c('ANTHROPIC_API_KEY');
 if ($apiKey === '') out(503, ['ok' => false, 'error' => 'not_configured']);
 
-/* налаштування дзвінків (можна змінити секретами, інакше — ці значення) */
-$budget   = (float)$c('CHAT_BUDGET_USD', '4');           // ліміт витрат на місяць, $
-$callMin  = max(15, (int)$c('CALL_MINUTES', '30'));      // тривалість дзвінка
-[$workFrom, $workTo] = array_pad(explode('-', $c('CALL_HOURS', '10:00-17:00')), 2, '17:00');
-$workDays = array_map('intval', explode(',', $c('CALL_DAYS', '1,2,3,4,5'))); // 1 = пн … 7 = нд
-$notice   = (int)$c('CALL_NOTICE_HOURS', '12');          // мінімум годин до дзвінка
-$horizon  = (int)$c('CALL_HORIZON_DAYS', '14');          // на скільки днів уперед показувати
-$calendarOn = $c('GOOGLE_CLIENT_ID') !== '' && $c('GOOGLE_CLIENT_SECRET') !== '' && $c('GOOGLE_REFRESH_TOKEN') !== '';
+$budget = (float)$c('CHAT_BUDGET_USD', '4'); // ліміт витрат на місяць, $
+
+/* CRM: графік дзвінків, клієнти, зустрічі й Google Календар (crm/_lib.php).
+   Якщо CRM чомусь недоступна, чат працює далі: дзвінок лише передається Андрію в Telegram. */
+$crmOn = false;
+try { require_once dirname(__DIR__) . '/crm/_lib.php'; crm_db(); crm_key(); $crmOn = true; }
+catch (Throwable $e) { error_log('deweb chat: crm unavailable ' . $e->getMessage()); }
+$googleOn = $crmOn && crm_google_on();
+$callMin = $crmOn ? crm_schedule()['minutes'] : 30;
 
 /* сховище: лічильник витрат, токен Google (закрите .htaccess) */
 $dataDir = __DIR__ . '/chat-data';
@@ -149,68 +150,38 @@ function transcript(array $msgs): string {
   return implode("\n", $lines);
 }
 
-/* ---- Google Calendar ---- */
-function g_token(array $cfg, string $dir): ?string {
-  $cache = "$dir/google-token.json";
-  $j = is_file($cache) ? json_decode((string)file_get_contents($cache), true) : null;
-  if (is_array($j) && ($j['exp'] ?? 0) > time() + 60) return $j['token'];
-  [$code, $res] = post('https://oauth2.googleapis.com/token', http_build_query([
-    'client_id' => $cfg['GOOGLE_CLIENT_ID'], 'client_secret' => $cfg['GOOGLE_CLIENT_SECRET'],
-    'refresh_token' => $cfg['GOOGLE_REFRESH_TOKEN'], 'grant_type' => 'refresh_token']));
-  $r = json_decode($res, true);
-  if ($code !== 200 || empty($r['access_token'])) return null;
-  @file_put_contents($cache, json_encode(['token' => $r['access_token'], 'exp' => time() + (int)($r['expires_in'] ?? 3000)]));
-  return $r['access_token'];
-}
-function g_call(string $token, string $url, array $body): array {
-  [$code, $res] = post($url, json_encode($body), ['Content-Type: application/json', "Authorization: Bearer $token"]);
-  return [$code, json_decode($res, true) ?: []];
-}
-function g_busy(string $token, string $cal, DateTimeImmutable $from, DateTimeImmutable $to): ?array {
-  [$code, $r] = g_call($token, 'https://www.googleapis.com/calendar/v3/freeBusy', [
-    'timeMin' => $from->format(DATE_RFC3339), 'timeMax' => $to->format(DATE_RFC3339), 'timeZone' => TZ, 'items' => [['id' => $cal]]]);
-  if ($code !== 200) return null;
-  return array_map(fn($b) => [strtotime($b['start']), strtotime($b['end'])], $r['calendars'][$cal]['busy'] ?? []);
-}
-/* вільні вікна в робочі години з урахуванням зайнятого в календарі */
-function free_slots(array $busy, DateTimeImmutable $from, int $days, array $o): array {
-  $tz = new DateTimeZone(TZ); $slots = [];
-  $earliest = time() + $o['notice'] * 3600;
-  for ($i = 0; $i < $days; $i++) {
-    $day = $from->setTimezone($tz)->setTime(0, 0)->modify("+$i day");
-    if (!in_array((int)$day->format('N'), $o['days'], true)) continue;
-    [$h1, $m1] = array_map('intval', explode(':', $o['from'])); [$h2, $m2] = array_map('intval', explode(':', $o['to']));
-    $t = $day->setTime($h1, $m1); $end = $day->setTime($h2, $m2);
-    while ($t->modify("+{$o['len']} minutes") <= $end) {
-      $s = $t->getTimestamp(); $e = $s + $o['len'] * 60;
-      $free = $s >= $earliest;
-      foreach ($busy as [$bs, $be]) if ($s < $be && $e > $bs) { $free = false; break; }
-      if ($free) $slots[] = $t;
-      $t = $t->modify('+30 minutes');
-    }
-  }
-  return $slots;
+function transcript_plain(array $msgs): string {
+  $lines = [];
+  foreach (array_slice($msgs, -12) as $m) $lines[] = ($m['role'] === 'user' ? 'Клієнт: ' : 'AI: ') . mb_substr($m['content'], 0, 600);
+  return implode("\n", $lines);
 }
 
-$slotOpts = ['from' => $workFrom, 'to' => $workTo, 'days' => $workDays, 'notice' => $notice, 'len' => $callMin];
-$calId = $c('GOOGLE_CALENDAR_ID', 'primary');
 $booked = null; $requested = false;
-$fmtLocal = function (DateTimeImmutable $t) use ($clientTz, $lang): string {
-  $l = $t->setTimezone($clientTz);
+$fmtLocal = function (int $ts) use ($clientTz, $lang): string {
+  $l = (new DateTimeImmutable('@' . $ts))->setTimezone($clientTz);
   $days = ['pl' => ['', 'pon.', 'wt.', 'śr.', 'czw.', 'pt.', 'sob.', 'niedz.'], 'en' => ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'ua' => ['', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'нд']][$lang];
   return $days[(int)$l->format('N')] . ' ' . $l->format('d.m H:i');
 };
 
 /* ---- інструменти агента ---- */
-$tools = $calendarOn ? [
+$requestCallTool = ['name' => 'request_call',
+  'description' => 'Sends Andrew a request to contact the visitor and agree on a call time. Use it when the visitor wants a call but none of the free times suit them, or booking is unavailable. Only call after the visitor gave their name and a way to contact them.',
+  'input_schema' => ['type' => 'object', 'properties' => [
+    'name' => ['type' => 'string'],
+    'contact' => ['type' => 'string', 'description' => 'Email, phone, Telegram or WhatsApp, as the visitor gave it.'],
+    'preferred_time' => ['type' => 'string', 'description' => 'When the visitor prefers to talk, in their words, plus their time zone if known.'],
+    'topic' => ['type' => 'string'],
+    'summary' => ['type' => 'string', 'description' => 'What Andrew should know before the call. Write it in Ukrainian.'],
+  ], 'required' => ['name', 'contact', 'preferred_time', 'topic', 'summary']]];
+$tools = $crmOn ? [
   ['name' => 'get_free_slots',
-   'description' => "Returns free {$callMin}-minute Google Meet call slots in Andrew's calendar. Call it before proposing any time. Each slot has `start` (exact value to pass to book_meeting) and `visitor_time` (already converted to the visitor's time zone, show this to the visitor).",
+   'description' => "Returns free {$callMin}-minute video call slots in Andrew's schedule. Call it before proposing any time. Each slot has `start` (exact value to pass to book_meeting) and `visitor_time` (already converted to the visitor's time zone, show this to the visitor).",
    'input_schema' => ['type' => 'object', 'properties' => [
      'from_date' => ['type' => 'string', 'description' => 'First day to check, YYYY-MM-DD. Use today unless the visitor asked for a specific day.'],
      'days' => ['type' => 'integer', 'description' => 'How many days to check, 1-14.'],
    ], 'required' => ['from_date', 'days']]],
   ['name' => 'book_meeting',
-   'description' => 'Books a Google Meet call with Andrew and emails the visitor an invitation. Only call after the visitor explicitly confirmed the exact time, their name and email in this conversation.',
+   'description' => 'Books a video call with Andrew in his CRM' . ($googleOn ? ', creates a Google Meet link and emails the visitor an invitation' : '') . '. Only call after the visitor explicitly confirmed the exact time, their name and email in this conversation.',
    'input_schema' => ['type' => 'object', 'properties' => [
      'start' => ['type' => 'string', 'description' => 'The `start` value of a slot returned by get_free_slots.'],
      'name' => ['type' => 'string'],
@@ -218,86 +189,77 @@ $tools = $calendarOn ? [
      'topic' => ['type' => 'string', 'description' => 'Short title of the project, e.g. "Website for a dental clinic".'],
      'summary' => ['type' => 'string', 'description' => 'What Andrew should know before the call: business, goals, budget, deadline, anything the visitor said. Write it in Ukrainian.'],
    ], 'required' => ['start', 'name', 'email', 'topic', 'summary']]],
-] : [
-  ['name' => 'request_call',
-   'description' => 'Sends Andrew a request for a call with the visitor; he will contact them to agree on the exact time. Only call after the visitor gave their name, a way to contact them and agreed to the call.',
-   'input_schema' => ['type' => 'object', 'properties' => [
-     'name' => ['type' => 'string'],
-     'contact' => ['type' => 'string', 'description' => 'Email, phone, Telegram or WhatsApp, as the visitor gave it.'],
-     'preferred_time' => ['type' => 'string', 'description' => "When the visitor prefers to talk, in their words, plus their time zone if known."],
-     'topic' => ['type' => 'string'],
-     'summary' => ['type' => 'string', 'description' => 'What Andrew should know before the call. Write it in Ukrainian.'],
-   ], 'required' => ['name', 'contact', 'preferred_time', 'topic', 'summary']]],
-];
+  $requestCallTool,
+] : [$requestCallTool];
 
 function run_tool(string $name, array $in): array {
-  global $cfg, $dataDir, $calId, $slotOpts, $fmtLocal, $horizon, $booked, $requested, $msgs, $lang, $session, $clientTz;
-  if ($name === 'get_free_slots') {
-    $token = g_token($cfg, $dataDir);
-    if (!$token) return ['error' => 'Calendar is unavailable right now. Offer the quote form instead.'];
-    try { $from = new DateTimeImmutable(clean($in['from_date'] ?? '', 10) ?: 'today', new DateTimeZone(TZ)); } catch (Throwable $e) { $from = new DateTimeImmutable('today', new DateTimeZone(TZ)); }
-    $today = new DateTimeImmutable('today', new DateTimeZone(TZ));
+  global $cfg, $booked, $requested, $msgs, $lang, $fmtLocal, $clientTz, $googleOn, $crmOn, $callMin;
+  if ($name === 'get_free_slots' && $crmOn) {
+    $tz = new DateTimeZone(TZ);
+    try { $from = new DateTimeImmutable(clean($in['from_date'] ?? '', 10) ?: 'today', $tz); } catch (Throwable $e) { $from = new DateTimeImmutable('today', $tz); }
+    $today = new DateTimeImmutable('today', $tz);
     if ($from < $today) $from = $today;
-    $days = max(1, min(14, (int)($in['days'] ?? 7)));
-    if ($from->modify("+$days day") > $today->modify("+$horizon day")) $days = max(1, $horizon - (int)$today->diff($from)->days);
-    $busy = g_busy($token, $calId, $from, $from->modify("+$days day"));
-    if ($busy === null) return ['error' => 'Calendar is unavailable right now. Offer the quote form instead.'];
+    $slots = crm_free_slots($from->getTimestamp(), max(1, min(14, (int)($in['days'] ?? 7))));
+    if ($slots === null) return ['error' => 'Calendar is unavailable right now. Offer request_call instead.'];
     /* не більше 3 вікон на день і 12 загалом — щоб агент міг запропонувати кілька днів */
     $perDay = []; $list = [];
-    foreach (free_slots($busy, $from, $days, $slotOpts) as $t) {
-      $k = $t->format('Y-m-d');
+    foreach ($slots as $ts) {
+      $k = (new DateTimeImmutable('@' . $ts))->setTimezone($tz)->format('Y-m-d');
       if (($perDay[$k] = ($perDay[$k] ?? 0) + 1) > 3 || count($list) >= 12) continue;
-      $list[] = ['start' => $t->format(DATE_RFC3339), 'visitor_time' => $fmtLocal($t)];
+      $list[] = ['start' => (new DateTimeImmutable('@' . $ts))->setTimezone($tz)->format(DATE_RFC3339), 'visitor_time' => $fmtLocal($ts)];
     }
-    return ['visitor_time_zone' => $clientTz->getName(), 'slots' => $list ?: [], 'note' => $list ? '' : 'No free slots in this range, try later days.'];
+    return ['visitor_time_zone' => $clientTz->getName(), 'slots' => $list, 'note' => $list ? '' : 'No free slots in this range, try later days.'];
   }
-  if ($name === 'book_meeting') {
+  if ($name === 'book_meeting' && $crmOn) {
     if ($booked) return ['error' => 'A call is already booked in this conversation.'];
     $email = clean($in['email'] ?? '', 160); $person = clean($in['name'] ?? '', 120);
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) return ['error' => 'Invalid email, ask the visitor again.'];
     if ($person === '') return ['error' => 'Ask the visitor for their name.'];
-    try { $start = new DateTimeImmutable(clean($in['start'] ?? '', 40)); } catch (Throwable $e) { return ['error' => 'Unknown slot, call get_free_slots again.']; }
-    $start = $start->setTimezone(new DateTimeZone(TZ));
-    $end = $start->modify("+{$slotOpts['len']} minutes");
-    $token = g_token($cfg, $dataDir);
-    if (!$token) return ['error' => 'Calendar is unavailable right now. Offer the quote form instead.'];
-    /* слот ще вільний і в робочих годинах? */
-    $busy = g_busy($token, $calId, $start->setTime(0, 0), $start->setTime(23, 59));
-    $ok = $busy !== null && array_filter(free_slots($busy, $start->setTime(0, 0), 1, $slotOpts), fn($t) => $t->getTimestamp() === $start->getTimestamp());
-    if (!$ok) return ['error' => 'This time is no longer available. Call get_free_slots and offer other times.'];
+    $start = strtotime(clean($in['start'] ?? '', 40));
+    if (!$start) return ['error' => 'Unknown slot, call get_free_slots again.'];
+    $free = crm_free_slots($start, 1, $start);
+    if ($free === null) return ['error' => 'Calendar is unavailable right now. Offer request_call instead.'];
+    if (!$free) return ['error' => 'This time is no longer available. Call get_free_slots and offer other times.'];
     /* не більше 3 бронювань з однієї IP за добу */
     $bl = sys_get_temp_dir() . '/deweb_book_' . md5((string)($GLOBALS['ip'] ?? ''));
     $bh = array_filter(is_file($bl) ? (array)json_decode((string)file_get_contents($bl), true) : [], fn($t) => $t > time() - 86400);
     if (count($bh) >= 3) return ['error' => 'Too many bookings from this visitor today. Offer the quote form instead.'];
     $topic = clean($in['topic'] ?? '', 120) ?: 'Website project';
     $summary = clean($in['summary'] ?? '', 2000);
-    [$code, $ev] = g_call($token, 'https://www.googleapis.com/calendar/v3/calendars/' . rawurlencode($calId) . '/events?conferenceDataVersion=1&sendUpdates=all', [
-      'summary' => "Deweb · $person · $topic",
-      'description' => "Zapis z czatu na deweb.studio / Booked via the deweb.studio chat.\n\n$summary",
-      'start' => ['dateTime' => $start->format(DATE_RFC3339), 'timeZone' => TZ],
-      'end' => ['dateTime' => $end->format(DATE_RFC3339), 'timeZone' => TZ],
-      'attendees' => [['email' => $email, 'displayName' => $person]],
-      'conferenceData' => ['createRequest' => ['requestId' => $session['id'] . dechex(time()), 'conferenceSolutionKey' => ['type' => 'hangoutsMeet']]],
-      'reminders' => ['useDefault' => true],
-    ]);
-    if ($code !== 200) return ['error' => 'Booking failed. Apologise and offer the quote form.'];
+    $meet = ''; $gid = '';
+    if ($googleOn) {
+      $ev = crm_google_event($start, $callMin, "Deweb · $person · $topic", "Zapis z czatu na deweb.studio / Booked via the deweb.studio chat.\n\n$summary", $email, $person);
+      if (!$ev) return ['error' => 'Booking failed. Apologise and offer request_call or the quote form.'];
+      $meet = $ev['meet']; $gid = $ev['id'];
+    }
+    $warsaw = (new DateTimeImmutable('@' . $start))->setTimezone(new DateTimeZone(TZ))->format('d.m.Y H:i');
+    $cid = crm_client_upsert(['name' => $person, 'email' => $email], 'chat', $lang, "Забронював дзвінок на $warsaw. $topic. $summary");
+    crm_meeting_add($cid, $start, $callMin, ['topic' => $topic, 'notes' => "$summary\n\nРозмова в чаті:\n" . transcript_plain($msgs)], 'chat', $meet, $gid);
     $bh[] = time(); @file_put_contents($bl, json_encode(array_values($bh)));
-    $meet = (string)($ev['hangoutLink'] ?? '');
-    $booked = ['start' => $start->format(DATE_RFC3339), 'visitor_time' => $fmtLocal($start), 'meet' => $meet];
-    tg($cfg, "📅 <b>Дзвінок заброньовано через AI-чат</b> · " . strtoupper($lang) . "\n\n🕑 " . $start->format('d.m.Y H:i') . " (Варшава)\n👤 <b>" . esc($person) . "</b> · <code>" . esc($email) . "</code>\n📝 " . esc($topic)
-      . "\n\n" . esc($summary) . ($meet ? "\n\n🎥 " . esc($meet) : '') . "\n\n<b>Розмова:</b>\n" . transcript($msgs));
-    return ['ok' => true, 'visitor_time' => $fmtLocal($start), 'meet_link' => $meet, 'note' => 'Invitation sent to the visitor email by Google Calendar.'];
+    $booked = ['start' => date(DATE_RFC3339, $start), 'visitor_time' => $fmtLocal($start), 'meet' => $meet];
+    crm_tg("📅 <b>Дзвінок заброньовано через AI-чат</b> · " . strtoupper($lang) . "\n\n🕑 $warsaw (Варшава)\n👤 <b>" . esc($person) . "</b> · <code>" . esc($email) . "</code>\n📝 " . esc($topic)
+      . "\n\n" . esc($summary) . ($meet ? "\n\n🎥 " . esc($meet) : "\n\n⚠️ Google не підключений: надішли клієнту посилання на дзвінок сам.") . "\n\n🗂 " . crm_site() . '/crm/');
+    return ['ok' => true, 'visitor_time' => $fmtLocal($start), 'meet_link' => $meet,
+      'note' => $meet ? 'Google Calendar emailed the visitor an invitation with this Google Meet link.' : 'Andrew will email the visitor the Google Meet link before the call.'];
   }
   if ($name === 'request_call') {
     if ($requested) return ['ok' => true];
     $person = clean($in['name'] ?? '', 120); $contact = clean($in['contact'] ?? '', 160);
     if ($person === '' || $contact === '') return ['error' => 'Ask the visitor for their name and contact.'];
+    $topic = clean($in['topic'] ?? '', 120); $summary = clean($in['summary'] ?? '', 2000); $when = clean($in['preferred_time'] ?? '', 200);
+    $saved = false;
+    if ($crmOn) {
+      try {
+        $isEmail = (bool)filter_var($contact, FILTER_VALIDATE_EMAIL);
+        crm_client_upsert(['name' => $person] + ($isEmail ? ['email' => $contact] : ['contact' => $contact]), 'chat', $lang, "Просить дзвінок ($when). $topic. $summary\n\nРозмова в чаті:\n" . transcript_plain($msgs));
+        $saved = true;
+      } catch (Throwable $e) { error_log('deweb chat: crm save ' . $e->getMessage()); }
+    }
     $sent = tg($cfg, "📞 <b>Прохання про дзвінок з AI-чату</b> · " . strtoupper($lang) . "\n\n👤 <b>" . esc($person) . "</b> · <code>" . esc($contact) . "</code>\n🕑 "
-      . esc(clean($in['preferred_time'] ?? '', 200)) . "\n📝 " . esc(clean($in['topic'] ?? '', 120)) . "\n\n" . esc(clean($in['summary'] ?? '', 2000))
-      . "\n\n<b>Розмова:</b>\n" . transcript($msgs));
-    if (!$sent) return ['error' => 'Could not send the request. Offer the quote form instead.'];
+      . esc($when) . "\n📝 " . esc($topic) . "\n\n" . esc($summary) . "\n\n<b>Розмова:</b>\n" . transcript($msgs) . ($saved ? "\n\n🗂 " . crm_site() . '/crm/' : ''));
+    if (!$sent && !$saved) return ['error' => 'Could not send the request. Offer the quote form instead.'];
     $requested = true;
-    return ['ok' => true, 'note' => 'Andrew got the request and will contact the visitor to confirm the time.'];
+    return ['ok' => true, 'note' => 'Andrew got the request and will contact the visitor to agree on the time.'];
   }
   return ['error' => 'Unknown tool'];
 }
@@ -306,8 +268,8 @@ function run_tool(string $name, array $in): array {
 /* база мовою сторінки (утричі менший запит); якщо її немає — усі мови разом */
 $knowledgeFile = is_file("$dataDir/knowledge-$lang.md") ? "$dataDir/knowledge-$lang.md" : "$dataDir/knowledge.md";
 $knowledge = is_file($knowledgeFile) ? (string)file_get_contents($knowledgeFile) : '';
-$callRule = $calendarOn
-  ? "You can book a free {$callMin}-minute Google Meet video call with Andrew. Flow: ask for the visitor's name and email; call get_free_slots and offer 2-3 options (show visitor_time and say it is their local time); when they pick one, restate the day, time and email and ask them to confirm; only after a clear yes call book_meeting. After booking, say the invitation with the Google Meet link was sent to their email."
+$callRule = $crmOn
+  ? "You can book a free {$callMin}-minute video call (Google Meet) with Andrew. Flow: ask for the visitor's name and email; call get_free_slots and offer 2-3 options (show visitor_time and say it is their local time); when they pick one, restate the day, time and email and ask them to confirm; only after a clear yes call book_meeting. After booking: if meet_link is returned, give the visitor that link as plain text and say the invitation was also sent to their email; otherwise say Andrew will email them the Google Meet link. If none of the offered times suit the visitor, ask when suits them and call request_call. Never say a call is booked unless book_meeting returned ok."
   : "You can pass Andrew a request for a free video call (Google Meet). Ask for the visitor's name, a way to contact them (email, phone, Telegram or WhatsApp) and when it suits them; then call request_call. Say Andrew will contact them to confirm the exact time. Never say a call is booked for a specific time.";
 $system = <<<TXT
 You are the AI assistant on deweb.studio, the website of Deweb studio: a one-person web studio of Andrew Deleniv (Polish: Andrzej Deleniv, Ukrainian: Андрій Деленів), based in Poland, working with clients in Poland and abroad. Visitors are potential clients asking about websites.
