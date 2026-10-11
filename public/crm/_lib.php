@@ -284,6 +284,19 @@ function crm_meeting_add(?int $clientId, int $start, int $minutes, array $data, 
   return (int)crm_db()->lastInsertId();
 }
 
+/* перенесення з чату: скасувати майбутні дзвінки клієнта (крім нового) і прибрати їх з Google Календаря */
+function crm_meetings_cancel_future(int $clientId, int $exceptId): array {
+  $st = crm_db()->prepare('SELECT * FROM meetings WHERE client_id = ? AND id != ? AND status = \'scheduled\' AND start_at > ? ORDER BY start_at');
+  $st->execute([$clientId, $exceptId, time()]);
+  $done = [];
+  foreach ($st->fetchAll() as $r) {
+    if ($r['gcal_id'] !== '' && crm_google_on()) crm_google_cancel($r['gcal_id']);
+    crm_db()->prepare('UPDATE meetings SET status = \'cancelled\' WHERE id = ?')->execute([$r['id']]);
+    $done[] = (int)$r['start_at'];
+  }
+  return $done;
+}
+
 /* ---- Google Календар ---- */
 const CRM_GOOGLE_SCOPES = 'openid email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.freebusy';
 function crm_google_configured(): bool { return crm_cfg('GOOGLE_CLIENT_ID') !== '' && crm_cfg('GOOGLE_CLIENT_SECRET') !== ''; }
@@ -352,7 +365,7 @@ function crm_free_slots(int $fromDay, int $days, ?int $onlyStart = null): ?array
   $first = (new DateTimeImmutable('@' . $fromDay))->setTimezone($tz)->setTime(0, 0);
   $end = $first->modify("+$days day");
   $busy = [];
-  $st = crm_db()->prepare('SELECT start_at, minutes FROM meetings WHERE status = \'scheduled\' AND start_at < ? AND start_at + minutes * 60 > ?');
+  $st = crm_db()->prepare('SELECT start_at, minutes FROM meetings WHERE status = \'scheduled\' AND start_at < ? AND start_at + minutes * 60 > CAST(? AS INTEGER)');
   $st->execute([$end->getTimestamp(), $first->getTimestamp()]);
   foreach ($st->fetchAll() as $m) $busy[] = [(int)$m['start_at'], (int)$m['start_at'] + (int)$m['minutes'] * 60];
   if (crm_google_on()) {

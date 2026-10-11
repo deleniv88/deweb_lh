@@ -9,7 +9,10 @@ import { UI, type Locale } from "../lib/i18n";
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const STORE = "dw_chat";
 
-type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean; code?: string };
+type Slot = { start: string; day: string; time: string };
+type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean; code?: string; slots?: Slot[] };
+/* обраний час іде в історію з міткою [slot …] для агента, а відвідувач бачить лише день і годину */
+const visible = (s: string) => s.replace(/\s*\[slot [^\]]*\]\s*$/, "");
 
 declare global {
   interface Window { turnstile?: any }
@@ -63,6 +66,25 @@ async function readStream(body: ReadableStream<Uint8Array>, onDelta: (x: string)
     if (done) break;
   }
   return end || { ok: false, error: "api" };
+}
+
+/* вільні години кнопками, згруповані по днях */
+function Slots({ slots, onPick }: { slots: Slot[]; onPick: (s: Slot) => void }) {
+  const days: [string, Slot[]][] = [];
+  for (const s of slots) {
+    const d = days.find(([k]) => k === s.day);
+    if (d) d[1].push(s); else days.push([s.day, [s]]);
+  }
+  return (
+    <div className="ai-slots">
+      {days.map(([day, list]) => (
+        <div key={day} className="ai-slots__day">
+          <span>{day}</span>
+          <div>{list.map((s) => <button key={s.start} type="button" onClick={() => onPick(s)}>{s.time}</button>)}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
@@ -158,8 +180,8 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
     return tsToken.current;
   };
 
-  async function send(text: string) {
-    const q = text.trim();
+  async function send(text: string, slot?: string) {
+    const q = text.trim() + (slot ? ` [slot ${slot}]` : "");
     if (!q || busy) return;
     const history = [...msgs.filter((m) => !m.error), { role: "user" as const, content: q }];
     setMsgs((m) => [...m, { role: "user", content: q }]);
@@ -203,7 +225,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
     setLive(false);
     /* недописана відповідь при помилці прибирається — замість неї повідомлення про помилку */
     const base = (m: Msg[]) => (started ? m.slice(0, -1) : m);
-    if (res?.ok) setMsgs((m) => [...base(m), { role: "assistant", content: res.reply }]);
+    if (res?.ok) setMsgs((m) => [...base(m), { role: "assistant", content: res.reply, ...(res.slots?.length ? { slots: res.slots } : {}) }]);
     else {
       const e = res?.error;
       const off = e === "budget" || e === "not_configured" || e === "too_long";
@@ -247,7 +269,8 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
           )}
           {msgs.map((m, i) => (
             <div key={i} className={`ai-msg ai-msg--${m.role === "user" ? "me" : "bot"}${m.error ? " ai-msg--err" : ""}`}>
-              <Text text={m.content} />
+              <Text text={visible(m.content)} />
+              {m.slots && i === msgs.length - 1 && !busy && <Slots slots={m.slots} onPick={(s) => send(`${s.day} ${s.time}`, s.start)} />}
               {m.code && <small className="ai-msg__code">{m.code}</small>}
               {m.form && <button className="ai-msg__form" type="button" data-open-quote onClick={() => setOpen(false)}>{t.openForm}</button>}
             </div>
