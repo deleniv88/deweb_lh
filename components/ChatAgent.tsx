@@ -8,9 +8,9 @@ import { UI, type Locale } from "../lib/i18n";
    Розмова зберігається в sessionStorage, тож не губиться при переході між сторінками. */
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const STORE = "dw_chat";
-/* вітальне вікно: раз за візит і не частіше ніж раз на 3 дні після закриття */
+/* вітальне вікно: при перезавантаженні сторінки (F5, Ctrl+Shift+R) і раз на добу при звичайному вході */
 const TEASER = "dw_chat_teaser";
-const TEASER_PAUSE = 3 * 864e5;
+const TEASER_PAUSE = 864e5;
 
 type Slot = { start: string; day: string; time: string };
 type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean; code?: string; slots?: Slot[] };
@@ -110,22 +110,22 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
 
   /* вітальне вікно агента через кілька секунд після входу */
   useEffect(() => {
+    const nav = performance.getEntriesByType?.("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const reload = nav?.type === "reload";
     try {
-      if (sessionStorage.getItem(TEASER) || sessionStorage.getItem(STORE)?.includes('"content"')) return;
-      if (Date.now() - Number(localStorage.getItem(TEASER) || 0) < TEASER_PAUSE) return;
-    } catch { return; }
+      if (!reload && Date.now() - Number(localStorage.getItem(TEASER) || 0) < TEASER_PAUSE) return;
+    } catch {}
     const timer = setTimeout(() => {
       if (document.documentElement.classList.contains("is-locked")) return;
-      try { sessionStorage.setItem(TEASER, "1"); } catch {}
+      try { localStorage.setItem(TEASER, String(Date.now())); } catch {}
       setTeaser("in");
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
 
   /* закриття: вікно стискається і плавно «влітає» у сферу, щоб було видно, де агент живе далі */
-  const dismissTeaser = (remember = true) => {
+  const dismissTeaser = () => {
     if (teaser !== "in") return;
-    if (remember) try { localStorage.setItem(TEASER, String(Date.now())); } catch {}
     const el = teaserEl.current, o = orb.current;
     if (!el || !o || !el.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTeaser(""); return; }
     const a = el.getBoundingClientRect(), b = o.getBoundingClientRect();
@@ -145,7 +145,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
   useEffect(() => {
     if (teaser !== "in") return;
     const y0 = window.scrollY;
-    const onScroll = () => { if (Math.abs(window.scrollY - y0) > window.innerHeight * 0.35) dismissTeaser(false); };
+    const onScroll = () => { if (Math.abs(window.scrollY - y0) > window.innerHeight * 0.35) dismissTeaser(); };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissTeaser(); };
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("keydown", onKey);
