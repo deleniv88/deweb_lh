@@ -8,11 +8,14 @@ header('Cache-Control: no-store');
 
 function back(string $result): void { header('Location: /crm/#settings?google=' . $result, true, 303); exit; }
 
-if (!crm_authed()) { header('Location: /crm/', true, 303); exit; }
 if (!crm_google_configured()) back('not_configured');
 $redirect = crm_site() . '/crm/google.php';
 
+/* старт — лише з відкритої CRM. Повернення від Google приходить з іншого сайту, тож браузер
+   не надсилає cookie входу (SameSite=Strict); там доступ підтверджує одноразовий state,
+   який знала лише сесія, що натиснула «Підключити». */
 if (isset($_GET['start'])) {
+  if (!crm_authed()) { header('Location: /crm/', true, 303); exit; }
   $state = bin2hex(random_bytes(16));
   crm_set('google_state', ['s' => hash('sha256', $state), 'exp' => time() + 600]);
   header('Location: https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query([
