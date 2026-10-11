@@ -58,14 +58,22 @@ function post(string $url, $body, array $headers = []): array {
   return [$code, $res];
 }
 
-/* 5) Cloudflare Turnstile (якщо задано секретний ключ) */
+/* 5) Cloudflare Turnstile (якщо задано секретний ключ).
+   Якщо віджет не видав токен (помилка Cloudflare, блокувальник) або Cloudflare не відповів —
+   заявку не губимо: приймаємо з жорсткішим лімітом (2 з IP за 10 хв) і позначкою в Telegram.
+   Явно невалідний токен — відхиляємо. */
+$unverified = false;
 if ($c('TURNSTILE_SECRET_KEY') !== '') {
   $tok = clean($d['turnstile'] ?? '', 4000);
-  if ($tok === '') out(400, ['ok' => false, 'error' => 'captcha']);
-  [$code, $res] = post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
-    http_build_query(['secret' => $c('TURNSTILE_SECRET_KEY'), 'response' => $tok, 'remoteip' => $ip]));
-  $j = json_decode((string)$res, true);
-  if (empty($j['success'])) out(400, ['ok' => false, 'error' => 'captcha']);
+  if ($tok === '') $unverified = true;
+  else {
+    [$code, $res] = post('https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      http_build_query(['secret' => $c('TURNSTILE_SECRET_KEY'), 'response' => $tok, 'remoteip' => $ip]));
+    $j = json_decode((string)$res, true);
+    if ($code !== 200 || !is_array($j)) $unverified = true;
+    elseif (empty($j['success'])) out(400, ['ok' => false, 'error' => 'captcha']);
+  }
+  if ($unverified && count($hits) > 2) out(429, ['ok' => false, 'error' => 'rate']);
 }
 
 $labels = ['telegram' => 'Telegram', 'instagram' => 'Instagram', 'whatsapp' => 'WhatsApp', 'email' => 'Email'];
@@ -111,7 +119,8 @@ function smtpSend(string $user, string $pass, string $to, string $subject, strin
 }
 
 $tg = "🆕 <b>Нова заявка з сайту</b>" . ($lang !== '' ? " · $lang" : '') . "\n\n👤 <b>" . esc($name) . "</b>\n📬 " . esc($via) . ': <code>' . esc($contact) . "</code>\n\n📝 "
-    . esc($message !== '' ? $message : '—') . ($page !== '' ? "\n\n🔗 " . esc($page) : '');
+    . esc($message !== '' ? $message : '—') . ($page !== '' ? "\n\n🔗 " . esc($page) : '')
+    . ($unverified ? "\n\n⚠️ Без перевірки Turnstile (віджет не спрацював) — можливо спам" : '');
 $subject = "Нова заявка з сайту — $name" . ($lang !== '' ? " [$lang]" : '');
 $text = ($lang !== '' ? "Мова сайту: $lang\n" : '') . "Ім'я: $name\nЗв'язок ($via): $contact\n\nЗапит:\n" . ($message ?: '—') . "\n\nСторінка: " . ($page ?: '—');
 $html = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#242527">'
