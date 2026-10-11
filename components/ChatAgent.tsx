@@ -8,6 +8,9 @@ import { UI, type Locale } from "../lib/i18n";
    Розмова зберігається в sessionStorage, тож не губиться при переході між сторінками. */
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const STORE = "dw_chat";
+/* вітальне вікно: раз за візит і не частіше ніж раз на 3 дні після закриття */
+const TEASER = "dw_chat_teaser";
+const TEASER_PAUSE = 3 * 864e5;
 
 type Slot = { start: string; day: string; time: string };
 type Msg = { role: "user" | "assistant"; content: string; error?: boolean; form?: boolean; code?: string; slots?: Slot[] };
@@ -101,6 +104,60 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
   const list = useRef<HTMLDivElement>(null);
   const field = useRef<HTMLTextAreaElement>(null);
   const orb = useRef<HTMLButtonElement>(null);
+  const teaserEl = useRef<HTMLDivElement>(null);
+  const [teaser, setTeaser] = useState<"" | "in" | "out">("");
+  const [catchOrb, setCatchOrb] = useState(false);
+
+  /* вітальне вікно агента через кілька секунд після входу */
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(TEASER) || sessionStorage.getItem(STORE)?.includes('"content"')) return;
+      if (Date.now() - Number(localStorage.getItem(TEASER) || 0) < TEASER_PAUSE) return;
+    } catch { return; }
+    const timer = setTimeout(() => {
+      if (document.documentElement.classList.contains("is-locked")) return;
+      try { sessionStorage.setItem(TEASER, "1"); } catch {}
+      setTeaser("in");
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  /* закриття: вікно стискається і плавно «влітає» у сферу, щоб було видно, де агент живе далі */
+  const dismissTeaser = (remember = true) => {
+    if (teaser !== "in") return;
+    if (remember) try { localStorage.setItem(TEASER, String(Date.now())); } catch {}
+    const el = teaserEl.current, o = orb.current;
+    if (!el || !o || !el.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setTeaser(""); return; }
+    const a = el.getBoundingClientRect(), b = o.getBoundingClientRect();
+    setTeaser("out");
+    const anim = el.animate(
+      [
+        { left: `${a.left}px`, top: `${a.top}px`, width: `${a.width}px`, height: `${a.height}px`, borderRadius: "24px", backgroundColor: "#ffffff", opacity: 1, transform: "none" },
+        { borderRadius: "40px", backgroundColor: "#c9ceff", opacity: 1, transform: "none", offset: 0.55 },
+        { left: `${b.left}px`, top: `${b.top}px`, width: `${b.width}px`, height: `${b.height}px`, borderRadius: `${b.width / 2}px`, backgroundColor: "#4b5aff", opacity: 0.2, transform: "none" },
+      ],
+      { duration: 700, easing: "cubic-bezier(.65,0,.25,1)", fill: "forwards" },
+    );
+    anim.onfinish = () => { setTeaser(""); setCatchOrb(true); setTimeout(() => setCatchOrb(false), 700); };
+  };
+
+  /* прокрутка сторінки теж ховає вікно у сферу */
+  useEffect(() => {
+    if (teaser !== "in") return;
+    const y0 = window.scrollY;
+    const onScroll = () => { if (Math.abs(window.scrollY - y0) > window.innerHeight * 0.35) dismissTeaser(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") dismissTeaser(); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("keydown", onKey);
+    return () => { window.removeEventListener("scroll", onScroll); document.removeEventListener("keydown", onKey); };
+  });
+
+  /* з вітального вікна — одразу в чат */
+  const fromTeaser = (q?: string) => {
+    setTeaser("");
+    setOpen(true);
+    if (q) send(q);
+  };
 
   /* мобільний: сфера стоїть унизу, а коли знизу з'являється кнопка заявки (у hero або плаваюча) —
      піднімається й тримається над нею, щоб вони не накладались */
@@ -239,10 +296,26 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
 
   return (
     <>
-      <button ref={orb} className={`ai-orb${open ? " is-open" : ""}`} type="button" aria-label={t.open} aria-expanded={open} aria-controls="ai-chat" onClick={() => setOpen((o) => !o)}>
+      <button ref={orb} className={`ai-orb${open ? " is-open" : ""}${catchOrb ? " is-catch" : ""}`} type="button" aria-label={t.open} aria-expanded={open} aria-controls="ai-chat" onClick={() => { setTeaser(""); setOpen((o) => !o); }}>
         <span className="ai-orb__core" aria-hidden="true"><i></i><i></i><i></i></span>
         <span className="ai-orb__x" aria-hidden="true"><CloseIcon /></span>
       </button>
+
+      {teaser && (
+        <div ref={teaserEl} className={`ai-teaser is-${teaser}`} role="dialog" aria-label={t.title}>
+          <div className="ai-teaser__in">
+            <button className="ai-chat__x ai-teaser__x" type="button" aria-label={UI[locale].close} onClick={() => dismissTeaser()}><CloseIcon /></button>
+            <span className="ai-orb__core ai-teaser__ava" aria-hidden="true"><i></i><i></i><i></i></span>
+            <b className="ai-teaser__title">{t.title}</b>
+            <span className="ai-teaser__status">{t.status}</span>
+            <p className="ai-teaser__text">{t.hello}</p>
+            <div className="ai-chat__chips ai-teaser__chips">
+              {t.chips.map((c) => <button key={c} type="button" onClick={() => fromTeaser(c)}>{c}</button>)}
+            </div>
+            <button className="ai-teaser__ask" type="button" onClick={() => fromTeaser()}>{t.placeholder}<span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg></span></button>
+          </div>
+        </div>
+      )}
 
       <div className="ai-chat__backdrop" aria-hidden="true" onClick={() => setOpen(false)}></div>
       <div className={`ai-chat${open ? " is-open" : ""}`} id="ai-chat" role="dialog" aria-label={t.title} aria-hidden={!open} data-lenis-prevent>
