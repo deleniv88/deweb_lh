@@ -7,8 +7,14 @@
 declare(strict_types=1);
 header('Content-Type: application/json; charset=utf-8');
 header('X-Robots-Tag: noindex');
+/* попередження PHP (напр. deprecations у новій версії) не повинні потрапляти у відповідь і ламати JSON */
+ini_set('display_errors', '0');
+ob_start();
 
-function out(int $code, array $data): void { http_response_code($code); echo json_encode($data); exit; }
+function out(int $code, array $data): void {
+  while (ob_get_level()) ob_end_clean();
+  http_response_code($code); echo json_encode($data); exit;
+}
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, ['ok' => false]);
 
 $cfgFile = __DIR__ . '/config.php';
