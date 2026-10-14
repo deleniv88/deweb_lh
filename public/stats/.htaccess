@@ -1,0 +1,10 @@
+# службові файли /stats (_lib.php, _digest.php) підключає лише PHP, браузеру вони не віддаються
+<FilesMatch "^_">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>

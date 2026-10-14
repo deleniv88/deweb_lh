@@ -11,6 +11,10 @@ concurrency:
   group: deploy-lh
   cancel-in-progress: true
 
+# токен GitHub у збірці лише читає репозиторій
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

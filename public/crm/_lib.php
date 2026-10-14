@@ -128,10 +128,8 @@ function crm_tg(string $html): bool {
   return $code === 200;
 }
 function crm_esc(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
-function crm_ip(): string {
-  $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-  return trim(explode(',', (string)$ip)[0]);
-}
+require_once dirname(__DIR__) . '/api/_ip.php';
+function crm_ip(): string { return dw_client_ip(); }
 function crm_site(): string {
   $host = preg_replace('/[^a-z0-9.:-]/i', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
   return $host === '' ? 'https://deweb.studio' : (crm_cookie_secure() && !str_starts_with($host, 'localhost') ? 'https://' : 'http://') . $host;
@@ -279,17 +277,21 @@ function crm_client_upsert(array $in, string $source, string $lang, string $note
 
 function crm_meeting_add(?int $clientId, int $start, int $minutes, array $data, string $source, string $meetUrl = '', string $gcalId = ''): int {
   crm_db()->prepare('INSERT INTO meetings (client_id, data, start_at, minutes, status, meet_url, gcal_id, source, created_at) VALUES (?, ?, ?, ?, \'scheduled\', ?, ?, ?, ?)')
-    ->execute([$clientId, crm_enc(['topic' => crm_clean($data['topic'] ?? '', 200), 'notes' => crm_clean($data['notes'] ?? '', 20000)]), $start, $minutes, $meetUrl, $gcalId, $source, time()]);
+    ->execute([$clientId, crm_enc(['topic' => crm_clean($data['topic'] ?? '', 200), 'notes' => crm_clean($data['notes'] ?? '', 20000)] + (isset($data['chat']) ? ['chat' => (string)$data['chat']] : [])), $start, $minutes, $meetUrl, $gcalId, $source, time()]);
   if ($clientId) crm_db()->prepare('UPDATE clients SET status = CASE WHEN status IN (\'new\', \'contacted\') THEN \'call\' ELSE status END, updated_at = ? WHERE id = ?')->execute([time(), $clientId]);
   return (int)crm_db()->lastInsertId();
 }
 
-/* перенесення з чату: скасувати майбутні дзвінки клієнта (крім нового) і прибрати їх з Google Календаря */
-function crm_meetings_cancel_future(int $clientId, int $exceptId): array {
+/* перенесення з чату: скасувати майбутні дзвінки клієнта (крім нового) і прибрати їх з Google Календаря.
+   З $chatSession — лише ті, що заброньовані в цій самій розмові: інакше будь-хто, знаючи чужий email,
+   міг би скасувати чужий дзвінок через чат. Решта повертається в $others, щоб Андрій вирішив сам. */
+function crm_meetings_cancel_future(int $clientId, int $exceptId, ?string $chatSession = null, array &$others = []): array {
   $st = crm_db()->prepare('SELECT * FROM meetings WHERE client_id = ? AND id != ? AND status = \'scheduled\' AND start_at > ? ORDER BY start_at');
   $st->execute([$clientId, $exceptId, time()]);
   $done = [];
   foreach ($st->fetchAll() as $r) {
+    $md = (array)(crm_dec($r['data']) ?? []);
+    if ($chatSession !== null && (string)($md['chat'] ?? '') !== $chatSession) { $others[] = (int)$r['start_at']; continue; }
     if ($r['gcal_id'] !== '' && crm_google_on()) crm_google_cancel($r['gcal_id']);
     crm_db()->prepare('UPDATE meetings SET status = \'cancelled\' WHERE id = ?')->execute([$r['id']]);
     $done[] = (int)$r['start_at'];

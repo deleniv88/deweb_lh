@@ -49,8 +49,8 @@ if ($name === '' || $contact === '') out(400, ['ok' => false, 'error' => 'missin
 if (preg_match_all('~https?://|www\.~i', "$name $contact $message") > 2) out(200, ['ok' => true]);
 
 /* 4) простий ліміт: не більше 5 заявок з однієї IP за 10 хв */
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-$ip = trim(explode(',', (string)$ip)[0]);
+require_once __DIR__ . '/_ip.php';
+$ip = dw_client_ip();
 $rl = sys_get_temp_dir() . '/deweb_rl_' . md5($ip);
 $hits = array_filter(is_file($rl) ? (array)json_decode((string)file_get_contents($rl), true) : [], fn($t) => $t > time() - 600);
 if (count($hits) >= 5) out(429, ['ok' => false, 'error' => 'rate']);

@@ -1,3 +1,7 @@
 <Files "config.php">
   Require all denied
 </Files>
+# службові файли (_ip.php тощо) підключає лише PHP, браузеру вони не віддаються
+<FilesMatch "^_">
+  Require all denied
+</FilesMatch>

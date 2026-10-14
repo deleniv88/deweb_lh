@@ -63,6 +63,9 @@ ErrorDocument 404 /404.html
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-Frame-Options "SAMEORIGIN"
+  # браузер завжди відкриває сайт лише по https (без субдоменів: dentistica.deweb.studio живе окремо)
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
   # головна залежить від мови браузера й cookie — кеші не мають віддавати одну версію всім
   <If "%{REQUEST_URI} == '/' || %{REQUEST_URI} == '/index.html'">
     Header append Vary "Accept-Language, Cookie"

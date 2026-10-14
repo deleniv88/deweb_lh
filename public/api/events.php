@@ -45,8 +45,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
   if ($ev !== 'quote_open') { http_response_code(400); exit; }
 
   /* не більше 20 подій з однієї IP за 10 хв, щоб цифри не накрутити */
-  $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-  $rl = sys_get_temp_dir() . '/deweb_ev_' . md5(trim(explode(',', (string)$ip)[0]));
+  require_once __DIR__ . '/_ip.php';
+  $rl = sys_get_temp_dir() . '/deweb_ev_' . md5(dw_client_ip());
   $hits = array_filter(is_file($rl) ? (array)json_decode((string)file_get_contents($rl), true) : [], fn($t) => $t > time() - 600);
   if (count($hits) >= 20) { http_response_code(204); exit; }
   $hits[] = time(); @file_put_contents($rl, json_encode(array_values($hits)));

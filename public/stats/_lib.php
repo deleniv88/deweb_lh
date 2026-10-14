@@ -34,8 +34,8 @@ function dw_set_cookie(int $exp): void {
 
 /* не більше 8 невдалих спроб з однієї IP за 15 хв */
 function dw_rl_file(): string {
-  $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-  return sys_get_temp_dir() . '/deweb_stats_' . md5(trim(explode(',', (string)$ip)[0]));
+  require_once dirname(__DIR__) . '/api/_ip.php';
+  return sys_get_temp_dir() . '/deweb_stats_' . md5(dw_client_ip());
 }
 function dw_fails(): array { $f = dw_rl_file(); return array_values(array_filter(is_file($f) ? (array)json_decode((string)file_get_contents($f), true) : [], fn($t) => $t > time() - 900)); }
 

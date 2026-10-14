@@ -75,8 +75,8 @@ $userTurns = count(array_filter($msgs, fn($m) => $m['role'] === 'user'));
 if ($userTurns > 25) out(200, ['ok' => false, 'error' => 'too_long']);
 
 /* ---- ліміт на IP: 30 повідомлень за 10 хв, 150 за добу ---- */
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
-$ip = trim(explode(',', (string)$ip)[0]);
+require_once __DIR__ . '/_ip.php';
+$ip = dw_client_ip();
 $rl = sys_get_temp_dir() . '/deweb_chat_' . md5($ip);
 $hits = array_filter(is_file($rl) ? (array)json_decode((string)file_get_contents($rl), true) : [], fn($t) => $t > time() - 86400);
 if (count($hits) >= 150 || count(array_filter($hits, fn($t) => $t > time() - 600)) >= 30) out(429, ['ok' => false, 'error' => 'rate']);
@@ -194,7 +194,7 @@ $tools = $crmOn ? [
 ] : [$requestCallTool];
 
 function run_tool(string $name, array $in): array {
-  global $cfg, $booked, $requested, $offered, $msgs, $lang, $fmtLocal, $clientTz, $googleOn, $crmOn, $callMin;
+  global $cfg, $booked, $requested, $offered, $msgs, $lang, $fmtLocal, $clientTz, $googleOn, $crmOn, $callMin, $session;
   if ($name === 'get_free_slots' && $crmOn) {
     $tz = new DateTimeZone(TZ);
     try { $from = new DateTimeImmutable(clean($in['from_date'] ?? '', 10) ?: 'today', $tz); } catch (Throwable $e) { $from = new DateTimeImmutable('today', $tz); }
@@ -247,15 +247,19 @@ function run_tool(string $name, array $in): array {
     }
     $warsaw = (new DateTimeImmutable('@' . $start))->setTimezone(new DateTimeZone(TZ))->format('d.m.Y H:i');
     $cid = crm_client_upsert(['name' => $person, 'email' => $email], 'chat', $lang, "Забронював дзвінок на $warsaw. $topic. $summary");
-    $mid = crm_meeting_add($cid, $start, $callMin, ['topic' => $topic, 'notes' => "$summary\n\nРозмова в чаті:\n" . transcript_plain($msgs)], 'chat', $meet, $gid);
-    $old = $move ? crm_meetings_cancel_future($cid, $mid) : [];
+    $mid = crm_meeting_add($cid, $start, $callMin, ['topic' => $topic, 'notes' => "$summary\n\nРозмова в чаті:\n" . transcript_plain($msgs), 'chat' => $session['id']], 'chat', $meet, $gid);
+    /* автоматично скасовуються лише дзвінки, заброньовані в цій самій розмові; інші — Андрій перевіряє сам */
+    $kept = [];
+    $old = $move ? crm_meetings_cancel_future($cid, $mid, $session['id'], $kept) : [];
+    $keptTxt = implode(', ', array_map(fn($t) => (new DateTimeImmutable('@' . $t))->setTimezone(new DateTimeZone(TZ))->format('d.m.Y H:i'), $kept));
     $oldTxt = implode(', ', array_map(fn($t) => (new DateTimeImmutable('@' . $t))->setTimezone(new DateTimeZone(TZ))->format('d.m.Y H:i'), $old));
     $bh[] = time(); @file_put_contents($bl, json_encode(array_values($bh)));
     $booked = ['start' => date(DATE_RFC3339, $start), 'visitor_time' => $fmtLocal($start), 'meet' => $meet];
-    crm_tg("📅 <b>" . ($old ? 'Дзвінок перенесено через AI-чат' : 'Дзвінок заброньовано через AI-чат') . "</b> · " . strtoupper($lang) . "\n\n🕑 $warsaw (Варшава)" . ($old ? "\n❌ Скасовано: $oldTxt (прибрано з календаря)" : '') . "\n👤 <b>" . esc($person) . "</b> · <code>" . esc($email) . "</code>\n📝 " . esc($topic)
+    crm_tg("📅 <b>" . ($old ? 'Дзвінок перенесено через AI-чат' : 'Дзвінок заброньовано через AI-чат') . "</b> · " . strtoupper($lang) . "\n\n🕑 $warsaw (Варшава)" . ($old ? "\n❌ Скасовано: $oldTxt (прибрано з календаря)" : '') . ($kept ? "\n⚠️ Просить перенести, але старий дзвінок ($keptTxt) заброньовано в іншій розмові: перевір, що це той самий клієнт, і скасуй у CRM сам." : '') . "\n👤 <b>" . esc($person) . "</b> · <code>" . esc($email) . "</code>\n📝 " . esc($topic)
       . "\n\n" . esc($summary) . ($meet ? "\n\n🎥 " . esc($meet) : "\n\n⚠️ Google не підключений: надішли клієнту посилання на дзвінок сам.") . "\n\n🗂 " . crm_site() . '/crm/');
     return ['ok' => true, 'visitor_time' => $fmtLocal($start), 'meet_link' => $meet,
       'previous_cancelled' => array_map(fn($t) => $fmtLocal($t), $old),
+      'previous_pending' => $kept ? 'The earlier call was booked in another conversation, so it was not cancelled automatically. Tell the visitor Andrew will confirm the cancellation of the old time by email.' : null,
       'note' => $meet ? 'Google Calendar emailed the visitor an invitation with this Google Meet link.' : 'Andrew will email the visitor the Google Meet link before the call.'];
   }
   if ($name === 'request_call') {

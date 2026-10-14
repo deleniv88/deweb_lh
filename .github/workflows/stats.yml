@@ -20,6 +20,10 @@ concurrency:
   group: stats
   cancel-in-progress: false
 
+# токен GitHub у збірці лише читає репозиторій
+permissions:
+  contents: read
+
 jobs:
   stats:
     runs-on: ubuntu-latest
