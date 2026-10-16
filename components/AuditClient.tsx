@@ -83,6 +83,11 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
   const urlRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { document.documentElement.lang = localeOf(locale).htmlLang; }, [locale]);
+  /* ?url=… — адреса, яку людина ввела на сторінці чек-листа: підставляємо в поле (перевірку запускає сама людина, бо потрібен Turnstile) */
+  useEffect(() => {
+    const u = new URLSearchParams(location.search).get("url");
+    if (u && urlRef.current && !urlRef.current.value) urlRef.current.value = u.replace(/^\s*https?:\/\//i, "").slice(0, 200);
+  }, []);
   /* форма аудиту на самій сторінці, тож перевірку Turnstile готуємо одразу після завантаження */
   useEffect(() => {
     if (document.readyState === "complete") { loadTurnstile(); return; }

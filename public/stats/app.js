@@ -123,7 +123,7 @@
         ? '<p class="sub">Період ' + dm(cur[0]) + '–' + dm(end) + ' для всіх джерел.' + (end > gaEnd ? ' GA4 і форма мають дані до ' + dm(gaEnd) + '.' : '') + (end > gscEnd ? ' <b>Search Console</b> має дані лише до ' + dm(gscEnd) + ' (Google віддає їх із затримкою 2–3 дні).' : '')
         : '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(end) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gend) + ', бо Google віддає ці дані із затримкою 2–3 дні.') + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
       + trendPanel(cur, end)
-      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + auditsPanel() + '</div>';
+      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + checklistPanel(cur) + auditsPanel() + '</div>';
     bindHeader(); drawTrend(cur); bindNotes(); bindQueries();
   }
 
@@ -360,6 +360,17 @@
     }).join('') + '</table>' : '<p class="empty">Немає даних за цей період</p>';
     return '<section class="panel full"><div class="ph"><h2>Сторінки: трафік і поведінка</h2><span class="src">GA4 + GSC + Clarity</span></div><div class="tbl">' + body + '</div>'
       + '<p class="sub" style="margin-top:8px">Сер. час — активний час на сторінці на одного відвідувача. «Глянути записи» з’являється, коли rage clicks понад 5%, dead clicks понад 20% або скролять менше чверті сторінки.</p></section>';
+  }
+
+  /* ---------- Чек-лист «Сайт зробив AI?» (/checklist/): скільки відкрили, пройшли до кінця і перейшли на /audyt/ ---------- */
+  function checklistPanel(cur) {
+    var t = function (ev) { return total(cur, function (d) { return srv(d, ev); }); };
+    var o = t('cl_open'), dn = t('cl_done'), g = t('cl_go');
+    var pct = function (a, b) { return a != null && b ? ' <span class="sub">' + Math.round(a / b * 100) + '%</span>' : ''; };
+    var row = function (k, v, extra) { return '<tr><td>' + k + '</td><td><b>' + (v == null ? '—' : v) + '</b>' + (extra || '') + '</td></tr>'; };
+    return '<section class="panel full"><div class="ph"><h2>Чек-лист «Сайт зробив AI?»</h2><span class="src">сервер</span></div><div class="tbl"><table>'
+      + row('Відкрили сторінку', o) + row('Пройшли всі пункти', dn, pct(dn, o)) + row('Перейшли на перевірку /audyt/', g, pct(g, o)) + '</table></div>'
+      + '<p class="sub" style="margin-top:8px">Прихована сторінка deweb.studio/checklist/ (EN /en/checklist/, UA /ua/checklist/). Відкриття рахується раз за сесію браузера.</p></section>';
   }
 
   /* ---------- Перевірки сайтів (сторінка /audyt/): хто який сайт перевіряв і чи залишив контакт ---------- */

@@ -1,6 +1,6 @@
 <?php
 /* =========================================================
-   Лічильник подій сайту для сторінки /stats: заявки і відкриття форми.
+   Лічильник подій сайту для сторінки /stats: заявки, відкриття форми, чек-лист.
    Рахуємо на сервері, тож цифри не залежать від блокувальників реклами і налаштувань GTM.
    Особистих даних не пишемо: лише дата, подія, мова і канал зв'язку.
    Файл: stats/data/events.json (закритий від браузера).
@@ -42,7 +42,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
   if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
   $raw = substr((string)file_get_contents('php://input'), 0, 40);
   [$ev, $lang] = array_pad(explode('|', $raw), 2, '');
-  if ($ev !== 'quote_open') { http_response_code(400); exit; }
+  /* quote_open — відкрили форму; cl_* — чек-лист /checklist/: відкрили, пройшли до кінця, перейшли на /audyt/ */
+  if (!in_array($ev, ['quote_open', 'cl_open', 'cl_done', 'cl_go'], true)) { http_response_code(400); exit; }
 
   /* не більше 20 подій з однієї IP за 10 хв, щоб цифри не накрутити */
   require_once __DIR__ . '/_ip.php';
@@ -51,6 +52,6 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
   if (count($hits) >= 20) { http_response_code(204); exit; }
   $hits[] = time(); @file_put_contents($rl, json_encode(array_values($hits)));
 
-  dw_log_event('quote_open', $lang);
+  dw_log_event($ev, $lang);
   http_response_code(204);
 }
