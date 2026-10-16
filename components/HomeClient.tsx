@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { UI, localeOf, fill, worksPath, type Locale } from "../lib/i18n";
 import { casesFor } from "../lib/cases";
 import { FeaturePreview, hasFeaturePreview } from "./FeaturePreviews";
+import AiServiceDemo from "./AiServiceDemo";
 
 /* виділяє частину рядка (напр. "into clients") — на мобільному вона синя */
 function Accent({ text, accent }: { text?: string | null; accent?: string | null }) {
@@ -196,7 +197,9 @@ export default function HomeClient(props: Props) {
                     </a>
                   </div>
                   <div className="svc-card__media" data-tina-field={tinaField(s, "image")}>
-                    {s.image && <img src={s.image} alt={`${s.name} example`} width={748} height={421} loading="lazy" decoding="async" />}
+                    {/service-ai/.test(s.image || "")
+                      ? <AiServiceDemo locale={locale} label={s.name} />
+                      : s.image && <img src={s.image} alt={`${s.name} example`} width={748} height={421} loading="lazy" decoding="async" />}
                   </div>
                 </div>
               </li>
