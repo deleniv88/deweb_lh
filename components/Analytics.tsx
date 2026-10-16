@@ -31,10 +31,26 @@ window.gtag = window.gtag || function(){dataLayer.push(arguments);};
     queue.forEach(inject);
   }
   evs.forEach(function(e){ addEventListener(e, start, { capture: true, passive: true }); });
+
+  /* Згода (RODO / PKE): банер CookieYes приходить з GTM. Google працює в Consent Mode — до згоди
+     analytics/ads cookies не ставляться. Meta Pixel і Clarity взагалі не вантажаться, доки відвідувач
+     не погодиться на свою категорію (advertisement / analytics). Вибір CookieYes зберігає в cookie
+     cookieyes-consent і повідомляє подією cookieyes_consent_update. */
+  gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied', functionality_storage: 'granted', security_storage: 'granted', wait_for_update: 500 });
+  function agreed(cat){ var m = document.cookie.match(/(?:^|; )cookieyes-consent=([^;]*)/); return !!m && decodeURIComponent(m[1]).indexOf(cat + ':yes') > -1; }
+  var waiting = { analytics: [], advertisement: [] };
+  function gated(cat, src){ if (agreed(cat)) load(src); else waiting[cat].push(src); }
+  function applyConsent(){
+    var a = agreed('analytics'), ad = agreed('advertisement');
+    gtag('consent', 'update', { analytics_storage: a ? 'granted' : 'denied', ad_storage: ad ? 'granted' : 'denied', ad_user_data: ad ? 'granted' : 'denied', ad_personalization: ad ? 'granted' : 'denied' });
+    ['analytics', 'advertisement'].forEach(function(c){ if (agreed(c)) { waiting[c].forEach(load); waiting[c] = []; } });
+  }
+  if (agreed('analytics') || agreed('advertisement')) applyConsent();
+  document.addEventListener('cookieyes_consent_update', function(){ setTimeout(applyConsent, 0); });
   if (document.readyState === 'complete') setTimeout(start, 4000);
   else addEventListener('load', function(){ setTimeout(start, 4000); });
 
-  /* Google Tag Manager */
+  /* Google Tag Manager (у ньому GA4 і банер CookieYes) */
   dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
   load('https://www.googletagmanager.com/gtm.js?id=${GTM_ID}');
 
@@ -46,14 +62,14 @@ window.gtag = window.gtag || function(){dataLayer.push(arguments);};
   /* Meta Pixel */
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
   n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];load(v)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  n.queue=[];gated('advertisement',v)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', '${META_PIXEL_ID}');
   fbq('track', 'PageView');
 
   /* Microsoft Clarity */
   (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    load("https://www.clarity.ms/tag/"+i);
+    gated('analytics', "https://www.clarity.ms/tag/"+i);
   })(window, document, "clarity", "script", "${CLARITY_ID}");
 })();
 `;
