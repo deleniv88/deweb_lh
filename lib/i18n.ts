@@ -21,6 +21,8 @@ export const localeOf = (code: Locale) => LOCALES.find((l) => l.code === code) |
 
 /* адреса сторінки «Усі роботи» для мови: /realizacje/ (PL), /en/works/, /ua/works/ */
 export const worksPath = (code: Locale) => (code === "pl" ? "/realizacje/" : `${localeOf(code).path}works/`);
+/* адреса прихованої сторінки перевірки сайту: /audyt/ (PL), /en/audit/, /ua/audyt/ (лише за посиланням, noindex) */
+export const auditPath = (code: Locale) => (code === "pl" ? "/audyt/" : code === "en" ? "/en/audit/" : "/ua/audyt/");
 /* файл сторінки робіт для мови: content/works/works.json, works-pl.json, works-ua.json */
 export const worksFile = (code: Locale) => localeOf(code).file.replace("home", "works");
 

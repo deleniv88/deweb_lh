@@ -5,7 +5,7 @@
   const TZ = "Europe/Warsaw";
   const STATUS = { new: "Новий", contacted: "На зв'язку", call: "Дзвінок", proposal: "Пропозиція", won: "В роботі", lost: "Закрито" };
   const MSTATUS = { scheduled: "Заплановано", done: "Відбулась", cancelled: "Скасовано", no_show: "Не прийшов" };
-  const SOURCE = { manual: "вручну", chat: "AI-чат", form: "форма" };
+  const SOURCE = { manual: "вручну", chat: "AI-чат", form: "форма", audit: "перевірка сайту" };
   const DAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
   let S = null; // стан з сервера
   let clientFilter = { q: "", status: "" };

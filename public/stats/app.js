@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var app = document.getElementById('app');
-  var H, E, N;
+  var H, E, N, AU;
   /* P: 7 / 30 / 90 днів або 0 — свій період з календаря (F…T) */
   var st = { P: 30, L: 'all' };
   var R = {}; // поточний період: cur/prev (GA4, форма, Clarity), gcur/gprev (Search Console), n — днів
@@ -123,7 +123,7 @@
         ? '<p class="sub">Період ' + dm(cur[0]) + '–' + dm(end) + ' для всіх джерел.' + (end > gaEnd ? ' GA4 і форма мають дані до ' + dm(gaEnd) + '.' : '') + (end > gscEnd ? ' <b>Search Console</b> має дані лише до ' + dm(gscEnd) + ' (Google віддає їх із затримкою 2–3 дні).' : '')
         : '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(end) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gend) + ', бо Google віддає ці дані із затримкою 2–3 дні.') + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
       + trendPanel(cur, end)
-      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + '</div>';
+      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + auditsPanel() + '</div>';
     bindHeader(); drawTrend(cur); bindNotes(); bindQueries();
   }
 
@@ -362,7 +362,24 @@
       + '<p class="sub" style="margin-top:8px">Сер. час — активний час на сторінці на одного відвідувача. «Глянути записи» з’являється, коли rage clicks понад 5%, dead clicks понад 20% або скролять менше чверті сторінки.</p></section>';
   }
 
+  /* ---------- Перевірки сайтів (сторінка /audyt/): хто який сайт перевіряв і чи залишив контакт ---------- */
+  function auditsPanel() {
+    var A = AU || [], now = Date.now() / 1000;
+    var day = A.filter(function (a) { return a.t > now - 86400; }).length, week = A.filter(function (a) { return a.t > now - 7 * 86400; }).length;
+    var leads = A.filter(function (a) { return a.contact; }).length;
+    var path = { pl: '/audyt/', en: '/en/audit/', ua: '/ua/audyt/' };
+    var sc = function (n) { return n >= 80 ? 'up' : n >= 55 ? 'warn' : 'down'; };
+    var body = A.length ? '<table><tr><th>Коли</th><th>Сайт</th><th>Платформа</th><th>Оцінка</th><th>Контакт</th><th>Мова</th><th></th></tr>' + A.slice(0, 60).map(function (a) {
+      var d = new Date(a.t * 1000);
+      return '<tr><td>' + d.toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</td><td title="' + esc(a.host) + '"><b>' + esc(a.host) + '</b></td><td>' + esc(a.plat === 'custom' ? 'Власний код' : a.plat) + '</td>'
+        + '<td><span class="' + sc(a.score) + '"><b>' + a.score + '</b></span> <span class="sub">❌' + (a.bad || 0) + ' ⚠️' + (a.warn || 0) + '</span></td><td>' + (a.contact ? esc(a.contact) : '—') + '</td><td>' + esc(String(a.lang || '').toUpperCase()) + '</td>'
+        + '<td><a href="' + (path[a.lang] || '/audyt/') + '?r=' + encodeURIComponent(a.id) + '" target="_blank" rel="noopener">Звіт</a></td></tr>';
+    }).join('') + '</table>' : '<p class="empty">Ще ніхто не перевіряв сайт. Посилання: deweb.studio/audyt/</p>';
+    return '<section class="panel full"><div class="ph"><h2>Перевірки сайтів</h2><span class="src">' + day + ' за добу · ' + week + ' за 7 днів · ' + leads + ' з контактом</span></div><div class="tbl">' + body + '</div>'
+      + '<p class="sub" style="margin-top:8px">Прихована сторінка deweb.studio/audyt/ (EN /en/audit/, UA /ua/audyt/). Звіт відкривається тобі повністю, бо ти увійшов у /stats. Контакти також приходять у Telegram і CRM.</p></section>';
+  }
+
   /* ---------- старт ---------- */
-  api().then(function (r) { H = r.history; E = r.events; N = r.notes || []; render(); })
+  api().then(function (r) { H = r.history; E = r.events; N = r.notes || []; AU = r.audits || []; render(); })
     .catch(function (e) { if (e.message !== 'auth') app.innerHTML = '<p class="sub">Не вдалося завантажити дані: ' + esc(e.message) + '</p>'; });
 })();

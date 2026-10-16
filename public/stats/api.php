@@ -14,7 +14,7 @@ if (!dw_authed()) out(401, ['error' => 'auth']);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
   /* історія по днях велика — стискаємо, якщо браузер уміє */
   if (!ini_get('zlib.output_compression') && extension_loaded('zlib')) ob_start('ob_gzhandler');
-  out(200, ['history' => dw_read_json('history.json'), 'events' => dw_read_json('events.json'), 'notes' => dw_read_json('notes.json') ?? []]);
+  out(200, ['history' => dw_read_json('history.json'), 'events' => dw_read_json('events.json'), 'notes' => dw_read_json('notes.json') ?? [], 'audits' => array_slice(dw_read_json('audits.json') ?? [], 0, 200)]);
 }
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, ['error' => 'method']);
 

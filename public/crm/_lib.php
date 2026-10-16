@@ -262,7 +262,7 @@ function crm_client_upsert(array $in, string $source, string $lang, string $note
     $id = $st->fetchColumn() ?: null;
   }
   $stamp = (new DateTime('now', new DateTimeZone(CRM_TZ)))->format('d.m.Y H:i');
-  $label = ['chat' => 'AI-чат', 'form' => 'форма'][$source] ?? $source;
+  $label = ['chat' => 'AI-чат', 'form' => 'форма', 'audit' => 'перевірка сайту'][$source] ?? $source;
   $entry = $note !== '' ? "[$stamp · $label] $note" : '';
   if ($id) {
     $st = crm_db()->prepare('SELECT * FROM clients WHERE id = ?'); $st->execute([$id]);

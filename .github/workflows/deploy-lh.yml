@@ -61,10 +61,11 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
         run: |
           node -e '
             const k=["TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID","GMAIL_USER","GMAIL_APP_PASSWORD","NOTIFY_EMAIL","TURNSTILE_SECRET_KEY",
-              "ANTHROPIC_API_KEY","CHAT_BUDGET_USD","GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","GOOGLE_REFRESH_TOKEN","GOOGLE_CALENDAR_ID"];
+              "ANTHROPIC_API_KEY","CHAT_BUDGET_USD","GOOGLE_CLIENT_ID","GOOGLE_CLIENT_SECRET","GOOGLE_REFRESH_TOKEN","GOOGLE_CALENDAR_ID","PAGESPEED_API_KEY"];
             const q=v=>"\x27"+String(v||"").replace(/\\/g,"\\\\").replace(/\x27/g,"\\\x27")+"\x27";
             const body=k.map(x=>"  "+q(x)+" => "+q(process.env[x])+",").join("\n");
             require("fs").writeFileSync("out/api/config.php","<?php\nreturn [\n"+body+"\n];\n");
