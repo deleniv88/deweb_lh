@@ -29,6 +29,8 @@ function dw_log_event(string $event, string $lang, string $extra = ''): void {
     if (!is_array($j)) $j = ['since' => $day, 'days' => []];
     $n = &$j['days'][$day][$event][$lang];
     $n = (int)($n ?? 0) + 1;
+    /* не більше 40 різних значень на день, щоб випадкові UTM не роздули файл */
+    if ($extra !== '' && !isset($j['days'][$day][$event . '_via'][$extra]) && count($j['days'][$day][$event . '_via'] ?? []) >= 40) $extra = 'other';
     if ($extra !== '') { $m = &$j['days'][$day][$event . '_via'][$extra]; $m = (int)($m ?? 0) + 1; }
     ftruncate($fp, 0); rewind($fp);
     fwrite($fp, json_encode($j));
@@ -36,14 +38,24 @@ function dw_log_event(string $event, string $lang, string $extra = ''): void {
   } catch (Throwable $e) { /* статистика ніколи не ламає форму */ }
 }
 
-/* прямий виклик: navigator.sendBeacon('/api/events.php', 'quote_open|pl') */
+/* джерело переходу з браузера ('instagram / social / bio'): лише латиниця, цифри і роздільники */
+function dw_src_clean($v): string {
+  $v = strtolower(trim((string)$v));
+  $v = preg_replace('~[^a-z0-9_. /-]+~', '', $v);
+  return substr(trim(preg_replace('~\s+~', ' ', $v)), 0, 100);
+}
+
+/* прямий виклик: navigator.sendBeacon('/api/events.php', 'quote_open|pl'), перехід з джерелом — 'visit|pl|instagram / social / bio' */
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
   header('X-Robots-Tag: noindex');
   if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); exit; }
-  $raw = substr((string)file_get_contents('php://input'), 0, 40);
-  [$ev, $lang] = array_pad(explode('|', $raw), 2, '');
+  $raw = substr((string)file_get_contents('php://input'), 0, 140);
+  [$ev, $lang, $src] = array_pad(explode('|', $raw, 3), 3, '');
   /* quote_open — відкрили форму; cl_* — чек-лист /checklist/: відкрили, пройшли до кінця, перейшли на /audyt/ */
-  if (!in_array($ev, ['quote_open', 'cl_open', 'cl_done', 'cl_go'], true)) { http_response_code(400); exit; }
+  /* visit — прийшли за посиланням з UTM або із соцмережі (раз за сесію) */
+  if (!in_array($ev, ['quote_open', 'cl_open', 'cl_done', 'cl_go', 'visit'], true)) { http_response_code(400); exit; }
+  $src = $ev === 'visit' ? dw_src_clean($src) : '';
+  if ($ev === 'visit' && $src === '') { http_response_code(400); exit; }
 
   /* не більше 20 подій з однієї IP за 10 хв, щоб цифри не накрутити */
   require_once __DIR__ . '/_ip.php';
@@ -52,6 +64,6 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
   if (count($hits) >= 20) { http_response_code(204); exit; }
   $hits[] = time(); @file_put_contents($rl, json_encode(array_values($hits)));
 
-  dw_log_event($ev, $lang);
+  dw_log_event($ev, $lang, $src);
   http_response_code(204);
 }

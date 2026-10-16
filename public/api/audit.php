@@ -68,7 +68,7 @@ function au_log(array $r): void {
   flock($fp, LOCK_EX);
   $j = json_decode((string)stream_get_contents($fp), true); if (!is_array($j)) $j = [];
   $row = ['id' => $r['id'], 't' => $r['created'], 'host' => $r['host'], 'plat' => $r['platform']['name'], 'score' => $r['score'],
-    'lang' => $r['lang'], 'contact' => $r['contact'] ? $r['contact']['label'] : '', 'bad' => $r['counts']['bad'], 'warn' => $r['counts']['warn']];
+    'lang' => $r['lang'], 'contact' => $r['contact'] ? $r['contact']['label'] : '', 'src' => $r['src'] ?? '', 'bad' => $r['counts']['bad'], 'warn' => $r['counts']['warn']];
   $j = array_values(array_filter($j, fn($x) => ($x['id'] ?? '') !== $r['id']));
   array_unshift($j, $row);
   $j = array_slice($j, 0, 500);
@@ -649,10 +649,11 @@ if ($action === 'scan') {
   $r = ['id' => substr(str_replace(['+', '/', '='], '', strtolower(base64_encode(random_bytes(12)))), 0, 10), 'v' => 1,
     'host' => $res['host'], 'url' => $res['final'], 'created' => time(), 'lang' => $lang, 'platform' => $res['platform'],
     'items' => $res['items'], 'score' => $score, 'counts' => $counts, 'speed' => 'pending', 'contact' => null,
-    'ip' => substr(hash('sha256', $ip . '|deweb'), 0, 12), 'self' => $res['host'] === $selfHost ? 1 : 0];
+    'ip' => substr(hash('sha256', $ip . '|deweb'), 0, 12), 'self' => $res['host'] === $selfHost ? 1 : 0, 'src' => dw_src_clean($d['src'] ?? '')];
   while (!preg_match('~^[a-z0-9]{10}$~', $r['id'])) $r['id'] = substr(bin2hex(random_bytes(8)), 0, 10);
   au_save($r); au_log($r);
   dw_log_event('audit', $lang);
+  if ($r['src'] !== '') dw_log_event('src_audit', $lang, $r['src']);
   au_out(200, ['ok' => true, 'report' => au_public($r, false)]);
 }
 
@@ -684,7 +685,8 @@ if ($action === 'speed') {
     au_tg("🔎 <b>Перевірка сайту</b> · " . strtoupper($r['lang']) . "\n" . au_esc($r['host']) . ' — <b>' . $r['score'] . "/100</b>\n"
       . au_esc(($P['name'] === 'custom' ? 'Власний код' : $P['name']) . ($P['ver'] ? ' ' . $P['ver'] : '') . ($P['host'] ? ' · ' . $P['host'] : '')) . "\n"
       . '❌ ' . $r['counts']['bad'] . ' · ⚠️ ' . $r['counts']['warn'] . ' · ✅ ' . $r['counts']['ok']
-      . ($r['contact'] ? "\n📬 " . au_esc($r['contact']['label']) : "\n📬 контакт ще не залишив") . "\n🔗 " . au_link($r));
+      . ($r['contact'] ? "\n📬 " . au_esc($r['contact']['label']) : "\n📬 контакт ще не залишив")
+      . (($r['src'] ?? '') !== '' ? "\n📍 " . au_esc($r['src']) : '') . "\n🔗 " . au_link($r));
   } elseif ($busy) {
     for ($i = 0; $i < 50 && ($r['speed'] ?? '') === 'running'; $i++) { sleep(2); $r = au_load($r['id']) ?? $r; }
   }
@@ -702,19 +704,21 @@ if ($action === 'unlock') {
   else { $v = '@' . ltrim($v, '@'); if (!preg_match('~^@[A-Za-z0-9_.]{2,40}$~', $v)) au_out(400, ['ok' => false, 'error' => 'contact']); }
   $label = ($way === 'email' ? '' : ($way === 'ig' ? 'Instagram ' : 'Telegram ')) . $v;
   $first = empty($r['contact']);
+  if (($r['src'] ?? '') === '') $r['src'] = dw_src_clean($d['src'] ?? '');
   $r['contact'] = ['way' => $way, 'value' => $v, 'label' => $label, 't' => time()];
   au_save($r); au_log($r);
   if ($first) {
     dw_log_event('audit_lead', $lang, $way);
+    if ($r['src'] !== '') dw_log_event('src_lead', $lang, $r['src']);
     $crm = false;
     try {
       require_once dirname(__DIR__) . '/crm/_lib.php';
       crm_client_upsert(($way === 'email' ? ['email' => $v, 'name' => $r['host']] : ['contact' => $label, 'name' => $r['host']]), 'audit', $lang,
-        'Перевірка сайту ' . $r['host'] . ' — ' . $r['score'] . '/100. Звіт: ' . au_link($r));
+        'Перевірка сайту ' . $r['host'] . ' — ' . $r['score'] . '/100. Звіт: ' . au_link($r) . ($r['src'] !== '' ? '. Джерело: ' . $r['src'] : ''));
       $crm = true;
     } catch (Throwable $e) { error_log('deweb audit: crm ' . $e->getMessage()); }
     au_tg("📬 <b>Контакт з перевірки сайту</b> · " . strtoupper($lang) . "\n" . au_esc($r['host']) . ' — ' . $r['score'] . "/100\n"
-      . ($way === 'email' ? '✉️ ' : ($way === 'ig' ? '📷 Instagram ' : '✈️ Telegram ')) . '<code>' . au_esc($v) . "</code>\n🔗 " . au_link($r)
+      . ($way === 'email' ? '✉️ ' : ($way === 'ig' ? '📷 Instagram ' : '✈️ Telegram ')) . '<code>' . au_esc($v) . "</code>" . ($r['src'] !== '' ? "\n📍 " . au_esc($r['src']) : '') . "\n🔗 " . au_link($r)
       . ($crm ? "\n🗂 " . au_site() . '/crm/#clients' : ''), 'leads');
   }
   au_out(200, ['ok' => true, 'report' => au_public($r, true)]);

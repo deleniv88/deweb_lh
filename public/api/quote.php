@@ -43,6 +43,8 @@ $contact = clean($d['contact'] ?? '', 160);
 $method  = clean($d['method'] ?? '', 20);
 $message = clean($d['message'] ?? '', 3000);
 $lang    = strtoupper(clean($d['lang'] ?? '', 5));
+require_once __DIR__ . '/events.php';
+$src     = dw_src_clean($d['src'] ?? '');   // джерело переходу (UTM / соцмережа), див. components/Analytics.tsx
 if ($name === '' || $contact === '') out(400, ['ok' => false, 'error' => 'missing']);
 
 /* 3) спам із купою посилань */
@@ -123,15 +125,15 @@ function smtpSend(string $user, string $pass, string $to, string $subject, strin
 }
 
 $tg = "🆕 <b>Нова заявка з сайту</b>" . ($lang !== '' ? " · $lang" : '') . "\n\n👤 <b>" . esc($name) . "</b>\n📬 " . esc($via) . ': <code>' . esc($contact) . "</code>\n\n📝 "
-    . esc($message !== '' ? $message : '—') . ($page !== '' ? "\n\n🔗 " . esc($page) : '')
+    . esc($message !== '' ? $message : '—') . ($page !== '' ? "\n\n🔗 " . esc($page) : '') . ($src !== '' ? "\n📍 " . esc($src) : '')
     . ($unverified ? "\n\n⚠️ Без перевірки Turnstile (віджет не спрацював) — можливо спам" : '');
 $subject = "Нова заявка з сайту — $name" . ($lang !== '' ? " [$lang]" : '');
-$text = ($lang !== '' ? "Мова сайту: $lang\n" : '') . "Ім'я: $name\nЗв'язок ($via): $contact\n\nЗапит:\n" . ($message ?: '—') . "\n\nСторінка: " . ($page ?: '—');
+$text = ($lang !== '' ? "Мова сайту: $lang\n" : '') . "Ім'я: $name\nЗв'язок ($via): $contact\n\nЗапит:\n" . ($message ?: '—') . "\n\nСторінка: " . ($page ?: '—') . ($src !== '' ? "\nДжерело: $src" : '');
 $html = '<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#242527">'
       . '<h2 style="margin:0 0 12px;color:#5e6cff">Нова заявка з сайту</h2>'
       . '<p><b>Ім\'я:</b> ' . esc($name) . '<br><b>Зв\'язок (' . esc($via) . '):</b> ' . esc($contact) . '</p>'
       . '<p><b>Запит:</b><br>' . nl2br(esc($message ?: '—')) . '</p>'
-      . '<p style="color:#888;font-size:13px">Сторінка: ' . esc($page ?: '—') . '</p></div>';
+      . '<p style="color:#888;font-size:13px">Сторінка: ' . esc($page ?: '—') . ($src !== '' ? '<br>Джерело: ' . esc($src) : '') . '</p></div>';
 $replyTo = ($method === 'email' && filter_var($contact, FILTER_VALIDATE_EMAIL)) ? $contact : null;
 
 /* заявка — одразу клієнтом у CRM (/crm); якщо CRM недоступна, форма все одно працює */
@@ -140,7 +142,7 @@ try {
   require_once dirname(__DIR__) . '/crm/_lib.php';
   $isEmail = (bool)filter_var($contact, FILTER_VALIDATE_EMAIL);
   crm_client_upsert(['name' => $name] + ($isEmail ? ['email' => $contact] : ['contact' => "$via: $contact"]), 'form', strtolower($lang),
-    "Заявка з форми ($via): " . ($message !== '' ? $message : '—'));
+    "Заявка з форми ($via): " . ($message !== '' ? $message : '—') . ($src !== '' ? "\nДжерело: $src" : ''));
   $crmSaved = true;
 } catch (Throwable $e) { error_log('deweb quote: crm ' . $e->getMessage()); }
 if ($crmSaved) $tg .= "\n\n🗂 " . crm_site() . '/crm/#clients';
@@ -150,8 +152,8 @@ $e = smtpSend($c('GMAIL_USER'), $c('GMAIL_APP_PASSWORD'), $c('NOTIFY_EMAIL') ?: 
 
 if ($t === 'ok' || $e === 'ok') {
   /* лічильник заявок для сторінки /stats (без особистих даних) */
-  require_once __DIR__ . '/events.php';
   dw_log_event('lead', strtolower($lang), isset($labels[$method]) ? $method : 'other');
+  if ($src !== '') dw_log_event('src_lead', strtolower($lang), $src);
   out(200, ['ok' => true]);
 }
 if ($t === 'skip' && $e === 'skip') out(501, ['ok' => false, 'error' => 'not_configured']);

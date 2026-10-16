@@ -18,6 +18,8 @@ import { AUDIT, AU_CRIT, AU_GROUPS, AU_HOSTED, type AuP, type AuStatus, type Aud
 
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const API = "/api/audit.php";
+/* джерело переходу (UTM / соцмережа), яке запам'ятав components/Analytics.tsx */
+const srcOf = () => { try { return sessionStorage.getItem("dw-src") || ""; } catch { return ""; } };
 
 type Item = { id: string; g: string; s: AuStatus; p?: AuP };
 type Report = {
@@ -151,7 +153,7 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
     try {
       const r = await fetch(API, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "scan", url: host, lang: locale, turnstile: String(fd.get("cf-turnstile-response") || ""), t: Date.now() - born.current, company: String(fd.get("company") || "") }),
+        body: JSON.stringify({ action: "scan", url: host, lang: locale, turnstile: String(fd.get("cf-turnstile-response") || ""), t: Date.now() - born.current, company: String(fd.get("company") || ""), src: srcOf() }),
       });
       const j = await r.json().catch(() => ({ ok: false, error: "generic" }));
       if (!j.ok) { setErr((t.err as any)[j.error] || t.err.generic); return; }
@@ -176,7 +178,7 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
     if (!good) { setGErr(t.gate.err); return; }
     setGErr(""); setGBusy(true);
     try {
-      const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unlock", id: report.id, way, contact: v, lang: locale }) });
+      const r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "unlock", id: report.id, way, contact: v, lang: locale, src: srcOf() }) });
       const j = await r.json().catch(() => ({ ok: false }));
       if (!j.ok) { setGErr(j.error === "rate" ? t.err.rate : t.gate.err); return; }
       setReport((cur) => (cur && cur.id === j.report.id ? { ...j.report, speed: cur.speed === "done" || cur.speed === "fail" ? cur.speed : j.report.speed, items: mergeSpeed(j.report.items, cur.items) } : j.report));

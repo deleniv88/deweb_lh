@@ -123,7 +123,7 @@
         ? '<p class="sub">Період ' + dm(cur[0]) + '–' + dm(end) + ' для всіх джерел.' + (end > gaEnd ? ' GA4 і форма мають дані до ' + dm(gaEnd) + '.' : '') + (end > gscEnd ? ' <b>Search Console</b> має дані лише до ' + dm(gscEnd) + ' (Google віддає їх із затримкою 2–3 дні).' : '')
         : '<p class="sub">Періоди: <b>GA4</b> (відвідування), <b>форма</b> (заявки) і <b>Clarity</b>: ' + dm(cur[0]) + '–' + dm(end) + '. <b>Search Console</b> (кліки, покази, позиція): ' + dm(gcur[0]) + '–' + dm(gend) + ', бо Google віддає ці дані із затримкою 2–3 дні.') + (st.L !== 'all' ? ' Rage clicks — по всіх мовах.' : '') + '</p>'
       + trendPanel(cur, end)
-      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + checklistPanel(cur) + auditsPanel() + '</div>';
+      + '<div class="grid2">' + funnelPanel(cur) + sourcesPanel() + queriesPanel() + pagesPanel(cur) + linksPanel(cur) + checklistPanel(cur) + auditsPanel() + '</div>';
     bindHeader(); drawTrend(cur); bindNotes(); bindQueries();
   }
 
@@ -362,6 +362,21 @@
       + '<p class="sub" style="margin-top:8px">Сер. час — активний час на сторінці на одного відвідувача. «Глянути записи» з’являється, коли rage clicks понад 5%, dead clicks понад 20% або скролять менше чверті сторінки.</p></section>';
   }
 
+  /* ---------- Переходи за посиланнями з UTM (біо Instagram тощо) і з соцмереж: рахує сервер, без cookies ---------- */
+  function linksPanel(cur) {
+    var m = {}, last = cur[cur.length - 1] > cur[0] ? cur[cur.length - 1] : cur[0];
+    /* дані GA4 закінчуються вчора, а сервер рахує й сьогодні: для 7/30/90 днів додаємо свіжі дні */
+    var days = st.P === 0 ? cur : cur.concat(Object.keys((E && E.days) || {}).filter(function (d) { return d > last; }));
+    var add = function (ev, i) { days.forEach(function (d) { if (!E || !E.since || d < E.since) return; var x = ((E.days || {})[d] || {})[ev + '_via'] || {}; Object.keys(x).forEach(function (k) { (m[k] = m[k] || [0, 0, 0])[i] += x[k]; }); }); };
+    add('visit', 0); add('src_audit', 1); add('src_lead', 2);
+    var rows = Object.keys(m).sort(function (a, b) { return m[b][0] - m[a][0] || m[b][2] - m[a][2]; });
+    var body = rows.length ? '<table><tr><th>Джерело / канал / кампанія</th><th>Переходи</th><th>Перевірки сайту</th><th>Контакти й заявки</th></tr>' + rows.slice(0, 30).map(function (k) {
+      var v = m[k]; return '<tr><td title="' + esc(k) + '"><b>' + esc(k) + '</b></td><td>' + v[0] + '</td><td>' + (v[1] || '—') + '</td><td>' + (v[2] || '—') + '</td></tr>';
+    }).join('') + '</table>' : '<p class="empty">Ще ніхто не приходив за посиланням з UTM за цей період</p>';
+    return '<section class="panel full"><div class="ph"><h2>Переходи за посиланнями</h2><span class="src">сервер · усі мови</span></div><div class="tbl">' + body + '</div>'
+      + '<p class="sub" style="margin-top:8px">Рахуються переходи за посиланнями з utm_source (наприклад, біо Instagram: ?utm_source=instagram&amp;utm_medium=social&amp;utm_campaign=bio) і з Instagram, Facebook, Telegram, LinkedIn, TikTok, YouTube без UTM (позначка «referral»). Раз за сесію браузера, без cookies, тож видно й тих, кого GA4 не бачить. Джерело також пишеться в CRM, Telegram і таблицю перевірок.</p></section>';
+  }
+
   /* ---------- Чек-лист «Сайт зробив AI?» (/checklist/): скільки відкрили, пройшли до кінця і перейшли на /audyt/ ---------- */
   function checklistPanel(cur) {
     var t = function (ev) { return total(cur, function (d) { return srv(d, ev); }); };
@@ -380,10 +395,10 @@
     var leads = A.filter(function (a) { return a.contact; }).length;
     var path = { pl: '/audyt/', en: '/en/audit/', ua: '/ua/audyt/' };
     var sc = function (n) { return n >= 80 ? 'up' : n >= 55 ? 'warn' : 'down'; };
-    var body = A.length ? '<table><tr><th>Коли</th><th>Сайт</th><th>Платформа</th><th>Оцінка</th><th>Контакт</th><th>Мова</th><th></th></tr>' + A.slice(0, 60).map(function (a) {
+    var body = A.length ? '<table><tr><th>Коли</th><th>Сайт</th><th>Платформа</th><th>Оцінка</th><th>Контакт</th><th>Джерело</th><th>Мова</th><th></th></tr>' + A.slice(0, 60).map(function (a) {
       var d = new Date(a.t * 1000);
       return '<tr><td>' + d.toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</td><td title="' + esc(a.host) + '"><b>' + esc(a.host) + '</b></td><td>' + esc(a.plat === 'custom' ? 'Власний код' : a.plat) + '</td>'
-        + '<td><span class="' + sc(a.score) + '"><b>' + a.score + '</b></span> <span class="sub">❌' + (a.bad || 0) + ' ⚠️' + (a.warn || 0) + '</span></td><td>' + (a.contact ? esc(a.contact) : '—') + '</td><td>' + esc(String(a.lang || '').toUpperCase()) + '</td>'
+        + '<td><span class="' + sc(a.score) + '"><b>' + a.score + '</b></span> <span class="sub">❌' + (a.bad || 0) + ' ⚠️' + (a.warn || 0) + '</span></td><td>' + (a.contact ? esc(a.contact) : '—') + '</td><td>' + (a.src ? esc(a.src) : '—') + '</td><td>' + esc(String(a.lang || '').toUpperCase()) + '</td>'
         + '<td><a href="' + (path[a.lang] || '/audyt/') + '?r=' + encodeURIComponent(a.id) + '" target="_blank" rel="noopener">Звіт</a></td></tr>';
     }).join('') + '</table>' : '<p class="empty">Ще ніхто не перевіряв сайт. Посилання: deweb.studio/audyt/</p>';
     return '<section class="panel full"><div class="ph"><h2>Перевірки сайтів</h2><span class="src">' + day + ' за добу · ' + week + ' за 7 днів · ' + leads + ' з контактом</span></div><div class="tbl">' + body + '</div>'

@@ -21,6 +21,24 @@ window.gtag = window.gtag || function(){dataLayer.push(arguments);};
      першого показу сторінки, а з першою дією відвідувача (рух, дотик, скрол, клавіша)
      або через 4 с після повного завантаження — так вони не гальмують PageSpeed.
      Черги dataLayer / gtag / fbq / clarity працюють одразу, події не губляться. */
+  /* Джерело переходу: UTM з посилання (біо Instagram, розсилка…) або соцмережа з referrer.
+     Пам'ятаємо на сесію браузера (sessionStorage, не cookie) і раз рахуємо на сервері (api/events.php),
+     тож у /stats видно і тих, хто відхилив cookies. Заявка й перевірка сайту додають джерело до CRM. */
+  try {
+    var q = new URLSearchParams(location.search), src = '';
+    var cl = function(v){ return String(v || '').toLowerCase().replace(/[^a-z0-9_.-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30); };
+    if (q.get('utm_source')) src = [q.get('utm_source'), q.get('utm_medium'), q.get('utm_campaign')].map(cl).filter(Boolean).join(' / ');
+    else if (document.referrer) {
+      var m = new URL(document.referrer).hostname.match(/(instagram|facebook|threads|linkedin|tiktok|youtube|t\\.me|telegram)\\./);
+      if (m) src = m[1].replace('t.me', 'telegram') + ' / referral';
+    }
+    if (src && !sessionStorage.getItem('dw-src')) {
+      sessionStorage.setItem('dw-src', src);
+      var hl = document.documentElement.lang;
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/events.php', 'visit|' + (hl === 'uk' ? 'ua' : hl === 'pl' ? 'pl' : 'en') + '|' + src);
+    }
+  } catch (e) {}
+
   var queue = [], started = false;
   function load(src){ if (started) inject(src); else queue.push(src); }
   function inject(src){ var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
