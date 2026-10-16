@@ -9,8 +9,8 @@ const lh = j.lighthouseResult, a = lh.audits;
 console.log(`\n===== ${strategy.toUpperCase()} ${url} score=${Math.round(lh.categories.performance.score * 100)}`);
 for (const id of ["first-contentful-paint", "largest-contentful-paint", "total-blocking-time", "cumulative-layout-shift", "speed-index", "interactive"])
   console.log(`  ${id}: ${a[id]?.displayValue} (${a[id]?.score})`);
-const lcp = a["largest-contentful-paint-element"]?.details?.items;
-console.log("LCP element:", JSON.stringify(lcp)?.slice(0, 1500));
+const lcp = ["lcp-breakdown-insight","lcp-discovery-insight","largest-contentful-paint-element"].map(id => a[id]?.details && JSON.stringify(a[id].details)).filter(Boolean).join("\n");
+console.log("LCP element:", lcp.slice(0, 3000));
 const cls = a["layout-shift-elements"]?.details?.items || a["layout-shifts"]?.details?.items;
 console.log("CLS:", JSON.stringify(cls)?.slice(0, 1500));
 const bad = Object.values(a).filter(x => x.score !== null && x.score < 0.9 && x.scoreDisplayMode !== "informative" && x.scoreDisplayMode !== "notApplicable");
