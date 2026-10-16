@@ -7,10 +7,6 @@
   --f-display:"Urbanist",system-ui,sans-serif; --f-body:"Manrope",system-ui,sans-serif; --f-num:"Inter Tight",system-ui,sans-serif;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#0E0F19; --surface:#171927; --fg:#EDEEF7; --muted:#9397B3; --line:#2A2D42;
-  --accent:#7D89FF; --accent-soft:rgba(125,137,255,.16); --s2:#3CC7A6; --s3:#F0B04F; --s4:#B9BFFF; --s5:#CE86F0; --s6:#E2C54A;
-  --good:#3DC48A; --bad:#F06B6B; --warn:#E6A93A; color-scheme:dark}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 var(--f-body);padding-inline:16px;padding-block:20px 48px}
 .wrap{max-width:1240px;margin:0 auto;display:grid;gap:20px}
