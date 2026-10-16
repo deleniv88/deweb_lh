@@ -1,0 +1,19 @@
+name: PageSpeed check
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/fix-pagespeed-**"]
+    paths: [".github/workflows/pagespeed.yml", "scripts/psi-report.mjs"]
+jobs:
+  psi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - env: { PAGESPEED_API_KEY: "${{ secrets.PAGESPEED_API_KEY }}" }
+        run: |
+          for u in https://deweb.studio/ ${{ vars.PSI_EXTRA_URL }}; do
+            node scripts/psi-report.mjs "$u" mobile || true
+            node scripts/psi-report.mjs "$u" desktop || true
+          done
