@@ -87,12 +87,10 @@ $via  = $labels[$method] ?? ($method ?: '—');
 $page = clean($_SERVER['HTTP_REFERER'] ?? '', 300);
 
 /* ---- Telegram ---- */
+require_once __DIR__ . '/_tg.php';
 function sendTelegram(string $token, string $chat, string $text): string {
   if ($token === '' || $chat === '') return 'skip';
-  [$code] = post("https://api.telegram.org/bot$token/sendMessage",
-    json_encode(['chat_id' => $chat, 'text' => $text, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true]),
-    ['Content-Type: application/json']);
-  return $code === 200 ? 'ok' : 'fail';
+  return dw_tg('leads', $text) ? 'ok' : 'fail';
 }
 
 /* ---- Gmail через SMTP (пароль застосунку) ---- */

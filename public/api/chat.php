@@ -136,14 +136,8 @@ function usage_update(string $dir, float $add = 0.0): float {
 if (usage_update($dataDir) >= $budget) out(200, ['ok' => false, 'error' => 'budget']);
 
 /* ---- Telegram ---- */
-function tg(array $cfg, string $text): bool {
-  $token = trim((string)($cfg['TELEGRAM_BOT_TOKEN'] ?? '')); $chat = trim((string)($cfg['TELEGRAM_CHAT_ID'] ?? ''));
-  if ($token === '' || $chat === '') return false;
-  [$code] = post("https://api.telegram.org/bot$token/sendMessage",
-    json_encode(['chat_id' => $chat, 'text' => $text, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true]),
-    ['Content-Type: application/json']);
-  return $code === 200;
-}
+require_once __DIR__ . '/_tg.php';
+function tg(array $cfg, string $text): bool { return dw_tg('calls', $text); }
 function transcript(array $msgs): string {
   $lines = [];
   foreach (array_slice($msgs, -8) as $m) $lines[] = ($m['role'] === 'user' ? '👤 ' : '🤖 ') . esc(mb_substr($m['content'], 0, 400));
@@ -256,7 +250,7 @@ function run_tool(string $name, array $in): array {
     $bh[] = time(); @file_put_contents($bl, json_encode(array_values($bh)));
     $booked = ['start' => date(DATE_RFC3339, $start), 'visitor_time' => $fmtLocal($start), 'meet' => $meet];
     crm_tg("📅 <b>" . ($old ? 'Дзвінок перенесено через AI-чат' : 'Дзвінок заброньовано через AI-чат') . "</b> · " . strtoupper($lang) . "\n\n🕑 $warsaw (Варшава)" . ($old ? "\n❌ Скасовано: $oldTxt (прибрано з календаря)" : '') . ($kept ? "\n⚠️ Просить перенести, але старий дзвінок ($keptTxt) заброньовано в іншій розмові: перевір, що це той самий клієнт, і скасуй у CRM сам." : '') . "\n👤 <b>" . esc($person) . "</b> · <code>" . esc($email) . "</code>\n📝 " . esc($topic)
-      . "\n\n" . esc($summary) . ($meet ? "\n\n🎥 " . esc($meet) : "\n\n⚠️ Google не підключений: надішли клієнту посилання на дзвінок сам.") . "\n\n🗂 " . crm_site() . '/crm/');
+      . "\n\n" . esc($summary) . ($meet ? "\n\n🎥 " . esc($meet) : "\n\n⚠️ Google не підключений: надішли клієнту посилання на дзвінок сам.") . "\n\n🗂 " . crm_site() . '/crm/', 'calls');
     return ['ok' => true, 'visitor_time' => $fmtLocal($start), 'meet_link' => $meet,
       'previous_cancelled' => array_map(fn($t) => $fmtLocal($t), $old),
       'previous_pending' => $kept ? 'The earlier call was booked in another conversation, so it was not cancelled automatically. Tell the visitor Andrew will confirm the cancellation of the old time by email.' : null,

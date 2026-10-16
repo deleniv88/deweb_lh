@@ -578,13 +578,10 @@ function au_public(array $r, bool $full): array {
     'counts' => $r['counts'], 'speed' => $r['speed'], 'unlocked' => $open, 'items' => $items];
 }
 
-function au_tg(string $html): void {
-  $t = au_cfg('TELEGRAM_BOT_TOKEN'); $c = au_cfg('TELEGRAM_CHAT_ID');
-  if ($t === '' || $c === '') return;
-  $ch = curl_init("https://api.telegram.org/bot$t/sendMessage");
-  curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 8, CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => json_encode(['chat_id' => $c, 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true])]);
-  curl_exec($ch);
+/* $topic — тема групи з api/_tg.php: перевірки окремо, контакти з перевірки — до заявок */
+function au_tg(string $html, string $topic = 'audits'): void {
+  require_once __DIR__ . '/_tg.php';
+  dw_tg($topic, $html);
 }
 function au_site(): string { return 'https://' . preg_replace('~[^a-z0-9.:-]~i', '', (string)($_SERVER['HTTP_HOST'] ?? 'deweb.studio')); }
 function au_link(array $r): string {
@@ -718,7 +715,7 @@ if ($action === 'unlock') {
     } catch (Throwable $e) { error_log('deweb audit: crm ' . $e->getMessage()); }
     au_tg("📬 <b>Контакт з перевірки сайту</b> · " . strtoupper($lang) . "\n" . au_esc($r['host']) . ' — ' . $r['score'] . "/100\n"
       . ($way === 'email' ? '✉️ ' : ($way === 'ig' ? '📷 Instagram ' : '✈️ Telegram ')) . '<code>' . au_esc($v) . "</code>\n🔗 " . au_link($r)
-      . ($crm ? "\n🗂 " . au_site() . '/crm/#clients' : ''));
+      . ($crm ? "\n🗂 " . au_site() . '/crm/#clients' : ''), 'leads');
   }
   au_out(200, ['ok' => true, 'report' => au_public($r, true)]);
 }

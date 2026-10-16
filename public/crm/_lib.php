@@ -120,12 +120,10 @@ function crm_http(string $method, string $url, $body = null, array $headers = []
   $res = curl_exec($ch);
   return [(int)curl_getinfo($ch, CURLINFO_HTTP_CODE), (string)$res];
 }
-function crm_tg(string $html): bool {
-  $token = crm_cfg('TELEGRAM_BOT_TOKEN'); $chat = crm_cfg('TELEGRAM_CHAT_ID');
-  if ($token === '' || $chat === '') return false;
-  [$code] = crm_http('POST', "https://api.telegram.org/bot$token/sendMessage",
-    json_encode(['chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true]), ['Content-Type: application/json']);
-  return $code === 200;
+/* $topic — тема групи з api/_tg.php */
+function crm_tg(string $html, string $topic = 'security'): bool {
+  require_once dirname(__DIR__) . '/api/_tg.php';
+  return dw_tg($topic, $html);
 }
 function crm_esc(string $s): string { return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
 require_once dirname(__DIR__) . '/api/_ip.php';
@@ -523,7 +521,7 @@ function crm_ret_remind(): array {
       . "\nдо " . date('d.m.Y', strtotime($r['renew'])) . " ($when)$price" . ($r['contact'] !== '' ? "\n" . crm_esc($r['contact']) : '');
   }
   $text = "⏰ <b>Утримання: час продовжити</b>\n\n" . implode("\n\n", $lines) . "\n\nКоли клієнт оплатить, відміть «Оплачено» в CRM: " . crm_site() . '/crm/#retention';
-  if (!crm_tg($text)) return ['sent' => 0, 'error' => 'telegram'];
+  if (!crm_tg($text, 'renewals')) return ['sent' => 0, 'error' => 'telegram'];
   foreach ($items as $it) {
     $sent = array_values(array_unique(array_merge($it['r']['sent'], $it['mark'])));
     $row = crm_ret_get($it['r']['id']);

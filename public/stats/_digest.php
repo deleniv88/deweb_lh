@@ -4,21 +4,11 @@
    Бот і чат ті самі, що й для заявок: api/config.php, який створює деплой сайту. */
 declare(strict_types=1);
 
-function dw_tg_cfg(): array {
-  $f = dirname(__DIR__) . '/api/config.php';
-  $c = is_file($f) ? (include $f) : [];
-  return ['token' => trim((string)($c['TELEGRAM_BOT_TOKEN'] ?? '')), 'chat' => trim((string)($c['TELEGRAM_CHAT_ID'] ?? ''))];
-}
+require_once dirname(__DIR__) . '/api/_tg.php';
 
 function dw_tg_send(string $html): string {
-  $c = dw_tg_cfg();
-  if ($c['token'] === '' || $c['chat'] === '') return 'tg_config';
-  $ch = curl_init('https://api.telegram.org/bot' . $c['token'] . '/sendMessage');
-  curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15,
-    CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-    CURLOPT_POSTFIELDS => json_encode(['chat_id' => $c['chat'], 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true])]);
-  curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-  return $code === 200 ? 'ok' : 'tg_http_' . $code;
+  if (dw_tg('stats', $html, $code)) return 'ok';
+  return $code === 0 ? 'tg_config' : 'tg_http_' . $code;
 }
 
 /* $P — 7/30/90 останніх днів (Search Console — до останнього дня з даними); або свій період $from…$to для всіх джерел */
