@@ -154,27 +154,158 @@
       m.meet_url && m.status === "scheduled" ? h("a", { class: "btn btn--sm", href: m.meet_url, target: "_blank", rel: "noopener", onclick: (e) => e.stopPropagation() }, "Meet") : null);
   }
 
+  /* ---------- спільне для «Зустрічей» і «Клієнтів» ---------- */
+  const COLORS = ["#5E6CFF", "#16935F", "#B9770E", "#9a4cc0", "#D04545", "#0E8FA8", "#C2549A", "#4B5563"];
+  const SCOLOR = { new: "#5E6CFF", contacted: "#0E8FA8", call: "#B9770E", proposal: "#9a4cc0", won: "#16935F", lost: "#9AA0B8" };
+  const SRCCLS = { chat: "src--chat", form: "src--form", audit: "src--audit" };
+  const ui = { day: "", cView: (() => { try { return localStorage.getItem("crm_cview") === "list" ? "list" : "board"; } catch { return "board"; } })(), src: "", drawer: 0, slots: null, slotsAt: 0 };
+  const now = () => Date.now() / 1000;
+  const initials = (n) => (n || "?").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+  const avatar = (c, lg) => h("span", { class: "av" + (lg ? " av--lg" : ""), style: "background:" + COLORS[(c ? c.id : 0) % COLORS.length], "aria-hidden": "true" }, initials(c ? c.name : ""));
+  const srcBadge = (s) => h("span", { class: "badge " + (SRCCLS[s] || "") }, SOURCE[s] || s || "вручну");
+  const statusBadge = (s) => h("span", { class: "badge", style: `color:${SCOLOR[s]};background:${SCOLOR[s]}1f` }, STATUS[s] || s);
+  const weekday = (d) => { const n = new Date(d + "T12:00:00Z").getUTCDay(); return n || 7; };
+  const ago = (ts) => { const d = Math.round((Date.parse(ymd(now()) + "T00:00:00Z") - Date.parse(ymd(ts) + "T00:00:00Z")) / 864e5); return d <= 0 ? "сьогодні" : d === 1 ? "вчора" : d + " дн. тому"; };
+  const nextCall = (id) => S.meetings.filter((m) => m.client_id === id && m.status === "scheduled" && m.start_at + m.minutes * 60 > now()).sort((a, b) => a.start_at - b.start_at)[0];
+  const meetLink = (m, cls, label) => h("a", { class: cls, href: m.meet_url, target: "_blank", rel: "noopener", onclick: (e) => e.stopPropagation() }, label);
+  function countdown(ts) {
+    const min = Math.round((ts - now()) / 60);
+    if (min <= 0) return ["зараз", ""];
+    if (min < 60) return [min + " хв", "через"];
+    if (min < 1440) return [Math.round(min / 60) + " год", "через"];
+    return [Math.round(min / 1440) + " дн.", "через"];
+  }
+  async function setMeetingStatus(m, status) {
+    const r = await api("meeting_save", { meeting: { id: m.id, minutes: m.minutes, topic: m.topic, notes: m.notes, status, meet_url: m.meet_url } });
+    if (!r.ok) return toast("Не вдалося зберегти");
+    S = r;
+    if (status === "done" && m.client_id) { ui.drawer = m.client_id; toast("Позначено. Можеш дописати нотатку в картці клієнта."); }
+    else toast(status === "done" ? "Позначено: відбулась" : "Позначено: не прийшов");
+    render();
+  }
+  async function setClientStatus(c, status) {
+    if (c.status === status) return;
+    const r = await api("client_save", { id: c.id, client: { status } });
+    if (!r.ok) return toast("Не вдалося змінити статус");
+    S = r; render(); toast((c.name || "Клієнт") + ": " + STATUS[status]);
+  }
+  async function loadSlots() {
+    if (ui.slotsAt && Date.now() - ui.slotsAt < 120000) return;
+    ui.slotsAt = Date.now();
+    const r = await api("free_slots", {});
+    ui.slots = r.ok ? r.slots : "error";
+    if ((location.hash.slice(1) || "meetings").startsWith("meetings")) render();
+  }
+
+  /* ---------- Зустрічі ---------- */
   function meetingsView() {
-    const now = Date.now() / 1000;
-    const upcoming = S.meetings.filter((m) => m.start_at + m.minutes * 60 > now && m.status === "scheduled").sort((a, b) => a.start_at - b.start_at);
-    const past = S.meetings.filter((m) => !upcoming.includes(m)).slice(0, 40);
-    const week = upcoming.filter((m) => m.start_at < now + 7 * 86400).length;
-    const leads = S.clients.filter((c) => c.status === "new").length;
-    const active = S.clients.filter((c) => ["contacted", "call", "proposal"].includes(c.status)).length;
-    const kpi = (n, l) => h("div", { class: "panel kpi" }, h("b", null, n), h("span", null, l));
-    const list = h("div", { class: "list" });
-    let lastDay = "";
-    for (const m of upcoming) {
-      const d = ymd(m.start_at);
-      if (d !== lastDay) { list.append(h("div", { class: "day" }, dayLabel(m.start_at))); lastDay = d; }
-      list.append(meetingItem(m));
+    const t = now();
+    const upcoming = S.meetings.filter((m) => m.status === "scheduled" && m.start_at + m.minutes * 60 > t).sort((a, b) => a.start_at - b.start_at);
+    const unresolved = S.meetings.filter((m) => m.status === "scheduled" && m.start_at + m.minutes * 60 <= t).sort((a, b) => b.start_at - a.start_at);
+    const archive = S.meetings.filter((m) => m.status !== "scheduled").sort((a, b) => b.start_at - a.start_at).slice(0, 40);
+    const today = ymd(t), tomorrow = ymd(t + 86400);
+    const days = [...Array(7)].map((_, i) => ymd(t + i * 86400));
+    const week = upcoming.filter((m) => days.includes(ymd(m.start_at))).length;
+    const newLeads = S.clients.filter((c) => c.status === "new");
+    const freshLeads = S.clients.filter((c) => c.created_at > t - 7 * 86400).length;
+    const fromChat = S.meetings.filter((m) => m.source === "chat" && m.start_at > t - 30 * 86400).length;
+
+    /* найближча зустріч */
+    const nx = upcoming[0], nc = nx && nx.client_id ? clientById(nx.client_id) : null;
+    let hero = null;
+    if (nx) {
+      const [big, small] = countdown(nx.start_at);
+      const note = (nx.notes || (nc && nc.notes) || "").split("\n").find((l) => l.trim()) || "";
+      hero = h("section", { class: "m-next" },
+        h("div", { class: "m-next__when" }, h("span", null, small || "триває"), h("b", { class: "num" }, big), h("span", { class: "num" }, (ymd(nx.start_at) === today ? "" : fShort(nx.start_at) + " ") + hm(nx.start_at))),
+        h("div", { class: "m-next__main" },
+          h("div", { class: "eyebrow" }, "Наступна зустріч"),
+          h("h2", null, nc ? [nc.name, nc.company].filter(Boolean).join(" · ") : "Без клієнта"),
+          h("div", { class: "m-next__meta" }, [nx.topic, nx.minutes + " хв", SOURCE[nx.source]].filter(Boolean).join(" · ")),
+          note ? h("div", { class: "m-next__note" }, "📝 " + note) : null),
+        h("div", { class: "row" },
+          nx.meet_url ? meetLink(nx, "btn", "Приєднатися до Meet") : null,
+          nc ? h("button", { class: "btn btn--light", onclick: () => openClient(nc.id) }, "Картка клієнта") : null,
+          h("button", { class: "btn btn--light", onclick: () => meetingDialog(nx) }, "Деталі")));
     }
-    if (!upcoming.length) list.append(h("p", { class: "empty" }, "Запланованих зустрічей немає."));
-    shell("meetings", h("div", { class: "wrap" },
-      h("div", { class: "kpis" }, kpi(upcoming.length, "запланованих"), kpi(week, "цього тижня"), kpi(leads, "нових клієнтів"), kpi(active, "у роботі")),
+
+    const stat = (n, l, extra) => h("div", { class: "panel kpi" }, h("b", { class: "num" }, n), h("span", null, l), extra ? h("i", null, " " + extra) : null);
+
+    /* тиждень і розклад */
+    if (ui.day && !days.includes(ui.day)) ui.day = "";
+    const strip = h("div", { class: "m-week" }, days.map((d) => {
+      const n = upcoming.filter((m) => ymd(m.start_at) === d).length;
+      const ts = Date.parse(d + "T12:00:00Z") / 1000;
+      const off = !S.schedule.days.includes(weekday(d)) || S.schedule.blocked.includes(d);
+      return h("button", { class: "m-day" + (off ? " off" : ""), "aria-pressed": String(ui.day === d), title: off ? "Неробочий день у графіку" : null,
+        onclick: () => { ui.day = ui.day === d ? "" : d; render(); } },
+        h("small", null, d === today ? "сьогодні" : fmt(ts, { weekday: "short" })), h("b", { class: "num" }, fmt(ts, { day: "numeric" })),
+        h("span", { class: "dots" }, [...Array(Math.min(n, 4))].map(() => h("i"))));
+    }));
+    const shown = ui.day ? upcoming.filter((m) => ymd(m.start_at) === ui.day) : upcoming;
+    const agenda = h("div", { class: "m-agenda" });
+    let lastDay = "";
+    for (const m of shown) {
+      const c = m.client_id ? clientById(m.client_id) : null, d = ymd(m.start_at);
+      if (d !== lastDay) { agenda.append(h("div", { class: "m-dhead" }, dayLabel(m.start_at))); lastDay = d; }
+      agenda.append(h("button", { class: "m-slot", onclick: () => (c ? openClient(c.id) : meetingDialog(m)) },
+        h("span", { class: "m-slot__t num" }, hm(m.start_at), h("small", null, m.minutes + " хв")),
+        h("span", { class: "m-slot__bar", style: "background:" + COLORS[(c ? c.id : 0) % COLORS.length] }),
+        h("span", { class: "who" }, avatar(c), h("span", { class: "who__txt" }, h("b", null, c ? c.name : "Без клієнта"), h("span", null, [c && c.company, m.topic].filter(Boolean).join(" · ") || "—"))),
+        h("span", { class: "m-slot__act row" }, srcBadge(m.source),
+          m.meet_url ? meetLink(m, "btn btn--sm", "Meet") : h("span", { class: "badge badge--soon" }, "без Meet"),
+          h("span", { class: "icon-btn", role: "button", tabindex: "0", title: "Змінити зустріч", "aria-label": "Змінити зустріч",
+            onclick: (e) => { e.stopPropagation(); meetingDialog(m); }, onkeydown: (e) => { if (e.key === "Enter") { e.stopPropagation(); meetingDialog(m); } } }, "✎"))));
+    }
+    if (!shown.length) agenda.append(h("p", { class: "empty" }, ui.day ? "У цей день зустрічей немає." : "Запланованих зустрічей немає."));
+
+    /* бокова колонка */
+    const review = h("section", { class: "panel side-box" },
+      h("h3", null, "Як пройшло? ", unresolved.length ? h("span", { class: "badge badge--soon num" }, unresolved.length) : null),
+      unresolved.length
+        ? [h("p", { class: "small muted" }, "Минулі дзвінки без підсумку. Один клік, і зустріч піде в архів."),
+          h("div", { class: "todo" }, unresolved.slice(0, 6).map((m) => {
+            const c = m.client_id ? clientById(m.client_id) : null;
+            return h("div", { class: "todo__it" },
+              h("button", { class: "who who--btn", onclick: () => (c ? openClient(c.id) : meetingDialog(m)) }, avatar(c),
+                h("span", { class: "who__txt" }, h("b", null, c ? c.name : "Без клієнта"), h("span", null, fShort(m.start_at) + ", " + hm(m.start_at) + (m.topic ? " · " + m.topic : "")))),
+              h("div", { class: "row" },
+                h("button", { class: "btn btn--sm", onclick: () => setMeetingStatus(m, "done") }, "Відбулась"),
+                h("button", { class: "btn btn--ghost btn--sm", onclick: () => setMeetingStatus(m, "no_show") }, "Не прийшов")));
+          }))]
+        : h("p", { class: "small muted" }, "Усі минулі дзвінки підсумовані 👌"));
+
+    if (ui.slots == null || Date.now() - ui.slotsAt > 120000) loadSlots();
+    const sl = ui.slots;
+    const slotDay = Array.isArray(sl) && sl.length ? ymd(sl[0]) : "";
+    const free = h("section", { class: "panel side-box" },
+      h("h3", null, "Вільні вікна" + (slotDay ? " · " + (slotDay === today ? "сьогодні" : slotDay === tomorrow ? "завтра" : fDate(sl[0])) : "")),
+      h("p", { class: "small muted" }, "Саме їх AI-агент зараз пропонує клієнтам на сайті."),
+      sl == null ? h("p", { class: "small muted" }, "Рахую…")
+        : sl === "error" ? h("p", { class: "small err" }, "Не вдалося отримати зайнятість з Google Календаря.")
+        : sl.length ? h("div", { class: "free" }, sl.slice(0, 12).map((ts) => h("span", { class: "num" }, hm(ts))), sl.length > 12 ? h("em", null, "ще " + (sl.length - 12)) : null)
+        : h("p", { class: "small muted" }, "Вільних вікон на найближчі два тижні немає."),
+      h("a", { class: "small", href: "#settings" }, "Змінити графік →"));
+
+    const leads = newLeads.slice().sort((a, b) => b.created_at - a.created_at);
+    const leadsBox = h("section", { class: "panel side-box" },
+      h("h3", null, "Нові заявки ", leads.length ? h("span", { class: "badge badge--new num" }, leads.length) : null),
+      leads.length ? h("div", { class: "todo" }, leads.slice(0, 5).map((c) => h("button", { class: "lead", onclick: () => openClient(c.id) },
+        h("span", { class: "who" }, avatar(c), h("span", { class: "who__txt" }, h("b", null, c.name || "Без імені"), h("span", null, (c.notes || c.company || c.email || "").split("\n")[0] || ago(c.created_at)))),
+        srcBadge(c.source))))
+        : h("p", { class: "small muted" }, "Нових заявок немає."),
+      leads.length > 5 ? h("a", { class: "small", href: "#clients" }, "Усі заявки →") : null);
+
+    shell("meetings", h("div", { class: "wrap wrap--wide" },
+      hero,
       googleBanner(),
-      h("section", { class: "panel" }, h("h2", null, "Найближчі зустрічі"), list),
-      past.length ? h("section", { class: "panel" }, h("h2", null, "Минулі й скасовані"), h("div", { class: "list", style: "margin-top:10px" }, past.map((m) => meetingItem(m, true)))) : null));
+      h("div", { class: "kpis" }, stat(upcoming.length, "заплановано"), stat(week, "за 7 днів"), stat(newLeads.length, "нових заявок", freshLeads ? "+" + freshLeads + " за тиждень" : ""), stat(fromChat, "записів через AI-чат за 30 днів")),
+      h("div", { class: "m-grid" },
+        h("section", { class: "panel m-sched" },
+          h("div", { class: "row" }, h("h2", null, "Розклад"), h("span", { class: "spacer" }), ui.day ? h("button", { class: "btn btn--ghost btn--sm", onclick: () => { ui.day = ""; render(); } }, "Показати всі") : null),
+          strip, agenda,
+          archive.length ? h("details", { class: "m-archive" }, h("summary", null, "Минулі й скасовані · " + archive.length), h("div", { class: "sub-list" }, archive.map((m) => meetingItem(m, true)))) : null),
+        h("aside", { class: "m-side" }, review, free, leadsBox))), true);
   }
 
   function googleBanner() {
@@ -184,28 +315,114 @@
       h("a", { href: "#settings" }, "Підключити в налаштуваннях"));
   }
 
+  /* ---------- Клієнти ---------- */
   function clientsView() {
     const q = clientFilter.q.trim().toLowerCase();
+    const rows = S.clients.filter((c) => (!ui.src || c.source === ui.src)
+      && (!q || [c.name, c.company, c.email, c.phone, c.contact, c.notes].join(" ").toLowerCase().includes(q)));
     const counts = {};
     for (const c of S.clients) counts[c.status] = (counts[c.status] || 0) + 1;
-    const rows = S.clients.filter((c) => (!clientFilter.status || c.status === clientFilter.status)
-      && (!q || [c.name, c.company, c.email, c.phone, c.contact, c.notes].join(" ").toLowerCase().includes(q)));
-    const next = (id) => S.meetings.filter((m) => m.client_id === id && m.status === "scheduled" && m.start_at > Date.now() / 1000).sort((a, b) => a.start_at - b.start_at)[0];
-    const list = h("div", { class: "list" }, rows.map((c) => {
-      const n = next(c.id);
-      return h("button", { class: "item", onclick: () => clientDialog(c) },
-        h("span", { class: "item__main" }, h("b", null, c.name || "Без імені"),
-          h("span", null, [c.company, c.email || c.phone || c.contact, SOURCE[c.source], n ? "дзвінок " + fShort(n.start_at) + " " + hm(n.start_at) : ""].filter(Boolean).join(" · "))),
-        badge(c.status, STATUS[c.status]));
-    }));
-    if (!rows.length) list.append(h("p", { class: "empty" }, S.clients.length ? "Нічого не знайдено." : "Клієнтів поки немає. Вони з'являться тут із чату й форми, або додай вручну."));
-    const search = h("input", { type: "search", placeholder: "Пошук за іменем, email, нотатками…", value: clientFilter.q, oninput: (e) => { clientFilter.q = e.target.value; render(true); } });
-    const chip = (key, label) => h("button", { "aria-pressed": String(clientFilter.status === key), onclick: () => { clientFilter.status = key; render(); } }, label);
-    shell("clients", h("section", { class: "panel", style: "display:grid;gap:12px" },
-      search,
-      h("div", { class: "chips" }, chip("", "Усі · " + S.clients.length), Object.entries(STATUS).map(([k, l]) => chip(k, l + (counts[k] ? " · " + counts[k] : "")))),
-      list));
+    const max = Math.max(1, ...Object.values(counts));
+    const funnel = h("section", { class: "c-funnel" }, Object.entries(STATUS).map(([k, l]) => h("div", null,
+      h("b", { class: "num" }, counts[k] || 0), h("span", null, l),
+      h("div", { class: "c-funnel__bar" }, h("i", { style: `width:${((counts[k] || 0) / max) * 100}%;background:${SCOLOR[k]}` })))));
+
+    const search = h("input", { type: "search", placeholder: "Пошук: ім'я, компанія, email, нотатки", value: clientFilter.q, oninput: (e) => { clientFilter.q = e.target.value; render(true); } });
+    const srcs = [["", "Усі джерела"], ...Object.entries(SOURCE).filter(([k]) => k === "manual" || S.clients.some((c) => c.source === k))];
+    const seg = (v, l) => h("button", { "aria-pressed": String(ui.cView === v), onclick: () => { ui.cView = v; try { localStorage.setItem("crm_cview", v); } catch {} render(); } }, l);
+    const tools = h("div", { class: "row" },
+      h("div", { class: "c-search" }, search),
+      h("div", { class: "chips" }, srcs.map(([k, l]) => h("button", { "aria-pressed": String(ui.src === k), onclick: () => { ui.src = k; render(); } }, l))),
+      h("span", { class: "spacer" }),
+      h("div", { class: "seg" }, seg("board", "Дошка"), seg("list", "Список")));
+
+    let body;
+    if (!S.clients.length) body = h("section", { class: "panel" }, h("p", { class: "empty" }, "Клієнтів поки немає. Вони з'являться тут із чату й форми, або додай вручну."));
+    else if (ui.cView === "board") {
+      let dragId = 0;
+      body = h("section", { class: "c-board" }, Object.entries(STATUS).map(([k, l]) => {
+        const items = rows.filter((c) => c.status === k).sort((a, b) => b.updated_at - a.updated_at);
+        const col = h("div", { class: "c-col", "data-col": k,
+          ondragover: (e) => { if (!dragId) return; e.preventDefault(); col.classList.add("over"); },
+          ondragleave: (e) => { if (!col.contains(e.relatedTarget)) col.classList.remove("over"); },
+          ondrop: (e) => { e.preventDefault(); col.classList.remove("over"); const c = clientById(dragId); dragId = 0; if (c) setClientStatus(c, k); } },
+          h("h3", null, h("span", { class: "dot", style: "background:" + SCOLOR[k] }), l, h("span", { class: "n num" }, items.length)),
+          items.map((c) => {
+            const n = nextCall(c.id);
+            return h("button", { class: "c-card", draggable: "true", onclick: () => openClient(c.id),
+              ondragstart: (e) => { dragId = c.id; e.currentTarget.classList.add("drag"); try { e.dataTransfer.setData("text/plain", String(c.id)); e.dataTransfer.effectAllowed = "move"; } catch {} },
+              ondragend: (e) => { e.currentTarget.classList.remove("drag"); document.querySelectorAll(".c-col.over").forEach((x) => x.classList.remove("over")); } },
+              h("span", { class: "who" }, avatar(c), h("span", { class: "who__txt" }, h("b", null, c.name || "Без імені"), h("span", null, c.company || c.email || c.contact || c.phone || "—"))),
+              h("span", { class: "c-card__foot" }, srcBadge(c.source), n ? h("span", { class: "call num" }, "📞 " + fShort(n.start_at) + ", " + hm(n.start_at)) : h("span", { class: "muted" }, ago(c.updated_at))));
+          }),
+          items.length ? null : h("p", { class: "c-col__empty" }, "Порожньо"));
+        return col;
+      }));
+    } else {
+      body = h("div", { class: "c-table" }, h("table", null,
+        h("thead", null, h("tr", null, ["Клієнт", "Статус", "Джерело", "Наступний дзвінок", "Контакт", "Додано"].map((x) => h("th", null, x)))),
+        h("tbody", null, rows.slice().sort((a, b) => b.updated_at - a.updated_at).map((c) => {
+          const n = nextCall(c.id);
+          return h("tr", { tabindex: "0", onclick: () => openClient(c.id), onkeydown: (e) => { if (e.key === "Enter") openClient(c.id); } },
+            h("td", null, h("span", { class: "who" }, avatar(c), h("span", { class: "who__txt" }, h("b", null, c.name || "Без імені"), h("span", null, c.company)))),
+            h("td", null, statusBadge(c.status)), h("td", null, srcBadge(c.source)),
+            h("td", { class: "num" }, n ? fShort(n.start_at) + ", " + hm(n.start_at) : "—"),
+            h("td", { class: "muted" }, c.email || c.phone || c.contact || "—"),
+            h("td", { class: "num muted" }, ago(c.created_at)));
+        }))));
+      if (!rows.length) body.append(h("p", { class: "empty" }, "Нічого не знайдено."));
+    }
+    shell("clients", h("div", { class: "wrap wrap--wide" }, funnel, tools, body), true);
     if (clientFilter.focus) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+  }
+
+  /* картка клієнта: панель справа */
+  let drawerEl = null, scrimEl = null;
+  function openClient(id) { ui.drawer = id; drawClient(); }
+  function closeClient() {
+    ui.drawer = 0;
+    if (drawerEl) { drawerEl.classList.remove("open"); scrimEl.classList.remove("open"); }
+  }
+  function drawClient() {
+    const c = ui.drawer ? clientById(ui.drawer) : null;
+    if (!c) return closeClient();
+    if (!drawerEl) {
+      scrimEl = h("div", { class: "scrim", onclick: closeClient });
+      drawerEl = h("aside", { class: "drawer", role: "dialog", "aria-label": "Картка клієнта" });
+      document.body.append(scrimEl, drawerEl);
+      document.addEventListener("keydown", (e) => { if (e.key === "Escape" && ui.drawer && !document.querySelector("dialog[open]")) closeClient(); });
+    }
+    const wasOpen = drawerEl.classList.contains("open");
+    const ms = S.meetings.filter((m) => m.client_id === c.id).sort((a, b) => b.start_at - a.start_at);
+    const keys = [c.name, c.company].map((x) => (x || "").trim().toLowerCase()).filter(Boolean);
+    const svcs = (S.retention || []).filter((r) => keys.includes((r.client || "").trim().toLowerCase()));
+    const sel = h("select", { "aria-label": "Статус", onchange: (e) => setClientStatus(c, e.target.value) }, Object.entries(STATUS).map(([k, l]) => h("option", { value: k }, l)));
+    sel.value = c.status;
+    const close = h("button", { class: "x", "aria-label": "Закрити", onclick: closeClient }, "×");
+    const kv = [];
+    const add = (k, v) => { if (v) kv.push(h("span", null, k), h("div", null, v)); };
+    add("Email", c.email ? h("a", { href: "mailto:" + c.email }, c.email) : null);
+    add("Телефон", c.phone ? h("a", { class: "num", href: "tel:" + c.phone.replace(/[^\d+]/g, "") }, c.phone) : null);
+    add("Контакт", c.contact);
+    add("Додано", fShort(c.created_at) + " · " + (SOURCE[c.source] || c.source) + (c.lang ? " · " + c.lang.toUpperCase() : ""));
+    drawerEl.replaceChildren(
+      h("header", null,
+        h("div", { class: "row", style: "flex-wrap:nowrap" }, avatar(c, true), h("div", { style: "flex:1;min-width:0" }, h("h2", null, c.name || "Без імені"), c.company ? h("div", { class: "muted small" }, c.company) : null), close),
+        h("div", { class: "row" }, h("div", { class: "drawer__status" }, sel), srcBadge(c.source), h("span", { class: "spacer" }),
+          h("button", { class: "btn btn--sm", onclick: () => meetingDialog(null, c.id) }, "+ Зустріч"),
+          h("button", { class: "btn btn--ghost btn--sm", onclick: () => clientDialog(c) }, "Редагувати"))),
+      h("div", { class: "drawer__body" },
+        h("section", null, h("h3", null, "Контакти"), h("div", { class: "kv" }, kv)),
+        h("section", null, h("h3", null, "Нотатки"), c.notes ? h("div", { class: "notes-box" }, c.notes) : h("p", { class: "small muted" }, "Нотаток ще немає. ", h("button", { class: "link", onclick: () => clientDialog(c) }, "Додати"))),
+        h("section", null, h("h3", null, "Історія"), h("div", { class: "timeline" },
+          ms.map((m) => h("button", { class: "ev", onclick: () => meetingDialog(m) },
+            h("b", null, (m.status === "scheduled" ? (m.start_at > now() ? "📞 " : "⏳ ") : m.status === "done" ? "✓ " : "✕ ") + "Дзвінок" + (m.topic ? ": " + m.topic : "")),
+            h("small", null, fShort(m.start_at) + ", " + hm(m.start_at) + " · " + m.minutes + " хв" + (m.status !== "scheduled" ? " · " + MSTATUS[m.status] : "")))),
+          h("div", { class: "ev" }, h("b", null, c.source === "manual" ? "Додано вручну" : "Заявка: " + (SOURCE[c.source] || c.source)), h("small", null, fShort(c.created_at))))),
+        svcs.length ? h("section", null, h("h3", null, "Утримання"),
+          h("div", { class: "svc-list" }, svcs.map((r) => h("a", { class: "svc", href: "#retention", onclick: closeClient },
+            h("span", null, (r.type === "dom" ? "🌐 " : r.type === "srv" ? "🖥 " : "• ") + (r.name || RTYPES[r.type] || "")), leftBadge(r))))) : null));
+    if (!wasOpen) { drawerEl.classList.add("open"); scrimEl.classList.add("open"); close.focus(); }
   }
 
   function settingsView(note) {
@@ -946,6 +1163,7 @@
     else if (id === "sites") sitesView();
     else if (id === "settings") settingsView(new URLSearchParams(query || "").get("google"));
     else meetingsView();
+    if (ui.drawer) drawClient();
   }
   function route() { if (S) render(); else load(); }
   async function load() {
@@ -954,6 +1172,6 @@
     else if (r.error === "auth") authView(r.configured);
     else app.replaceChildren(h("p", { class: "boot" }, "Не вдалося завантажити CRM. Онови сторінку."));
   }
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", () => { closeClient(); route(); });
   load();
 })();

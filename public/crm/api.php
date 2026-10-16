@@ -88,6 +88,16 @@ try {
   };
   if ($action === 'state') out($state());
 
+  /* найближчий день з вільними вікнами (те саме, що бачить AI-агент на сайті) */
+  if ($action === 'free_slots') {
+    $slots = crm_free_slots(time(), 15);
+    if ($slots === null) out(['ok' => false, 'error' => 'google']);
+    $tz = new DateTimeZone(CRM_TZ);
+    $first = $slots ? (new DateTimeImmutable('@' . $slots[0]))->setTimezone($tz)->format('Y-m-d') : '';
+    $day = array_values(array_filter($slots, fn($t) => (new DateTimeImmutable('@' . $t))->setTimezone($tz)->format('Y-m-d') === $first));
+    out(['ok' => true, 'slots' => $day, 'total' => count($slots)]);
+  }
+
   if ($action === 'client_save') {
     $id = (int)($d['id'] ?? 0) ?: null;
     $in = array_intersect_key((array)($d['client'] ?? []), CRM_CLIENT_FIELDS + ['status' => 1]);
