@@ -2,10 +2,13 @@
 
 import { tinaField } from "tinacms/dist/react";
 import { ArrowUpRight, Lines, RightArrow, socialIcons } from "./Icons";
+import type { UIStrings } from "../lib/i18n";
 
 /* Футер (блок «Футер» документа головної своєї мови) — спільний для головної і сторінки робіт.
    Кнопка з data-open-quote відкриває QuoteModal, який має бути на тій самій сторінці. */
-export default function Footer({ footer, t }: { footer: any; t: { social: string } }) {
+export default function Footer({ footer, t }: { footer: any; t: { social: string; legal: UIStrings["legal"] } }) {
+  /* посилання з адмінки має пріоритет; порожнє або «#» — сторінка політики своєї мови */
+  const privacyHref = footer?.privacyUrl && footer.privacyUrl !== "#" ? footer.privacyUrl : t.legal.privacyHref;
   return (
     <footer className="ft" id="contact">
       <div className="ft__in">
@@ -31,7 +34,12 @@ export default function Footer({ footer, t }: { footer: any; t: { social: string
         <div className="ft__bottom">
           <span data-tina-field={tinaField(footer, "copyright")}>{footer?.copyright}</span>
           <span data-tina-field={tinaField(footer, "middle")}>{footer?.middle}</span>
-          <a href={footer?.privacyUrl || "#"} data-tina-field={tinaField(footer, "privacyLabel")}>{footer?.privacyLabel}</a>
+          <span className="ft__legal">
+            <a href={privacyHref} data-tina-field={tinaField(footer, "privacyLabel")}>{footer?.privacyLabel || t.legal.privacy}</a>
+            <a href={t.legal.termsHref}>{t.legal.terms}</a>
+            {/* CookieYes (з GTM) відкриває налаштування згоди по кліку на елемент з класом cky-banner-element */}
+            <button type="button" className="ft__cookies cky-banner-element">{t.legal.cookies}</button>
+          </span>
         </div>
       </div>
     </footer>
