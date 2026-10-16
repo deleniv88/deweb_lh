@@ -1,4 +1,4 @@
-/* CRM deweb.studio: вхід, зустрічі, клієнти, налаштування. Дані — /crm/api.php. Без бібліотек. */
+/* CRM deweb.studio: вхід, зустрічі, клієнти, утримання (домени й сервери), налаштування. Дані — /crm/api.php. Без бібліотек. */
 (() => {
   "use strict";
   const app = document.getElementById("app");
@@ -133,13 +133,13 @@
   }
 
   /* ---------- основний екран ---------- */
-  function shell(active, body) {
+  function shell(active, body, wide) {
     const tab = (id, label) => h("a", { href: "#" + id, "aria-current": active === id ? "page" : null }, label);
-    app.replaceChildren(h("div", { class: "wrap" },
+    app.replaceChildren(h("div", { class: "wrap" + (wide ? " wrap--wide" : "") },
       h("header", { class: "top" },
         h("h1", null, "deweb", h("b", null, "."), "studio / CRM"),
         h("span", { class: "spacer" }),
-        h("nav", { class: "tabs" }, tab("meetings", "Зустрічі"), tab("clients", "Клієнти"), tab("settings", "Налаштування")),
+        h("nav", { class: "tabs" }, tab("meetings", "Зустрічі"), tab("clients", "Клієнти"), tab("retention", "Утримання"), tab("settings", "Налаштування")),
         h("button", { class: "btn btn--sm", onclick: () => meetingDialog() }, "+ Зустріч"),
         h("button", { class: "btn btn--sm btn--ghost", onclick: () => clientDialog() }, "+ Клієнт")),
       body));
@@ -271,6 +271,297 @@
         h("button", { class: "btn btn--ghost btn--sm", onclick: async () => { await api("logout", {}); S = null; authView(true); } }, "Вийти"))));
   }
 
+  /* ---------- утримання: домени, сервери, продовження ---------- */
+  const RTYPES = { dom: "Домен", srv: "Сервер", sup: "Підтримка", oth: "Інше" };
+  const ret = { filter: "all", q: "", sort: "client", edit: null, del: null, focus: false };
+  const isoToUa = (s) => (s && /^\d{4}-\d\d-\d\d$/.test(s) ? s.split("-").reverse().join(".") : s || "");
+  const isoDay = (s) => { const m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(s || ""); return m ? Date.UTC(+m[1], m[2] - 1, +m[3]) : null; };
+  const todayUtc = () => { const [y, mo, d] = ymd(Date.now() / 1000).split("-").map(Number); return Date.UTC(y, mo - 1, d); };
+  const daysLeft = (r) => { const d = isoDay(r.renew); return d == null ? null : Math.round((d - todayUtc()) / 864e5); };
+  const suspicious = (r) => { const a = isoDay(r.bought), b = isoDay(r.renew); return a != null && b != null && b <= a; };
+  const money = (v) => { const n = parseFloat(String(v || "").replace(",", ".").replace(/[^\d.]/g, "")); return isNaN(n) ? null : n; };
+  const fmtMoney = (n) => n.toLocaleString("uk-UA", { maximumFractionDigits: 2 }) + " zł";
+  const retVal = (r, c) => (c.custom ? (r.x || {})[c.key] || "" : c.key === "bought" || c.key === "renew" ? isoToUa(r[c.key]) : r[c.key] ?? "");
+  function leftBadge(r) {
+    const n = daysLeft(r);
+    if (n == null) return h("span", { class: "muted" }, "—");
+    const cls = r.paid ? "ok" : n < 0 ? "over" : n <= 30 ? "soon" : "ok";
+    return h("span", null, h("span", { class: "badge num badge--" + cls }, n < 0 ? -n + " дн. тому" : n === 0 ? "сьогодні" : n + " дн."),
+      suspicious(r) ? h("span", { class: "warn-ico", title: "Дата продовження не пізніша за дату покупки. Перевір." }, "!") : null);
+  }
+  const typeBadge = (t) => h("span", { class: "badge badge--" + t }, RTYPES[t] || t);
+
+  async function retSave(id, row) {
+    const r = await api("retention_save", { id, row });
+    if (!r.ok) { toast(r.error === "date" ? "Дата має бути у форматі дд.мм.рррр" : r.error === "client" ? "Вкажи клієнта" : "Не вдалося зберегти"); return false; }
+    S = r; return true;
+  }
+  async function retCols(cols) { const r = await api("retention_cols", { cols }); if (r.ok) { S = r; render(); } else toast("Не вдалося зберегти колонки"); }
+  function retRows() {
+    const q = ret.q.trim().toLowerCase();
+    let rows = S.retention.filter((r) => {
+      const n = daysLeft(r);
+      if (ret.filter === "dom" && r.type !== "dom") return false;
+      if (ret.filter === "srv" && r.type !== "srv") return false;
+      if (ret.filter === "soon" && !(n != null && n >= 0 && n <= 30)) return false;
+      if (ret.filter === "over" && !(n != null && n < 0 && !r.paid)) return false;
+      if (ret.filter === "unpaid" && r.paid) return false;
+      return !q || [r.client, r.contact, r.name, r.note].join(" ").toLowerCase().includes(q);
+    });
+    if (ret.sort === "date") rows = rows.slice().sort((a, b) => (isoDay(a.renew) ?? 9e15) - (isoDay(b.renew) ?? 9e15));
+    else { const order = [...new Set(S.retention.map((r) => r.client))]; rows = rows.slice().sort((a, b) => order.indexOf(a.client) - order.indexOf(b.client) || a.id - b.id); }
+    return rows;
+  }
+  /* наступне нагадування для послуги: дата, коли спрацює стадія 30/7/0, яку ще не надсилали */
+  function nextReminder(r) {
+    if (r.paid || !r.renew) return null;
+    const n = daysLeft(r), open = [30, 7, 0].filter((s) => !r.sent.includes(s));
+    const now = open.filter((s) => n <= s);
+    if (now.length) return { stage: Math.min(...now), inDays: 0, n };
+    const next = open.filter((s) => s < n);
+    return next.length ? { stage: Math.max(...next), inDays: n - Math.max(...next), n } : null;
+  }
+
+  function retentionView() {
+    const cols = S.retention_cols;
+    const vis = cols.filter((c) => c.on);
+    const rows = retRows();
+    let over = 0, soon = 0, sum = 0;
+    for (const r of S.retention) { const n = daysLeft(r); if (!r.paid && n != null && n < 0) over++; else if (!r.paid && n != null && n <= 30) soon++; const m = money(r.price); if (m) sum += m; }
+    const clients = new Set(S.retention.map((r) => r.client)).size;
+    const setFilter = (f) => { ret.filter = f; render(); };
+
+    /* колонки */
+    let dragFrom = null;
+    const move = (from, to) => { if (to < 0 || to >= cols.length) return; const c = cols.slice(); const [x] = c.splice(from, 1); c.splice(to, 0, x); retCols(c); };
+    const colChip = (c, i) => {
+      const el = h("div", { class: "colrow" + (c.on ? "" : " off"), draggable: "true",
+        ondragstart: (e) => { dragFrom = i; el.classList.add("drag"); e.dataTransfer.effectAllowed = "move"; try { e.dataTransfer.setData("text/plain", String(i)); } catch {} },
+        ondragover: (e) => { if (dragFrom != null) { e.preventDefault(); el.classList.add("over"); } },
+        ondragleave: () => el.classList.remove("over"),
+        ondrop: (e) => { e.preventDefault(); if (dragFrom != null && dragFrom !== i) move(dragFrom, i); dragFrom = null; },
+        ondragend: () => { dragFrom = null; el.classList.remove("drag"); } },
+        h("span", { class: "grip", title: "Перетягни" }, "⋮⋮"),
+        h("input", { type: "checkbox", checked: c.on, "aria-label": "Показувати колонку", onchange: (e) => retCols(cols.map((x, j) => (j === i ? { ...x, on: e.target.checked } : x))) }),
+        h("input", { type: "text", value: c.label, size: Math.max(4, c.label.length), "aria-label": "Назва колонки",
+          onchange: (e) => { const v = e.target.value.trim(); if (v) retCols(cols.map((x, j) => (j === i ? { ...x, label: v } : x))); },
+          onkeydown: (e) => { if (e.key === "Enter") e.target.blur(); } }),
+        c.custom ? h("button", { class: "mv", title: "Видалити колонку", "aria-label": "Видалити колонку", onclick: () => retCols(cols.filter((_, j) => j !== i)) }, "✕") : null,
+        h("button", { class: "mv", "aria-label": "Лівіше", onclick: () => move(i, i - 1) }, "◀"),
+        h("button", { class: "mv", "aria-label": "Правіше", onclick: () => move(i, i + 1) }, "▶"));
+      return el;
+    };
+    const newCol = h("input", { type: "text", placeholder: "+ своя колонка", "aria-label": "Нова колонка", onkeydown: (e) => { if (e.key === "Enter") addCol(); } });
+    const addCol = () => { const label = newCol.value.trim(); if (!label) return newCol.focus(); retCols([...cols, { key: "c" + Date.now().toString(36), label, on: true }]); };
+    const colbar = h("section", { class: "colbar", "aria-label": "Колонки таблиці" },
+      h("span", { class: "colbar__label" }, "Колонки"),
+      h("div", { class: "colset" }, h("div", { class: "colrow" }, h("input", { type: "checkbox", checked: true, disabled: true, "aria-label": "Клієнт завжди видно" }), h("input", { type: "text", value: "Клієнт", size: 6, disabled: true })), cols.map(colChip)),
+      h("div", { class: "colbar__add" }, newCol, h("button", { class: "btn btn--ghost btn--sm", onclick: addCol }, "Додати")));
+
+    /* плитки */
+    const kpi = (n, label, f, cls) => h("button", { class: "panel kpi kpi--btn", onclick: () => setFilter(f) }, h("b", { class: "num " + (cls || "") }, n), h("span", null, label));
+    const upcoming = S.retention.map((r) => ({ r, nx: nextReminder(r) })).filter((x) => x.nx).sort((a, b) => a.nx.inDays - b.nx.inDays).slice(0, 3);
+    const remindBtn = h("button", { class: "link", onclick: async () => {
+      remindBtn.disabled = true;
+      const r = await api("retention_remind", {});
+      remindBtn.disabled = false;
+      if (r.ok) { S = r; render(); toast(r.remind.error ? "Telegram не відповів" : r.remind.sent ? "Надіслано в Telegram: " + r.remind.sent : "Зараз нічого надсилати"); } else toast("Не вдалося перевірити");
+    } }, "Перевірити зараз");
+    const tg = h("div", { class: "panel kpi kpi--tg" },
+      h("h3", null, "✈ Нагадування в Telegram"),
+      upcoming.length ? upcoming.map(({ r, nx }) => h("div", { class: "tg-line", title: r.client + ": " + (RTYPES[r.type] || "") + (r.name ? " " + r.name : "") },
+        h("b", null, nx.inDays === 0 ? "Сьогодні" : "Через " + nx.inDays + " дн."), " · ", r.name || r.client,
+        h("span", { class: "muted" }, nx.n < 0 ? " · прострочено" : nx.stage === 0 ? " · день терміну" : " · за " + nx.stage + " дн. до терміну")))
+        : h("div", { class: "muted" }, "Немає неоплачених послуг з датою продовження."),
+      h("span", { class: "muted small" }, "Щоранку: за 30 днів, за 7 днів і в день терміну, поки не «Оплачено». ", remindBtn));
+    const kpis = h("section", { class: "kpis kpis--5" },
+      kpi(over, "Прострочено, не оплачено", "over", "bad"), kpi(soon, "Термін за 30 днів", "soon", "warn"),
+      kpi(S.retention.length, "Послуг у " + clients + " клієнтів", "all"), kpi(fmtMoney(sum), "Сума за рік", "all"), tg);
+
+    /* фільтри */
+    const chip = (k, l) => h("button", { "aria-pressed": String(ret.filter === k), onclick: () => setFilter(k) }, l);
+    const search = h("input", { type: "search", placeholder: "Пошук клієнта чи домену", value: ret.q, oninput: (e) => { ret.q = e.target.value; ret.focus = true; render(); } });
+    const sortSel = h("select", { style: "width:auto", "aria-label": "Сортування", onchange: (e) => { ret.sort = e.target.value; render(); } },
+      h("option", { value: "client" }, "По клієнтах"), h("option", { value: "date" }, "По терміну"));
+    sortSel.value = ret.sort;
+    const toolbar = h("div", { class: "row" },
+      h("div", { class: "chips" }, chip("all", "Усі"), chip("dom", "Домени"), chip("srv", "Сервери"), chip("soon", "≤ 30 днів"), chip("over", "Прострочені"), chip("unpaid", "Не оплачені")),
+      h("span", { class: "spacer" }), h("div", { style: "width:min(240px,100%)" }, search), sortSel,
+      h("button", { class: "btn btn--ghost btn--sm", onclick: importDialog }, "Імпорт з таблиці"),
+      h("button", { class: "btn btn--sm", onclick: () => retDialog() }, "+ Послуга"));
+
+    /* таблиця */
+    const commit = async (r, key, value) => {
+      ret.edit = null;
+      const c = cols.find((x) => x.key === key);
+      const row = c && c.custom ? { x: { [key]: value } } : { [key]: value };
+      if (await retSave(r.id, row)) render(); else render();
+    };
+    const editor = (r, key) => {
+      const cur = key === "client" ? r.client : retVal(r, cols.find((c) => c.key === key));
+      let el;
+      if (key === "type") el = h("select", { onchange: (e) => commit(r, key, e.target.value), onblur: () => { if (ret.edit) { ret.edit = null; render(); } } }, Object.entries(RTYPES).map(([k, l]) => h("option", { value: k }, l)));
+      else el = h("input", { type: "text", value: cur, placeholder: key === "bought" || key === "renew" ? "дд.мм.рррр" : null });
+      if (key === "type") el.value = cur;
+      else {
+        let done = false;
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); done = true; commit(r, key, el.value.trim()); }
+          if (e.key === "Escape") { done = true; ret.edit = null; render(); }
+        });
+        el.addEventListener("blur", () => { if (!done) { done = true; if (el.value.trim() !== String(cur)) commit(r, key, el.value.trim()); else { ret.edit = null; render(); } } });
+      }
+      setTimeout(() => { el.focus(); if (el.select) el.select(); }, 0);
+      return h("td", { class: "editing" }, el);
+    };
+    const startEdit = (r, key) => { ret.edit = { id: r.id, key }; ret.del = null; render(); };
+    const cell = (r, c, first) => {
+      if (ret.edit && ret.edit.id === r.id && ret.edit.key === c.key) return editor(r, c.key);
+      const ed = (cls, ...kids) => h("td", { class: "ed " + (cls || ""), onclick: () => startEdit(r, c.key), title: "Клікни, щоб змінити" }, ...kids);
+      switch (c.key) {
+        case "contact": return ret.sort === "client" && !first ? h("td") : ed("muted", r.contact);
+        case "type": return ed("", typeBadge(r.type));
+        case "left": return h("td", null, leftBadge(r));
+        case "paid": return h("td", null, h("button", { class: "badge" + (r.paid ? " badge--paid" : ""), title: "Клікни, щоб перемкнути",
+          onclick: async () => { if (await retSave(r.id, { paid: !r.paid })) { render(); toast(!r.paid ? "Оплачено. Нагадування для цієї послуги зупинені." : "Позначку оплати знято"); } } }, r.paid ? "✓ Оплачено" : "Не оплачено"));
+        case "bought": case "renew": case "price": return ed("num", retVal(r, c));
+        case "note": return ed("muted small", retVal(r, c));
+        default: return ed("", retVal(r, c));
+      }
+    };
+    const extend = async (r) => {
+      const d = isoDay(r.renew); if (d == null) return toast("Спершу вкажи дату продовження");
+      const nd = new Date(d); nd.setUTCFullYear(nd.getUTCFullYear() + 1);
+      if (await retSave(r.id, { renew: nd.toISOString().slice(0, 10), paid: false })) { render(); toast("Продовжено до " + isoToUa(nd.toISOString().slice(0, 10))); }
+    };
+    let prev = null;
+    const body = rows.map((r) => {
+      const first = ret.sort !== "client" || r.client !== prev; prev = r.client;
+      const clientCell = ret.edit && ret.edit.id === r.id && ret.edit.key === "client" ? editor(r, "client")
+        : first ? h("td", { class: "ed client", onclick: () => startEdit(r, "client"), title: "Клікни, щоб змінити" }, h("b", null, r.client)) : h("td");
+      const act = ret.del === r.id
+        ? h("td", { class: "act" }, h("button", { class: "btn btn--danger btn--sm", onclick: async () => { const x = await api("retention_delete", { id: r.id }); ret.del = null; if (x.ok) { S = x; toast("Рядок видалено"); } render(); } }, "Видалити"),
+            h("button", { class: "icon-btn", "aria-label": "Не видаляти", onclick: () => { ret.del = null; render(); } }, "✕"))
+        : h("td", { class: "act" },
+            h("button", { class: "icon-btn", title: "Продовжено на рік: дата +1 рік, оплата скидається", "aria-label": "Продовжити на рік", onclick: () => extend(r) }, "↻"),
+            h("button", { class: "icon-btn", title: "Відкрити всі поля", "aria-label": "Відкрити", onclick: () => retDialog(r) }, "✎"),
+            h("button", { class: "icon-btn", title: "Видалити рядок", "aria-label": "Видалити рядок", onclick: () => { ret.del = r.id; render(); } }, "🗑"));
+      return h("tr", { class: first && ret.sort === "client" ? "first" : null }, clientCell, vis.map((c) => cell(r, c, first)), act);
+    });
+    const table = h("div", { class: "ret-table" }, h("table", null,
+      h("thead", null, h("tr", null, h("th", null, "Клієнт"), vis.map((c) => h("th", null, c.label)), h("th"))),
+      h("tbody", null, body.length ? body : h("tr", null, h("td", { colspan: vis.length + 2, class: "empty" },
+        S.retention.length ? "Нічого не знайдено за цим фільтром." : "Тут поки порожньо. Натисни «Імпорт з таблиці» і встав рядки з Google-таблиці, або додай послугу вручну.")))));
+    const cardCols = vis.filter((c) => !["type", "name", "left", "contact"].includes(c.key));
+    const cards = h("div", { class: "ret-cards" }, rows.length ? rows.map((r) => h("button", { class: "ret-card", onclick: () => retDialog(r) },
+      h("div", { class: "row" }, h("b", { style: "flex:1;font-family:var(--f-display)" }, r.client), typeBadge(r.type)),
+      h("div", { class: "r" }, h("span", null, r.name || "—"), leftBadge(r)),
+      cardCols.map((c) => h("div", { class: "r" }, h("span", null, c.label), c.key === "paid" ? h("span", { class: "badge" + (r.paid ? " badge--paid" : "") }, r.paid ? "✓ Оплачено" : "Не оплачено") : h("span", { class: "num" }, retVal(r, c) || "—")))))
+      : h("p", { class: "empty" }, S.retention.length ? "Нічого не знайдено." : "Тут поки порожньо. Додай послугу або імпортуй з таблиці."));
+    const legend = h("p", { class: "legend" },
+      h("span", { class: "badge badge--over" }, "прострочено"), h("span", { class: "badge badge--soon" }, "≤ 30 днів"), h("span", { class: "badge badge--ok" }, "ще є час або оплачено"),
+      h("span", null, h("span", { class: "warn-ico" }, "!"), " продовження раніше за покупку"),
+      h("span", null, "Клік по клітинці редагує, Enter зберігає, Esc скасовує. ↻ — продовжено на рік."));
+
+    shell("retention", h("div", { class: "wrap wrap--wide" }, colbar, kpis, toolbar, h("div", null, table, cards), legend), true);
+    if (ret.focus) { ret.focus = false; search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+  }
+
+  function retDialog(r) {
+    const isNew = !r;
+    r = r || { client: "", contact: "", type: "dom", name: "", bought: "", renew: "", price: "", paid: false, note: "", x: {} };
+    const inp = (v, attrs) => h("input", { type: "text", value: v, ...attrs });
+    const clientsList = h("datalist", { id: "ret-clients" }, [...new Set(S.retention.map((x) => x.client))].map((c) => h("option", { value: c })));
+    const f = {
+      client: inp(r.client, { list: "ret-clients", autocomplete: "off" }), contact: inp(r.contact, { placeholder: "@telegram, телефон…" }),
+      type: h("select", null, Object.entries(RTYPES).map(([k, l]) => h("option", { value: k }, l))), name: inp(r.name, { placeholder: "домен або сервер" }),
+      bought: inp(isoToUa(r.bought), { placeholder: "дд.мм.рррр", inputmode: "numeric" }), renew: inp(isoToUa(r.renew), { placeholder: "дд.мм.рррр", inputmode: "numeric" }),
+      price: inp(r.price, { inputmode: "decimal" }), paid: h("select", null, h("option", { value: "0" }, "Не оплачено"), h("option", { value: "1" }, "Оплачено")),
+      note: inp(r.note),
+    };
+    f.type.value = r.type; f.paid.value = r.paid ? "1" : "0";
+    const custom = S.retention_cols.filter((c) => c.custom).map((c) => [c, inp((r.x || {})[c.key] || "")]);
+    const err = h("p", { class: "err" });
+    const body = h("div", { style: "display:grid;gap:12px" }, clientsList,
+      h("div", { class: "grid2" }, field("Клієнт", f.client), field("Контакт", f.contact), field("Послуга", f.type), field("Домен / сервер", f.name),
+        field("Куплено", f.bought), field("Продовження до", f.renew), field("Вартість brutto, zł", f.price), field("Оплата", f.paid),
+        custom.map(([c, el]) => field(c.label, el))),
+      field("Нотатки", f.note), err);
+    let sure = false;
+    dialog(isNew ? "Нова послуга" : r.client || "Послуга", body, (close) => [
+      h("button", { class: "btn", onclick: async () => {
+        const row = { client: f.client.value, contact: f.contact.value, type: f.type.value, name: f.name.value, bought: f.bought.value, renew: f.renew.value,
+          price: f.price.value, paid: f.paid.value === "1", note: f.note.value, x: Object.fromEntries(custom.map(([c, el]) => [c.key, el.value])) };
+        if (!row.client.trim()) return (err.textContent = "Вкажи клієнта.");
+        if (await retSave(isNew ? 0 : r.id, row)) { close(); render(); toast(isNew ? "Послугу додано" : "Збережено"); }
+      } }, "Зберегти"),
+      h("span", { class: "spacer" }),
+      isNew ? null : h("button", { class: "btn btn--danger btn--sm", onclick: async (e) => {
+        if (!sure) { sure = true; e.currentTarget.textContent = "Точно видалити?"; return; }
+        const x = await api("retention_delete", { id: r.id });
+        if (x.ok) { S = x; close(); render(); toast("Рядок видалено"); }
+      } }, "Видалити"),
+    ]);
+    if (isNew) setTimeout(() => f.client.focus(), 50);
+  }
+
+  /* імпорт: виділи рядки в Google-таблиці разом із заголовком, скопіюй і встав сюди.
+     Розуміє і широку таблицю (Клієнт, Контакт, потім блоки «Домен …» і «Сервер …» з датами, вартістю й оплатою). */
+  function parseSheet(text) {
+    const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const sep = lines[0].includes("\t") ? "\t" : lines[0].includes(";") ? ";" : ",";
+    const split = (l) => l.split(sep).map((x) => x.trim().replace(/^"|"$/g, ""));
+    const head = split(lines[0]).map((x) => x.toLowerCase());
+    const find = (re) => head.findIndex((x) => re.test(x));
+    const iClient = find(/клієнт|клиент|client/), iContact = find(/контакт|contact/);
+    const groups = [];
+    head.forEach((x, i) => {
+      const type = /домен|domain/.test(x) ? "dom" : /сервер|хостинг|server|hosting/.test(x) ? "srv" : /підтрим|support/.test(x) ? "sup" : null;
+      if (type) groups.push({ type, i });
+    });
+    if (iClient < 0 || !groups.length) return null;
+    const out = [];
+    for (const l of lines.slice(1)) {
+      const c = split(l);
+      const client = c[iClient] || "";
+      if (!client) continue;
+      groups.forEach((g, gi) => {
+        const end = gi + 1 < groups.length ? groups[gi + 1].i : head.length;
+        const part = head.slice(g.i + 1, end), val = (re) => { const k = part.findIndex((x) => re.test(x)); return k < 0 ? "" : c[g.i + 1 + k] || ""; };
+        const dates = part.map((x, k) => (/дата|date/.test(x) ? c[g.i + 1 + k] || "" : null)).filter((x) => x !== null);
+        const row = { client, contact: iContact >= 0 ? c[iContact] || "" : "", type: g.type,
+          name: (c[g.i] || "").replace(/^https?:\/\//, "").replace(/\/$/, ""),
+          bought: val(/покуп|куплен|purchase|bought/) || dates[0] || "", renew: val(/продов|renew|термін/) || dates[1] || "",
+          price: val(/варт|цін|price|brutto/).replace(/\s*(zł|zl|pln)\s*$/i, ""), paid: /так|yes|оплач|✓|true|\+/i.test(val(/оплат|paid/)), note: "" };
+        if (row.name || row.renew || row.price) out.push(row);
+      });
+    }
+    return out;
+  }
+  function importDialog() {
+    const ta = h("textarea", { rows: 9, placeholder: "Встав сюди рядки з Google-таблиці разом із рядком заголовків" });
+    const info = h("p", { class: "small muted", style: "margin:0" }, "У Google-таблиці виділи все від заголовків до останнього рядка (Ctrl+A), скопіюй і встав сюди. Кожен домен і сервер стане окремим рядком.");
+    const prevBox = h("p", { class: "small", style: "margin:0" });
+    let parsed = [];
+    ta.addEventListener("input", () => {
+      const p = parseSheet(ta.value);
+      parsed = p || [];
+      prevBox.className = p === null ? "err" : "ok";
+      prevBox.textContent = p === null ? "Не бачу колонок «Клієнт» і «Домен» або «Сервер» у першому рядку." : parsed.length ? "Знайдено послуг: " + parsed.length + " у " + new Set(parsed.map((x) => x.client)).size + " клієнтів." : "";
+    });
+    dialog("Імпорт з Google-таблиці", h("div", { style: "display:grid;gap:10px" }, info, ta, prevBox,
+      S.retention.length ? h("p", { class: "small muted", style: "margin:0" }, "Нові рядки додадуться до тих, що вже є (" + S.retention.length + ").") : null), (close) => [
+      h("button", { class: "btn", onclick: async (e) => {
+        if (!parsed.length) return ta.focus();
+        e.currentTarget.disabled = true;
+        const r = await api("retention_import", { rows: parsed });
+        if (r.ok) { S = r; close(); render(); toast("Імпортовано: " + r.imported); } else { e.currentTarget.disabled = false; toast("Не вдалося імпортувати"); }
+      } }, "Імпортувати"),
+    ]);
+    setTimeout(() => ta.focus(), 50);
+  }
+
   /* ---------- вікна ---------- */
   function dialog(title, body, foot) {
     const dlg = h("dialog", null);
@@ -387,6 +678,7 @@
     const [id, query] = (location.hash.slice(1) || "meetings").split("?");
     clientFilter.focus = !!keepFocus;
     if (id === "clients") clientsView();
+    else if (id === "retention") retentionView();
     else if (id === "settings") settingsView(new URLSearchParams(query || "").get("google"));
     else meetingsView();
   }

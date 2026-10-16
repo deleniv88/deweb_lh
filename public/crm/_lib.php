@@ -394,3 +394,141 @@ function crm_free_slots(int $fromDay, int $days, ?int $onlyStart = null): ?array
   }
   return $out;
 }
+
+/* ---- утримання: домени, сервери й інші послуги з датою продовження ----
+   Усе про послугу (клієнт, контакт, назва, дати, ціна, нотатки) — в одному зашифрованому полі.
+   Нагадування в Telegram: за 30 днів, за 7 днів і в день терміну, поки послуга не позначена «Оплачено». */
+const CRM_RET_TYPES = ['dom', 'srv', 'sup', 'oth'];
+const CRM_RET_TYPE_LABEL = ['dom' => 'Домен', 'srv' => 'Сервер', 'sup' => 'Підтримка', 'oth' => 'Інше'];
+const CRM_RET_STAGES = [30, 7, 0];
+const CRM_RET_COLS = [
+  ['key' => 'contact', 'label' => 'Контакт'], ['key' => 'type', 'label' => 'Послуга'], ['key' => 'name', 'label' => 'Домен / сервер'],
+  ['key' => 'bought', 'label' => 'Куплено'], ['key' => 'renew', 'label' => 'Продовження до'], ['key' => 'left', 'label' => 'Залишилось'],
+  ['key' => 'price', 'label' => 'Вартість brutto, zł'], ['key' => 'paid', 'label' => 'Оплата'], ['key' => 'note', 'label' => 'Нотатки'],
+];
+
+function crm_db_retention(): PDO {
+  $db = crm_db();
+  static $done = false;
+  if (!$done) {
+    $db->exec('CREATE TABLE IF NOT EXISTS retention (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL)');
+    $done = true;
+  }
+  return $db;
+}
+
+/* дата з «дд.мм.рррр» або «рррр-мм-дд» → «рррр-мм-дд»; порожньо — порожній рядок; null — неправильна дата */
+function crm_ret_date($v): ?string {
+  $s = trim((string)($v ?? ''));
+  if ($s === '') return '';
+  if (preg_match('/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/', $s, $m)) [$y, $mo, $d] = [(int)$m[3], (int)$m[2], (int)$m[1]];
+  elseif (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $s, $m)) [$y, $mo, $d] = [(int)$m[1], (int)$m[2], (int)$m[3]];
+  else return null;
+  return checkdate($mo, $d, $y) ? sprintf('%04d-%02d-%02d', $y, $mo, $d) : null;
+}
+
+function crm_ret_cols(): array {
+  $saved = crm_get('retention_cols');
+  $base = array_map(fn($c) => $c + ['on' => true, 'custom' => false], CRM_RET_COLS);
+  if (!is_array($saved)) return $base;
+  $out = []; $seen = [];
+  foreach ($saved as $c) {
+    $key = (string)($c['key'] ?? '');
+    $std = array_values(array_filter($base, fn($b) => $b['key'] === $key))[0] ?? null;
+    if (!$std && !preg_match('/^c[a-z0-9]{3,20}$/', $key)) continue;
+    if (isset($seen[$key])) continue;
+    $seen[$key] = 1;
+    $out[] = ['key' => $key, 'label' => crm_clean($c['label'] ?? '', 60) ?: ($std['label'] ?? 'Колонка'), 'on' => !empty($c['on']), 'custom' => !$std];
+  }
+  foreach ($base as $b) if (!isset($seen[$b['key']])) $out[] = $b; // нові стандартні колонки з'являються самі
+  return $out;
+}
+
+function crm_ret_row(array $r): array {
+  $d = (array)(crm_dec($r['data']) ?? []);
+  return ['id' => (int)$r['id'], 'client' => (string)($d['client'] ?? ''), 'contact' => (string)($d['contact'] ?? ''),
+    'type' => in_array($d['type'] ?? '', CRM_RET_TYPES, true) ? $d['type'] : 'oth', 'name' => (string)($d['name'] ?? ''),
+    'bought' => (string)($d['bought'] ?? ''), 'renew' => (string)($d['renew'] ?? ''), 'price' => (string)($d['price'] ?? ''),
+    'paid' => !empty($d['paid']), 'note' => (string)($d['note'] ?? ''), 'x' => (object)array_map('strval', (array)($d['x'] ?? [])),
+    'sent' => array_map('intval', (array)($d['sent'] ?? []))];
+}
+function crm_ret_all(): array {
+  return array_map('crm_ret_row', crm_db_retention()->query('SELECT * FROM retention ORDER BY id')->fetchAll());
+}
+function crm_ret_get(int $id): ?array {
+  $st = crm_db_retention()->prepare('SELECT * FROM retention WHERE id = ?'); $st->execute([$id]);
+  $r = $st->fetch();
+  return $r ? crm_ret_row($r) : null;
+}
+
+/* зберегти послугу; $in — лише ті поля, що змінюються. Повертає id або кидає 'date' */
+function crm_ret_save(?int $id, array $in): int {
+  $cur = $id ? crm_ret_get($id) : null;
+  if ($id && !$cur) throw new RuntimeException('not_found');
+  $d = $cur ? $cur : ['client' => '', 'contact' => '', 'type' => 'dom', 'name' => '', 'bought' => '', 'renew' => '', 'price' => '', 'paid' => false, 'note' => '', 'x' => [], 'sent' => []];
+  $d['x'] = (array)$d['x'];
+  foreach (['client' => 120, 'contact' => 200, 'name' => 200, 'price' => 40, 'note' => 2000] as $k => $max)
+    if (array_key_exists($k, $in)) $d[$k] = crm_clean($in[$k], $max);
+  if (array_key_exists('type', $in)) $d['type'] = in_array($in['type'], CRM_RET_TYPES, true) ? $in['type'] : 'oth';
+  foreach (['bought', 'renew'] as $k) if (array_key_exists($k, $in)) {
+    $v = crm_ret_date($in[$k]);
+    if ($v === null) throw new InvalidArgumentException('date');
+    $d[$k] = $v;
+  }
+  if (array_key_exists('paid', $in)) $d['paid'] = (bool)$in['paid'];
+  if (isset($in['x']) && is_array($in['x']))
+    foreach ($in['x'] as $k => $v) if (preg_match('/^c[a-z0-9]{3,20}$/', (string)$k)) $d['x'][$k] = crm_clean($v, 500);
+  /* нова дата продовження — нагадування починаються заново */
+  if ($cur && $cur['renew'] !== $d['renew']) $d['sent'] = [];
+  unset($d['id']);
+  $db = crm_db_retention();
+  if ($id) {
+    $db->prepare('UPDATE retention SET data = ?, updated_at = ? WHERE id = ?')->execute([crm_enc($d), time(), $id]);
+    return $id;
+  }
+  $db->prepare('INSERT INTO retention (data, created_at, updated_at) VALUES (?, ?, ?)')->execute([crm_enc($d), time(), time()]);
+  return (int)$db->lastInsertId();
+}
+
+/* скільки днів до дати (за варшавським календарем) */
+function crm_ret_days(string $ymd): ?int {
+  if (!preg_match('/^\d{4}-\d\d-\d\d$/', $ymd)) return null;
+  $tz = new DateTimeZone(CRM_TZ);
+  $today = new DateTimeImmutable('today', $tz);
+  $d = new DateTimeImmutable($ymd, $tz);
+  return (int)$today->diff($d)->format('%r%a');
+}
+
+/* щоденна перевірка: кожна стадія (30/7/0 днів) надсилається один раз на дату продовження.
+   Якщо перевірка пропустила день, нагадування все одно прийде наступного разу. */
+function crm_ret_remind(): array {
+  $items = [];
+  foreach (crm_ret_all() as $r) {
+    if ($r['paid'] || $r['renew'] === '') continue;
+    $days = crm_ret_days($r['renew']);
+    if ($days === null || $days > 30) continue;
+    $due = array_values(array_filter(CRM_RET_STAGES, fn($s) => $days <= $s && !in_array($s, $r['sent'], true)));
+    if (!$due) continue;
+    $items[] = ['r' => $r, 'days' => $days, 'mark' => $due];
+  }
+  if (!$items) return ['sent' => 0];
+  usort($items, fn($a, $b) => $a['days'] <=> $b['days']);
+  $lines = [];
+  foreach ($items as $it) {
+    $r = $it['r']; $n = $it['days'];
+    $when = $n < 0 ? 'прострочено на ' . -$n . ' дн.' : ($n === 0 ? 'сьогодні' : "через $n дн.");
+    $icon = $r['type'] === 'dom' ? '🌐' : ($r['type'] === 'srv' ? '🖥' : '•');
+    $price = $r['price'] !== '' ? ' · ' . crm_esc($r['price']) . (preg_match('/^[\d.,\s]+$/', $r['price']) ? ' zł' : '') : '';
+    $lines[] = "$icon <b>" . crm_esc($r['client'] ?: 'Без клієнта') . '</b>: ' . crm_esc(CRM_RET_TYPE_LABEL[$r['type']] . ($r['name'] !== '' ? ' ' . $r['name'] : ''))
+      . "\nдо " . date('d.m.Y', strtotime($r['renew'])) . " ($when)$price" . ($r['contact'] !== '' ? "\n" . crm_esc($r['contact']) : '');
+  }
+  $text = "⏰ <b>Утримання: час продовжити</b>\n\n" . implode("\n\n", $lines) . "\n\nКоли клієнт оплатить, відміть «Оплачено» в CRM: " . crm_site() . '/crm/#retention';
+  if (!crm_tg($text)) return ['sent' => 0, 'error' => 'telegram'];
+  foreach ($items as $it) {
+    $sent = array_values(array_unique(array_merge($it['r']['sent'], $it['mark'])));
+    $row = crm_ret_get($it['r']['id']);
+    $d = $row; unset($d['id']); $d['x'] = (array)$d['x']; $d['sent'] = $sent;
+    crm_db_retention()->prepare('UPDATE retention SET data = ? WHERE id = ?')->execute([crm_enc($d), $it['r']['id']]);
+  }
+  return ['sent' => count($items)];
+}

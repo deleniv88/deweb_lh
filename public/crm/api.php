@@ -81,6 +81,7 @@ try {
     $meetings = array_map('crm_meeting_row', $db->query('SELECT * FROM meetings ORDER BY start_at DESC')->fetchAll());
     $g = crm_get('google');
     return ['ok' => true, 'clients' => $clients, 'meetings' => $meetings, 'schedule' => crm_schedule(), 'tz' => CRM_TZ,
+      'retention' => crm_ret_all(), 'retention_cols' => crm_ret_cols(),
       'google' => ['configured' => crm_google_configured(), 'on' => crm_google_on(), 'email' => is_array($g) ? (string)($g['email'] ?? '') : '',
         'error' => (string)crm_get('google_error', ''), 'redirect' => crm_site() . '/crm/google.php']];
   };
@@ -169,6 +170,45 @@ try {
     ]);
     out($state());
   }
+  /* ---------- утримання ---------- */
+  if ($action === 'retention_save') {
+    $id = (int)($d['id'] ?? 0) ?: null;
+    $in = array_intersect_key((array)($d['row'] ?? []), array_flip(['client', 'contact', 'type', 'name', 'bought', 'renew', 'price', 'paid', 'note', 'x']));
+    $cur = $id ? crm_ret_get($id) : null;
+    if ($id && !$cur) out(['ok' => false, 'error' => 'not_found']);
+    if (!$id && trim((string)($in['client'] ?? '')) === '') out(['ok' => false, 'error' => 'client']);
+    try { $id = crm_ret_save($id, $in); } catch (InvalidArgumentException $e) { out(['ok' => false, 'error' => 'date']); }
+    /* клієнт і контакт спільні для всіх послуг клієнта: перейменування — в усіх його рядках */
+    $group = array_intersect_key($in, ['client' => 1, 'contact' => 1]);
+    $old = $cur ? $cur['client'] : (string)($in['client'] ?? '');
+    if ($group && $old !== '')
+      foreach (crm_ret_all() as $r) if ($r['id'] !== $id && $r['client'] === $old) crm_ret_save($r['id'], $group);
+    out(['ok' => true, 'id' => $id] + $state());
+  }
+  if ($action === 'retention_delete') {
+    crm_db_retention()->prepare('DELETE FROM retention WHERE id = ?')->execute([(int)($d['id'] ?? 0)]);
+    out($state());
+  }
+  if ($action === 'retention_import') {
+    $rows = array_slice((array)($d['rows'] ?? []), 0, 500);
+    $n = 0;
+    crm_db_retention()->beginTransaction();
+    foreach ($rows as $row) {
+      $row = array_intersect_key((array)$row, array_flip(['client', 'contact', 'type', 'name', 'bought', 'renew', 'price', 'paid', 'note']));
+      foreach (['bought', 'renew'] as $k) if (isset($row[$k]) && crm_ret_date($row[$k]) === null) $row[$k] = '';
+      if (trim((string)($row['client'] ?? '')) === '') continue;
+      crm_ret_save(null, $row); $n++;
+    }
+    crm_db_retention()->commit();
+    out(['ok' => true, 'imported' => $n] + $state());
+  }
+  if ($action === 'retention_cols') {
+    $cols = array_slice((array)($d['cols'] ?? []), 0, 40);
+    crm_set('retention_cols', array_map(fn($c) => ['key' => (string)($c['key'] ?? ''), 'label' => (string)($c['label'] ?? ''), 'on' => !empty($c['on'])], $cols));
+    out($state());
+  }
+  if ($action === 'retention_remind') out(['ok' => true, 'remind' => crm_ret_remind()] + $state());
+
   if ($action === 'google_disconnect') {
     crm_set('google', null); crm_set('google_access', null); crm_set('google_error', null);
     out($state());
