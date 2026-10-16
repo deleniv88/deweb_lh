@@ -8,6 +8,7 @@ import QuoteModal from "./QuoteModal";
 import ChatAgent from "./ChatAgent";
 import { ArrowUpRight } from "./Icons";
 import { UI, localeOf, type Locale } from "../lib/i18n";
+import { loadTurnstile } from "../lib/turnstile";
 import { AUDIT, AU_CRIT, AU_GROUPS, AU_HOSTED, type AuP, type AuStatus, type AuditTexts } from "../lib/auditText";
 
 /* Прихована сторінка «Перевірка сайту» (/audyt/, /en/audit/, /ua/audyt/).
@@ -82,6 +83,12 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
   const urlRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { document.documentElement.lang = localeOf(locale).htmlLang; }, [locale]);
+  /* форма аудиту на самій сторінці, тож перевірку Turnstile готуємо одразу після завантаження */
+  useEffect(() => {
+    if (document.readyState === "complete") { loadTurnstile(); return; }
+    window.addEventListener("load", loadTurnstile, { once: true });
+    return () => window.removeEventListener("load", loadTurnstile);
+  }, []);
 
   /* PageSpeed — окремим запитом: довго, тому звіт показуємо одразу, а швидкість доміряється */
   const runSpeed = async (id: string) => {

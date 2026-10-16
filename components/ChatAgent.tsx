@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CloseIcon } from "./Icons";
 import { UI, type Locale } from "../lib/i18n";
+import { loadTurnstile } from "../lib/turnstile";
 
 /* AI-чат: сфера справа внизу → вікно розмови.
    Відповіді дає api/chat.php (Claude Haiku + база знань сайту + бронювання дзвінка).
@@ -214,9 +215,10 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
     return () => { document.removeEventListener("keydown", onKey); document.documentElement.classList.remove("chat-open"); };
   }, [open]);
 
-  /* Turnstile: невидима перевірка на початку розмови (скрипт підвантажує QuoteModal) */
+  /* Turnstile: невидима перевірка на початку розмови (скрипт вантажиться лише при відкритті чату) */
   useEffect(() => {
     if (!open || !TURNSTILE_KEY || session.current || tsId.current !== null) return;
+    loadTurnstile();
     let tries = 0;
     const timer = setInterval(() => {
       if (window.turnstile && tsBox.current) {

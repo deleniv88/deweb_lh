@@ -17,7 +17,22 @@ window.gtag = window.gtag || function(){dataLayer.push(arguments);};
   try { off = window.self !== window.top || location.pathname.indexOf('/admin') === 0; } catch (e) { off = true; }
   window.__dwTrackingOff = off;
   if (off) return;
-  function load(src){ var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
+  /* Скрипти аналітики (~1 МБ JS разом із cookie-банером з GTM) вантажаться не під час
+     першого показу сторінки, а з першою дією відвідувача (рух, дотик, скрол, клавіша)
+     або через 4 с після повного завантаження — так вони не гальмують PageSpeed.
+     Черги dataLayer / gtag / fbq / clarity працюють одразу, події не губляться. */
+  var queue = [], started = false;
+  function load(src){ if (started) inject(src); else queue.push(src); }
+  function inject(src){ var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
+  var evs = ['pointerdown','pointermove','touchstart','keydown','scroll','wheel'];
+  function start(){
+    if (started) return; started = true;
+    evs.forEach(function(e){ removeEventListener(e, start, true); });
+    queue.forEach(inject);
+  }
+  evs.forEach(function(e){ addEventListener(e, start, { capture: true, passive: true }); });
+  if (document.readyState === 'complete') setTimeout(start, 4000);
+  else addEventListener('load', function(){ setTimeout(start, 4000); });
 
   /* Google Tag Manager */
   dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
@@ -31,16 +46,14 @@ window.gtag = window.gtag || function(){dataLayer.push(arguments);};
   /* Meta Pixel */
   !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
   n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  n.queue=[];load(v)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
   fbq('init', '${META_PIXEL_ID}');
   fbq('track', 'PageView');
 
   /* Microsoft Clarity */
   (function(c,l,a,r,i,t,y){
     c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    load("https://www.clarity.ms/tag/"+i);
   })(window, document, "clarity", "script", "${CLARITY_ID}");
 })();
 `;

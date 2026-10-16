@@ -33,6 +33,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${urbanist.variable} ${manrope.variable} ${interTight.variable} ${onest.variable}`}>
       <head>
+        {/* фото й картинки з Tina — заздалегідь відкриваємо з'єднання, щоб фото в hero з'являлось швидше */}
+        <link rel="preconnect" href="https://assets.tina.io" crossOrigin="" />
         <AnalyticsHead />
       </head>
       <body>

@@ -1,9 +1,8 @@
-import Script from "next/script";
 import { ArrowUpRight, CloseIcon, TickIcon, socialIcons } from "./Icons";
 import { UI, type Locale, type UIStrings } from "../lib/i18n";
 
 /* Cloudflare Turnstile — невидима перевірка "чи це людина".
-   Вмикається, лише якщо на Vercel задано NEXT_PUBLIC_TURNSTILE_SITE_KEY. */
+   Вмикається, лише якщо задано NEXT_PUBLIC_TURNSTILE_SITE_KEY; скрипт вантажиться при відкритті поп-апу (lib/turnstile.js). */
 const TURNSTILE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /* Поп-ап "Get a free quote". Відкривається з будь-якої кнопки з data-open-quote
@@ -65,7 +64,6 @@ export default function QuoteModal({ form, t = UI.en, locale = "en" }: { form?: 
           </div>
         </div>
       </div>
-      {TURNSTILE_KEY && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="lazyOnload" />}
       <button className="quote-fab" type="button" data-open-quote data-fab aria-haspopup="dialog">
         <span>{f.fabLabel || "Get a free quote"}</span>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M17 7 7 17M7 17V9M7 17h8" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>

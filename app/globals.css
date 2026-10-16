@@ -376,9 +376,11 @@ html{scroll-padding-top:var(--hdr-h)}
   .cta{animation-delay:.55s}
   .stats{animation-delay:.65s}
 }
-@keyframes rise{from{opacity:0;transform:translateY(calc(60 * var(--u)))}to{opacity:1;transform:none}}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(calc(24 * var(--u)))}to{opacity:1;transform:none}}
+/* стартова прозорість .01, а не 0: елементи з opacity 0 Chrome не рахує як LCP,
+   і тоді найбільшим елементом ставав пізній cookie-банер (LCP 15–20 с на мобільному) */
+@keyframes rise{from{opacity:.01;transform:translateY(calc(60 * var(--u)))}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:.01}to{opacity:1}}
+@keyframes fadeUp{from{opacity:.01;transform:translateY(calc(24 * var(--u)))}to{opacity:1;transform:none}}
 /* CTA центрований через left, тому translate у fadeUp йому не заважає */
 
 /* ================= TABLET (768–1279) · макет 834 ================= */
