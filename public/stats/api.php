@@ -39,7 +39,8 @@ if ($action === 'tg_send') {
   $ok = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) && $from <= $to && strtotime($to) - strtotime($from) <= 400 * 86400;
   $text = dw_digest($P, 'https://' . ($_SERVER['HTTP_HOST'] ?? 'deweb.studio'), $ok ? $from : null, $ok ? $to : null);
   if ($text === null) out(409, ['error' => 'no_data']);
-  $r = dw_tg_send($text);
+  /* ручне надсилання заодно створює в групі всі теми, яких ще немає */
+  $r = dw_tg_send($text, true);
   out($r === 'ok' ? 200 : 502, $r === 'ok' ? ['ok' => true] : ['error' => $r]);
 }
 

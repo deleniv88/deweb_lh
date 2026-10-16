@@ -44,8 +44,9 @@ function tg_api(string $token, string $method, array $body): array {
   return [$code, is_array($j) ? $j : []];
 }
 
-/* надсилає $html у тему $topic; $code — HTTP-код останньої відповіді Telegram (0 — бот не налаштований) */
-function dw_tg(string $topic, string $html, ?int &$code = null): bool {
+/* надсилає $html у тему $topic; $code — HTTP-код останньої відповіді Telegram (0 — бот не налаштований).
+   $all — заодно створити всі інші теми з TG_TOPICS, яких ще немає (кнопка «надіслати в Telegram» на /stats) */
+function dw_tg(string $topic, string $html, ?int &$code = null, bool $all = false): bool {
   $code = 0;
   $token = tg_cfg('TELEGRAM_BOT_TOKEN'); $chat0 = tg_cfg('TELEGRAM_CHAT_ID');
   if ($token === '' || $chat0 === '') return false;
@@ -56,17 +57,29 @@ function dw_tg(string $topic, string $html, ?int &$code = null): bool {
   if (!is_array($st)) $st = [];
   $st0 = $st;
 
+  /* створює тему $t, якщо її ще немає; false — група змінила id, треба почати спочатку */
+  $create = function (string $t, bool $force) use (&$st, $token, $chat0): bool {
+    $chat = (string)($st['moved'][$chat0] ?? $chat0); $key = "$chat|$t";
+    if (!empty($st['topics'][$key]) || !isset(TG_TOPICS[$t])) return true;
+    if (!$force && time() - (int)($st['failed'][$key] ?? 0) <= TG_RETRY_CREATE) return true;
+    [$c, $j] = tg_api($token, 'createForumTopic', ['chat_id' => $chat, 'name' => TG_TOPICS[$t][0], 'icon_color' => TG_TOPICS[$t][1]]);
+    if (!empty($j['parameters']['migrate_to_chat_id'])) { $st['moved'][$chat0] = (string)$j['parameters']['migrate_to_chat_id']; return false; }
+    if ($c === 200 && !empty($j['result']['message_thread_id'])) { $st['topics'][$key] = (int)$j['result']['message_thread_id']; unset($st['failed'][$key]); }
+    else $st['failed'][$key] = time();
+    return true;
+  };
+  if ($all) for ($i = 0; $i < 2; $i++) {
+    $ok = true;
+    foreach (array_keys(TG_TOPICS) as $t) if (!$create($t, true)) { $ok = false; break; }
+    if ($ok) break;
+  }
+
   $plain = false; // true — шлемо в загальний чат, минаючи тему
   for ($try = 0; $try < 4; $try++) {
+    if (!$plain && !$create($topic, false)) continue;
     $chat = (string)($st['moved'][$chat0] ?? $chat0);
     $key = "$chat|$topic";
     $thread = $plain ? 0 : (int)($st['topics'][$key] ?? 0);
-    if (!$thread && !$plain && isset(TG_TOPICS[$topic]) && time() - (int)($st['failed'][$key] ?? 0) > TG_RETRY_CREATE) {
-      [$c, $j] = tg_api($token, 'createForumTopic', ['chat_id' => $chat, 'name' => TG_TOPICS[$topic][0], 'icon_color' => TG_TOPICS[$topic][1]]);
-      if (!empty($j['parameters']['migrate_to_chat_id'])) { $st['moved'][$chat0] = (string)$j['parameters']['migrate_to_chat_id']; continue; }
-      if ($c === 200 && !empty($j['result']['message_thread_id'])) { $thread = (int)$j['result']['message_thread_id']; $st['topics'][$key] = $thread; unset($st['failed'][$key]); }
-      else $st['failed'][$key] = time();
-    }
     $body = ['chat_id' => $chat, 'text' => $html, 'parse_mode' => 'HTML', 'disable_web_page_preview' => true];
     if ($thread) $body['message_thread_id'] = $thread;
     [$code, $j] = tg_api($token, 'sendMessage', $body);

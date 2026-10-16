@@ -6,8 +6,8 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/api/_tg.php';
 
-function dw_tg_send(string $html): string {
-  if (dw_tg('stats', $html, $code)) return 'ok';
+function dw_tg_send(string $html, bool $allTopics = false): string {
+  if (dw_tg('stats', $html, $code, $allTopics)) return 'ok';
   return $code === 0 ? 'tg_config' : 'tg_http_' . $code;
 }
 
