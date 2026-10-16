@@ -368,7 +368,7 @@ export default function ChatAgent({ locale = "pl" }: { locale?: Locale }) {
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </form>
-        <p className="ai-chat__note">{t.note}</p>
+        <p className="ai-chat__note">{t.note} <a href={UI[locale].legal.privacyHref} target="_blank" rel="noopener">{UI[locale].legal.note}</a></p>
         <div className="ai-chat__ts" ref={tsBox}></div>
       </div>
     </>

@@ -25,6 +25,9 @@ export const worksPath = (code: Locale) => (code === "pl" ? "/realizacje/" : `${
 export const auditPath = (code: Locale) => (code === "pl" ? "/audyt/" : code === "en" ? "/en/audit/" : "/ua/audyt/");
 /* адреса прихованого чек-листа «Сайт зробив AI?»: /checklist/ (PL), /en/checklist/, /ua/checklist/ (лише за посиланням, noindex) */
 export const checklistPath = (code: Locale) => `${localeOf(code).path}checklist/`;
+/* юридичні сторінки: Політика приватності й cookies та Регламент (тексти — lib/legalText.ts) */
+export const privacyPath = (code: Locale) => (code === "pl" ? "/polityka-prywatnosci/" : `${localeOf(code).path}privacy-policy/`);
+export const termsPath = (code: Locale) => (code === "pl" ? "/regulamin/" : `${localeOf(code).path}terms/`);
 /* файл сторінки робіт для мови: content/works/works.json, works-pl.json, works-ua.json */
 export const worksFile = (code: Locale) => localeOf(code).file.replace("home", "works");
 
@@ -56,6 +59,7 @@ const en = {
   social: "Social and contact",
   auditLink: { label: "Free website audit", href: "/en/audit/" },
   close: "Close",
+  legal: { privacy: "Privacy Policy", terms: "Terms", cookies: "Cookie settings", note: "Privacy policy", privacyHref: "/en/privacy-policy/", termsHref: "/en/terms/" },
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Selected work — Deweb studio",
@@ -128,6 +132,7 @@ const pl: UIStrings = {
   social: "Social media i kontakt",
   auditLink: { label: "Darmowy audyt strony", href: "/audyt/" },
   close: "Zamknij",
+  legal: { privacy: "Polityka prywatności", terms: "Regulamin", cookies: "Ustawienia cookies", note: "Polityka prywatności", privacyHref: "/polityka-prywatnosci/", termsHref: "/regulamin/" },
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Wybrane realizacje — Deweb studio",
@@ -198,6 +203,7 @@ const ua: UIStrings = {
   social: "Соцмережі та контакти",
   auditLink: { label: "Безкоштовний аудит сайту", href: "/ua/audyt/" },
   close: "Закрити",
+  legal: { privacy: "Політика конфіденційності", terms: "Правила", cookies: "Налаштування cookies", note: "Політика конфіденційності", privacyHref: "/ua/privacy-policy/", termsHref: "/ua/terms/" },
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
     metaTitle: "Вибрані роботи — Deweb studio",

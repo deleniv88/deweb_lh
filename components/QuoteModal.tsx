@@ -55,7 +55,7 @@ export default function QuoteModal({ form, t = UI.en, locale = "en" }: { form?: 
             {TURNSTILE_KEY && <div className="cf-turnstile qf__ts" data-sitekey={TURNSTILE_KEY} data-appearance="interaction-only" data-theme="light"></div>}
             <button className="btn-primary qf__send" type="submit"><span>{tf.send}</span><ArrowUpRight /></button>
             <p className="qf__hint" data-hint="form"></p>
-            <p className="qf__note">{tf.note}</p>
+            <p className="qf__note">{tf.note} <a href={t.legal.privacyHref} target="_blank" rel="noopener">{t.legal.note}</a></p>
           </form>
           <div className="qm__ok" role="status">
             <span className="qm__tick"><TickIcon /></span>

@@ -1715,7 +1715,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 .ft__mark i:nth-child(5){margin-left:-.0959em}
 .ft__bottom{display:flex;justify-content:space-between;align-items:center;gap:calc(16 * var(--s));margin-top:calc(20 * var(--s));font-family:var(--f-body);font-weight:500;font-size:calc(15 * var(--s))}
 .ft__bottom a:hover{color:var(--accent-b)}
-.ft__legal{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(8 * var(--s)) calc(28 * var(--s))}
+.ft__legal{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:calc(8 * var(--s)) calc(28 * var(--s))}
 
 /* =========================================================
    QUOTE POP-UP — вміщується в екран без скролу
@@ -2958,3 +2958,43 @@ html.is-locked .ai-teaser,html.chat-open .ai-teaser{display:none}
 @keyframes aid-fade{from{opacity:0}}
 @keyframes aid-pulse{40%{box-shadow:0 0 0 6px rgba(94,108,255,.18),0 20px 50px rgba(36,37,39,.12)}}
 @media (prefers-reduced-motion:reduce){.aid *{animation:none !important;transition:none !important}}
+
+/* ===== Юридичні сторінки (Політика приватності, Регламент) — components/LegalClient.tsx ===== */
+.lg .page__title{font-size:calc(64 * var(--s));line-height:1}
+.lg__date{font-family:var(--f-body);font-size:calc(15 * var(--s));color:var(--ink-50)}
+.lg__body{font-family:var(--f-body);font-size:calc(18 * var(--s));line-height:1.6}
+.lg__body h2{font-family:var(--f-display);scroll-margin-top:calc(120 * var(--s))}
+.lg__body strong{font-weight:600}
+.lg__todo{background:#fff3b0;color:inherit;padding:0 .25em;border-radius:4px}
+.lg__toc{border:1px solid rgba(36,37,39,.1);border-radius:calc(20 * var(--s));padding:calc(20 * var(--s)) calc(28 * var(--s));background:rgba(94,108,255,.04)}
+.lg__toc ol{margin:0;padding-left:1.3em;columns:2;column-gap:calc(32 * var(--s))}
+.lg__toc li{break-inside:avoid}
+.lg__toc li + li{margin-top:.3em}
+.lg__toc a{color:inherit;text-decoration:none}
+.lg__toc a:hover{color:var(--accent-b)}
+.lg__table{overflow-x:auto;border:1px solid rgba(36,37,39,.1);border-radius:calc(16 * var(--s))}
+.lg__table table{width:100%;border-collapse:collapse;font-size:.85em;line-height:1.4}
+.lg__table th,.lg__table td{text-align:left;vertical-align:top;padding:.7em .9em;border-bottom:1px solid rgba(36,37,39,.08)}
+.lg__table thead th{font-weight:600;background:rgba(36,37,39,.03)}
+.lg__table tr:last-child > *{border-bottom:0}
+.lg__table tbody th{font-weight:500}
+.lg__table code{white-space:normal;word-break:break-word}
+.ft__legal a:hover,.ft__cookies:hover{color:var(--accent-b)}
+.ft__cookies{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.qf__note a,.ai-chat__note a,.au-consent a{color:inherit;text-decoration:underline;text-underline-offset:.15em}
+@media (max-width:1279px){
+  .lg .page__title{font-size:calc(52 * var(--s))}
+}
+@media (max-width:767px){
+  .lg .page__title{font-size:calc(38 * var(--s))}
+  .lg__body{font-size:calc(16 * var(--s))}
+  .lg__toc{padding:calc(16 * var(--s)) calc(18 * var(--s))}
+  .lg__toc ol{columns:1}
+  /* таблиця cookies на телефоні — картками: рядок = картка, підписи з data-label */
+  .lg__table{border:0;overflow:visible}
+  .lg__table thead{display:none}
+  .lg__table table,.lg__table tbody,.lg__table tr,.lg__table th,.lg__table td{display:block;width:100%}
+  .lg__table tr{border:1px solid rgba(36,37,39,.1);border-radius:14px;padding:.6em .9em;margin-bottom:.7em}
+  .lg__table th,.lg__table td{border:0;padding:.2em 0}
+  .lg__table td::before{content:attr(data-label) ": ";color:var(--ink-50)}
+}

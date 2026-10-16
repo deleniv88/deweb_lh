@@ -7,7 +7,7 @@ import Footer from "./Footer";
 import QuoteModal from "./QuoteModal";
 import ChatAgent from "./ChatAgent";
 import { ArrowUpRight } from "./Icons";
-import { UI, localeOf, type Locale } from "../lib/i18n";
+import { UI, localeOf, type Locale, type UIStrings } from "../lib/i18n";
 import { loadTurnstile } from "../lib/turnstile";
 import { AUDIT_SEO } from "../lib/auditSeo";
 import { AUDIT, AU_CRIT, AU_GROUPS, AU_HOSTED, type AuP, type AuStatus, type AuditTexts } from "../lib/auditText";
@@ -240,7 +240,7 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
             </section>
           )}
 
-          {report && <div ref={reportRef}><ReportView r={report} t={t} way={way} setWay={setWay} gErr={gErr} gBusy={gBusy} onUnlock={onUnlock} onBack={backToForm} onCopy={copyLink} /></div>}
+          {report && <div ref={reportRef}><ReportView r={report} t={t} way={way} setWay={setWay} gErr={gErr} gBusy={gBusy} onUnlock={onUnlock} onBack={backToForm} onCopy={copyLink} legal={ui.legal} /></div>}
         </div>
 
         {/* для Google і для тих, хто ще вагається: що перевіряємо + часті питання (те саме — у JSON-LD, lib/auditPage.tsx) */}
@@ -274,8 +274,8 @@ function mergeSpeed(next: Item[], cur: Item[]) {
   });
 }
 
-function ReportView({ r, t, way, setWay, gErr, gBusy, onUnlock, onBack, onCopy }: {
-  r: Report; t: AuditTexts; way: "email" | "ig" | "tg"; setWay: (w: "email" | "ig" | "tg") => void; gErr: string; gBusy: boolean;
+function ReportView({ r, t, way, setWay, gErr, gBusy, onUnlock, onBack, onCopy, legal }: {
+  legal: UIStrings["legal"]; r: Report; t: AuditTexts; way: "email" | "ig" | "tg"; setWay: (w: "email" | "ig" | "tg") => void; gErr: string; gBusy: boolean;
   onUnlock: (e: React.FormEvent<HTMLFormElement>) => void; onBack: () => void; onCopy: () => void;
 }) {
   const P = r.platform;
@@ -371,7 +371,7 @@ function ReportView({ r, t, way, setWay, gErr, gBusy, onUnlock, onBack, onCopy }
                 placeholder={way === "email" ? t.gate.phEmail : t.gate.phNick} aria-label={way === "email" ? t.gate.phEmail : t.gate.phNick} />
             </label>
             <button className="au-btn" type="submit" disabled={gBusy}>{t.gate.send}</button>
-            <span className="au-consent">{t.gate.consent}</span>
+            <span className="au-consent">{t.gate.consent} <a href={legal.privacyHref} target="_blank" rel="noopener">{legal.note}</a></span>
             {gErr && <p className="au-err" role="alert">{gErr}</p>}
           </form>
         </div>
