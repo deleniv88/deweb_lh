@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import client from "../tina/__generated__/client";
-import { DEFAULT_LOCALE, LOCALES, worksPath, type Locale } from "../lib/i18n";
+import { DEFAULT_LOCALE, LOCALES, auditPath, worksPath, type Locale } from "../lib/i18n";
 import { isHidden } from "../lib/seo";
 
 /* sitemap.xml: збирається автоматично під час build.
@@ -27,6 +27,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   await addLocalized((c) => LOCALES.find((l) => l.code === c)!.path, (c) => c, 1);
   await addLocalized(worksPath, (c) => (c === "en" ? "works" : `works-${c}`), 0.8);
+  /* безкоштовний аудит сайту (звіти ?r=… сюди не входять) */
+  await addLocalized(auditPath, (c) => (c === "en" ? "audit" : `audit-${c}`), 0.7);
 
   if (!(await isHidden({ page: "blog" }))) {
     entries.push({ url: `${siteUrl}/blog/`, lastModified: now, changeFrequency: "weekly", priority: 0.6 });

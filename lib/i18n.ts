@@ -57,6 +57,7 @@ const en = {
   mute: "Mute",
   unmute: "Unmute",
   social: "Social and contact",
+  auditLink: { label: "Free website audit", href: "/en/audit/" },
   close: "Close",
   legal: { privacy: "Privacy Policy", terms: "Terms", cookies: "Cookie settings", note: "Privacy policy", privacyHref: "/en/privacy-policy/", termsHref: "/en/terms/" },
   works: {
@@ -129,6 +130,7 @@ const pl: UIStrings = {
   mute: "Wycisz",
   unmute: "Włącz dźwięk",
   social: "Social media i kontakt",
+  auditLink: { label: "Darmowy audyt strony", href: "/audyt/" },
   close: "Zamknij",
   legal: { privacy: "Polityka prywatności", terms: "Regulamin", cookies: "Ustawienia cookies", note: "Polityka prywatności", privacyHref: "/polityka-prywatnosci/", termsHref: "/regulamin/" },
   works: {
@@ -199,6 +201,7 @@ const ua: UIStrings = {
   mute: "Вимкнути звук",
   unmute: "Увімкнути звук",
   social: "Соцмережі та контакти",
+  auditLink: { label: "Безкоштовний аудит сайту", href: "/ua/audyt/" },
   close: "Закрити",
   legal: { privacy: "Політика конфіденційності", terms: "Правила", cookies: "Налаштування cookies", note: "Політика конфіденційності", privacyHref: "/ua/privacy-policy/", termsHref: "/ua/terms/" },
   works: {

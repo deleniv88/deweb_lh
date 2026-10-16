@@ -17,7 +17,7 @@ export const en: AuditTexts = (() => {
       description: "Enter your website address and get a report in a minute: security, speed, Google, link previews and tips for your exact platform.",
     },
     hero: {
-      eyebrow: "Free website check",
+      eyebrow: "Free website audit",
       titleAccent: "Where is your website",
       titleRest: "losing clients?",
       lead: "Enter your website address. In a minute we’ll check 30+ points: security, speed, Google visibility and link previews in messengers. The tips depend on what your site is built with: WordPress, Wix, Tilda, Shopify or custom code.",

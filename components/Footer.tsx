@@ -6,7 +6,7 @@ import type { UIStrings } from "../lib/i18n";
 
 /* Футер (блок «Футер» документа головної своєї мови) — спільний для головної і сторінки робіт.
    Кнопка з data-open-quote відкриває QuoteModal, який має бути на тій самій сторінці. */
-export default function Footer({ footer, t }: { footer: any; t: { social: string; legal: UIStrings["legal"] } }) {
+export default function Footer({ footer, t }: { footer: any; t: { social: string; legal: UIStrings["legal"]; auditLink?: { label: string; href: string } } }) {
   /* посилання з адмінки має пріоритет; порожнє або «#» — сторінка політики своєї мови */
   const privacyHref = footer?.privacyUrl && footer.privacyUrl !== "#" ? footer.privacyUrl : t.legal.privacyHref;
   return (
@@ -35,6 +35,7 @@ export default function Footer({ footer, t }: { footer: any; t: { social: string
           <span data-tina-field={tinaField(footer, "copyright")}>{footer?.copyright}</span>
           <span data-tina-field={tinaField(footer, "middle")}>{footer?.middle}</span>
           <span className="ft__legal">
+            {t.auditLink && <a href={t.auditLink.href}>{t.auditLink.label}</a>}
             <a href={privacyHref} data-tina-field={tinaField(footer, "privacyLabel")}>{footer?.privacyLabel || t.legal.privacy}</a>
             <a href={t.legal.termsHref}>{t.legal.terms}</a>
             {/* CookieYes (з GTM) відкриває налаштування згоди по кліку на елемент з класом cky-banner-element */}

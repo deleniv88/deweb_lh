@@ -47,10 +47,11 @@ RewriteRule ^works/?$ /en/works/ [L,R=301]
 RewriteRule ^pl/?$ / [L,R=301]
 RewriteRule ^pl/(.*)$ /$1 [L,R=301]
 
-# Приховані сторінки перевірки сайту (/audyt/, /en/audit/, /ua/audyt/) і чек-листа (/checklist/, /en/checklist/, /ua/checklist/) — лише за посиланням.
+# Прихована сторінка чек-листа (/checklist/, /en/checklist/, /ua/checklist/) — лише за посиланням.
+# Сторінка аудиту (/audyt/, /en/audit/, /ua/audyt/) відкрита для Google з 2026-10-16; закриті лише звіти ?r=… (нижче, X-Robots-Tag).
 # Пошуковим і SEO-ботам — 403, щоб вони її не бачили навіть за випадковим посиланням. Прев'ю месенджерів (Telegram, WhatsApp, Facebook) пропускаємо.
 RewriteCond %{HTTP_USER_AGENT} (googlebot|google-inspectiontool|bingbot|bingpreview|yandex|baiduspider|duckduckbot|applebot|petalbot|seznambot|sogou|exabot|ahrefs|semrush|mj12bot|dotbot|blexbot|serpstat|dataforseo|megaindex|bytespider|gptbot|oai-searchbot|claudebot|ccbot|perplexitybot|amazonbot|meta-externalagent) [NC]
-RewriteRule ^(audyt|en/audit|ua/audyt|checklist|en/checklist|ua/checklist)(/|$) - [F,L]
+RewriteRule ^(checklist|en/checklist|ua/checklist)(/|$) - [F,L]
 
 ErrorDocument 404 /404.html
 
@@ -71,9 +72,13 @@ ErrorDocument 404 /404.html
   # браузер завжди відкриває сайт лише по https (без субдоменів: dentistica.deweb.studio живе окремо)
   Header always set Strict-Transport-Security "max-age=31536000"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  # приховані сторінки перевірки сайту і чек-листа: не індексувати, навіть якщо бот їх знайде
-  <If "%{REQUEST_URI} =~ m#^/(audyt|en/audit|ua/audyt|checklist|en/checklist|ua/checklist)(/|$)#">
+  # прихована сторінка чек-листа: не індексувати, навіть якщо бот її знайде
+  <If "%{REQUEST_URI} =~ m#^/(checklist|en/checklist|ua/checklist)(/|$)#">
     Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+  </If>
+  # звіти перевірки сайту (?r=…) — чужі сайти, у Google не показуємо; сама сторінка аудиту індексується
+  <If "%{REQUEST_URI} =~ m#^/(audyt|en/audit|ua/audyt)(/|$)# && %{QUERY_STRING} =~ /(^|&)r=/">
+    Header always set X-Robots-Tag "noindex, follow"
   </If>
   # головна залежить від мови браузера й cookie — кеші не мають віддавати одну версію всім
   <If "%{REQUEST_URI} == '/' || %{REQUEST_URI} == '/index.html'">

@@ -9,6 +9,7 @@ import ChatAgent from "./ChatAgent";
 import { ArrowUpRight } from "./Icons";
 import { UI, localeOf, type Locale, type UIStrings } from "../lib/i18n";
 import { loadTurnstile } from "../lib/turnstile";
+import { AUDIT_SEO } from "../lib/auditSeo";
 import { AUDIT, AU_CRIT, AU_GROUPS, AU_HOSTED, type AuP, type AuStatus, type AuditTexts } from "../lib/auditText";
 
 /* Прихована сторінка «Перевірка сайту» (/audyt/, /en/audit/, /ua/audyt/).
@@ -67,6 +68,7 @@ const track = (event: string, extra: Record<string, unknown> = {}) => {
 
 export default function AuditClient({ locale, home }: { locale: Locale; home: any }) {
   const t = AUDIT[locale];
+  const seo = AUDIT_SEO[locale];
   const ui = UI[locale];
   const [report, setReport] = useState<Report | null>(null);
   const [phase, setPhase] = useState<"idle" | "scan">("idle");
@@ -83,6 +85,13 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
   const urlRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { document.documentElement.lang = localeOf(locale).htmlLang; }, [locale]);
+  /* звіт (?r=…) — чужий сайт, у Google йому не місце; основний захист — X-Robots-Tag у public/.htaccess */
+  useEffect(() => {
+    if (!report || report.example) return;
+    let m = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!m) { m = document.createElement("meta"); m.name = "robots"; document.head.appendChild(m); }
+    m.content = "noindex, follow";
+  }, [report]);
   /* ?url=… — адреса, яку людина ввела на сторінці чек-листа: підставляємо в поле (перевірку запускає сама людина, бо потрібен Turnstile) */
   useEffect(() => {
     const u = new URLSearchParams(location.search).get("url");
@@ -194,8 +203,10 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
       <Header home={false} locale={locale} page="audit" />
       <main className="page au">
         <div className="page__head au-head">
-          <span className="au-eyebrow">{t.hero.eyebrow}</span>
-          <h1 className="page__title"><em>{t.hero.titleAccent}</em> {t.hero.titleRest}</h1>
+          <h1 className="au-h1">
+            <span className="au-eyebrow">{t.hero.eyebrow}</span>
+            <span className="page__title"><em>{t.hero.titleAccent}</em> {t.hero.titleRest}</span>
+          </h1>
           <p className="page__lead">{t.hero.lead}</p>
         </div>
 
@@ -229,6 +240,19 @@ export default function AuditClient({ locale, home }: { locale: Locale; home: an
 
           {report && <div ref={reportRef}><ReportView r={report} t={t} way={way} setWay={setWay} gErr={gErr} gBusy={gBusy} onUnlock={onUnlock} onBack={backToForm} onCopy={copyLink} legal={ui.legal} /></div>}
         </div>
+
+        {/* для Google і для тих, хто ще вагається: що перевіряємо + часті питання (те саме — у JSON-LD, lib/auditPage.tsx) */}
+        <section className="au-seo" aria-labelledby="au-seo-h">
+          <h2 id="au-seo-h">{seo.h2}</h2>
+          <p className="au-seo__intro">{seo.intro}</p>
+          <div className="au-seo__grid">
+            {seo.blocks.map(([h, p]) => <div key={h}><h3>{h}</h3><p>{p}</p></div>)}
+          </div>
+          <h2>{seo.faqTitle}</h2>
+          <div className="au-faq">
+            {seo.faq.map(([q, a]) => <details key={q}><summary>{q}</summary><p>{a}</p></details>)}
+          </div>
+        </section>
       </main>
       <Footer footer={home?.footer} t={ui} />
       <QuoteModal form={home?.quoteForm} t={ui} locale={locale} />
