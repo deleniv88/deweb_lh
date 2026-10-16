@@ -139,7 +139,7 @@
       h("header", { class: "top" },
         h("h1", null, "deweb", h("b", null, "."), "studio / CRM"),
         h("span", { class: "spacer" }),
-        h("nav", { class: "tabs" }, tab("meetings", "Зустрічі"), tab("clients", "Клієнти"), tab("retention", "Утримання"), tab("settings", "Налаштування")),
+        h("nav", { class: "tabs" }, tab("meetings", "Зустрічі"), tab("clients", "Клієнти"), tab("retention", "Утримання"), tab("sites", "Сайти"), tab("settings", "Налаштування")),
         h("button", { class: "btn btn--sm", onclick: () => meetingDialog() }, "+ Зустріч"),
         h("button", { class: "btn btn--sm btn--ghost", onclick: () => clientDialog() }, "+ Клієнт")),
       body));
@@ -562,6 +562,270 @@
     setTimeout(() => ta.focus(), 50);
   }
 
+  /* ---------- сейф доступів («Сайти») ----------
+     Майстер-пароль → PBKDF2-SHA256 (600 000 ітерацій) → ключ AES-GCM 256, який живе лише в пам'яті цієї вкладки.
+     На сервер ідуть тільки зашифровані записи. Забутий майстер-пароль = записи не відновити. */
+  const VAULT_ITER = 600000, VAULT_CHECK = "deweb-vault-ok", VAULT_IDLE = 15 * 60 * 1000;
+  const VGROUPS = [
+    ["Сайт", [["domain", "Домен"], ["client", "Клієнт"], ["created", "Рік створення"]]],
+    ["Адмінка", [["admin_url", "Панель адміна"], ["admin_login", "Логін"], ["admin_pass", "Пароль", 1]]],
+    ["Хостинг", [["host_url", "Хостинг (панель)"], ["host_login", "Логін"], ["host_pass", "Пароль", 1]]],
+    ["Пошта", [["mail_url", "Пошта"], ["mail_login", "Логін"], ["mail_pass", "Пароль", 1]]],
+    ["FTP", [["ftp_host", "Сервер FTP"], ["ftp_login", "Користувач"], ["ftp_pass", "Пароль", 1]]],
+    ["Stripe", [["stripe_login", "Логін"], ["stripe_pass", "Пароль", 1]]],
+    ["Instagram", [["insta_login", "Логін"], ["insta_pass", "Пароль", 1]]],
+  ];
+  const VKEYS = VGROUPS.flatMap(([, f]) => f.map((x) => x[0])).concat("note");
+  const vault = { key: null, items: [], timer: null, q: "" };
+  const te = new TextEncoder(), td = new TextDecoder();
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function vDerive(pw, salt, iter) {
+    const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt: unb64(salt), iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function vSeal(key, obj) {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, te.encode(JSON.stringify(obj)));
+    return b64(iv) + "." + b64(ct);
+  }
+  async function vOpen(key, blob) {
+    const [iv, ct] = String(blob).split(".");
+    return JSON.parse(td.decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv) }, key, unb64(ct))));
+  }
+  async function vNewMeta(pw) {
+    const salt = b64(crypto.getRandomValues(new Uint8Array(16)));
+    const key = await vDerive(pw, salt, VAULT_ITER);
+    return { key, meta: { salt, iter: VAULT_ITER, check: await vSeal(key, VAULT_CHECK) } };
+  }
+  async function vSync() {
+    const out = [];
+    for (const r of S.vault.rows) {
+      try { out.push({ id: r.id, ...(await vOpen(vault.key, r.data)) }); } catch { out.push({ id: r.id, domain: "⚠ не вдалося розшифрувати", broken: true }); }
+    }
+    vault.items = out.sort((a, b) => String(a.domain).localeCompare(String(b.domain)));
+  }
+  function vLock() { vault.key = null; vault.items = []; clearTimeout(vault.timer); if ((location.hash.slice(1) || "").startsWith("sites")) render(); }
+  function vTouch() { clearTimeout(vault.timer); if (vault.key) vault.timer = setTimeout(vLock, VAULT_IDLE); }
+  ["pointerdown", "keydown"].forEach((ev) => document.addEventListener(ev, () => vault.key && vTouch(), { passive: true }));
+  async function vApply(r, okText) {
+    if (!r.ok) { toast(r.error === "changed" ? "Сейф змінився в іншій вкладці. Онови сторінку." : "Не вдалося зберегти"); return false; }
+    S = r; await vSync(); render(); if (okText) toast(okText); return true;
+  }
+  const host = (u) => String(u || "").replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+  const href = (u) => (/^https?:\/\//.test(u || "") ? u : u && /\./.test(u) ? "https://" + u : null);
+  async function copy(text, label) {
+    try { await navigator.clipboard.writeText(text); toast(label || "Скопійовано"); }
+    catch { toast("Браузер не дав скопіювати"); }
+  }
+
+  function sitesView() {
+    if (!S.vault.meta) return vaultSetupView();
+    if (!vault.key) return vaultUnlockView();
+    vTouch();
+    const q = vault.q.trim().toLowerCase();
+    const rows = vault.items.filter((x) => !q || [x.domain, x.client, x.admin_login, x.host_url, x.note].join(" ").toLowerCase().includes(q));
+    const search = h("input", { type: "search", placeholder: "Пошук домену чи клієнта", value: vault.q, oninput: (e) => { vault.q = e.target.value; render(); search.focus(); } });
+    const copyBtn = (v, label) => v ? h("button", { class: "icon-btn", title: "Копіювати", "aria-label": "Копіювати " + label, onclick: (e) => { e.stopPropagation(); copy(v, label + " скопійовано"); } }, "⧉") : null;
+    const link = (u, text) => href(u) ? h("a", { href: href(u), target: "_blank", rel: "noopener noreferrer", onclick: (e) => e.stopPropagation() }, text || host(u)) : h("span", { class: "muted" }, u || "—");
+    const table = h("div", { class: "ret-table" }, h("table", null,
+      h("thead", null, h("tr", null, ["Домен", "Клієнт", "Адмінка", "Логін", "Пароль", "Хостинг", "Створено", ""].map((t) => h("th", null, t)))),
+      h("tbody", null, rows.length ? rows.map((x) => h("tr", { style: "cursor:pointer", onclick: () => siteDialog(x) },
+        h("td", null, h("b", null, x.broken ? x.domain : link(x.domain))),
+        h("td", { class: "muted" }, x.client || ""),
+        h("td", null, x.admin_url ? link(x.admin_url, "відкрити ↗") : h("span", { class: "muted" }, "—")),
+        h("td", null, x.admin_login || "", copyBtn(x.admin_login, "Логін")),
+        h("td", null, x.admin_pass ? h("span", { class: "muted" }, "•••••• ") : "", copyBtn(x.admin_pass, "Пароль")),
+        h("td", { class: "muted" }, host(x.host_url) || ""),
+        h("td", { class: "num muted" }, x.created || ""),
+        h("td", { class: "act" }, h("button", { class: "icon-btn", "aria-label": "Відкрити", title: "Усі доступи" }, "✎"))))
+        : h("tr", null, h("td", { colspan: 8, class: "empty" }, vault.items.length ? "Нічого не знайдено." : "Сейф порожній. Натисни «Імпорт з таблиці» і встав рядки з таблиці доступів, або додай сайт вручну.")))));
+    const cards = h("div", { class: "ret-cards" }, rows.map((x) => h("button", { class: "ret-card", onclick: () => siteDialog(x) },
+      h("div", { class: "row" }, h("b", { style: "flex:1;font-family:var(--f-display)" }, host(x.domain) || x.domain), h("span", { class: "muted small" }, x.client || "")),
+      h("div", { class: "r" }, h("span", null, "Адмінка"), h("span", null, x.admin_login || "—")))));
+    shell("sites", h("div", { class: "wrap wrap--wide" },
+      h("div", { class: "row" },
+        h("h2", null, "Доступи до сайтів · " + vault.items.length), h("span", { class: "spacer" }),
+        h("div", { style: "width:min(260px,100%)" }, search),
+        h("button", { class: "btn btn--ghost btn--sm", onclick: vaultImportDialog }, "Імпорт з таблиці"),
+        h("button", { class: "btn btn--sm", onclick: () => siteDialog() }, "+ Сайт"),
+        h("button", { class: "btn btn--ghost btn--sm", title: "Заблокувати сейф", onclick: vLock }, "🔒 Заблокувати")),
+      h("div", null, table, cards),
+      h("p", { class: "legend" }, h("span", null, "🔐 Паролі розшифровуються тільки в цьому браузері. Сейф сам блокується через 15 хвилин без дій."),
+        h("button", { class: "link", onclick: vaultRekeyDialog }, "Змінити майстер-пароль"))), true);
+    if (vault.q) { search.focus(); search.setSelectionRange(search.value.length, search.value.length); }
+  }
+
+  function vaultSetupView() {
+    const p1 = h("input", { type: "password", autocomplete: "new-password" }), p2 = h("input", { type: "password", autocomplete: "new-password" });
+    const err = h("p", { class: "err" });
+    const btn = h("button", { class: "btn", onclick: async () => {
+      if (p1.value.length < 12) return (err.textContent = "Майстер-пароль має бути щонайменше 12 символів.");
+      if (p1.value !== p2.value) return (err.textContent = "Паролі не збігаються.");
+      if (p1.value === "" || !crypto.subtle) return (err.textContent = "Браузер не підтримує шифрування.");
+      btn.disabled = true; err.textContent = "";
+      const { key, meta } = await vNewMeta(p1.value);
+      const r = await api("vault_setup", { meta });
+      btn.disabled = false;
+      if (!r.ok) return (err.textContent = r.error === "exists" ? "Сейф уже створено, онови сторінку." : "Не вдалося створити сейф.");
+      vault.key = key; await vApply(r, "Сейф створено");
+    } }, "Створити сейф");
+    shell("sites", h("section", { class: "panel", style: "display:grid;gap:12px;max-width:520px" },
+      h("h2", null, "Сейф доступів"),
+      h("p", { class: "muted small", style: "margin:0" }, "Тут зберігатимуться логіни й паролі до сайтів клієнтів. Вони шифруються прямо в браузері окремим майстер-паролем, якого немає на сервері. Тому навіть якщо хтось отримає доступ до хостингу чи бази, паролів він не прочитає."),
+      h("p", { class: "err", style: "margin:0" }, "Запам'ятай майстер-пароль або збережи його в надійному місці. Якщо його забути, відновити записи неможливо ні тобі, ні мені."),
+      h("p", { class: "muted small", style: "margin:0" }, "Не став той самий пароль, що й для входу в CRM. Найкраще 4–5 випадкових слів, наприклад «синій-трамвай-кава-гора-41»."),
+      field("Майстер-пароль (від 12 символів)", p1), field("Ще раз", p2), err, h("div", null, btn)));
+    p1.focus();
+  }
+
+  function vaultUnlockView() {
+    const pw = h("input", { type: "password", autocomplete: "off" });
+    const err = h("p", { class: "err" });
+    const btn = h("button", { class: "btn", type: "submit" }, "Відкрити сейф");
+    const form = h("form", { class: "panel", style: "display:grid;gap:12px;max-width:420px", onsubmit: async (e) => {
+      e.preventDefault(); btn.disabled = true; err.textContent = ""; btn.textContent = "Перевіряю…";
+      try {
+        const key = await vDerive(pw.value, S.vault.meta.salt, S.vault.meta.iter);
+        if ((await vOpen(key, S.vault.meta.check)) !== VAULT_CHECK) throw 0;
+        vault.key = key; await vSync(); render();
+      } catch { err.textContent = "Невірний майстер-пароль."; pw.value = ""; btn.disabled = false; btn.textContent = "Відкрити сейф"; pw.focus(); }
+    } },
+      h("h2", null, "🔒 Сейф заблоковано"),
+      h("p", { class: "muted small", style: "margin:0" }, "Введи майстер-пароль сейфа. Він перевіряється тільки в браузері й нікуди не надсилається."),
+      field("Майстер-пароль", pw), err, h("div", { class: "row" }, btn, h("span", { class: "spacer" }), h("button", { class: "link", type: "button", onclick: vaultResetDialog }, "Забув майстер-пароль")));
+    shell("sites", form);
+    pw.focus();
+  }
+
+  function siteDialog(x) {
+    const isNew = !x;
+    x = x || {};
+    const f = {};
+    const mk = ([k, label, secret]) => {
+      const el = h("input", { type: secret ? "password" : "text", value: x[k] || "", autocomplete: secret ? "new-password" : "off", spellcheck: "false" });
+      f[k] = el;
+      return h("label", null, h("span", null, label), h("div", { class: "row", style: "gap:4px;flex-wrap:nowrap" }, el,
+        secret ? h("button", { class: "icon-btn", type: "button", title: "Показати", "aria-label": "Показати пароль", onclick: () => { el.type = el.type === "password" ? "text" : "password"; } }, "👁") : null,
+        h("button", { class: "icon-btn", type: "button", title: "Копіювати", "aria-label": "Копіювати", onclick: () => el.value && copy(el.value, label + " скопійовано") }, "⧉"),
+        /url|host$/.test(k) || k === "domain" ? h("button", { class: "icon-btn", type: "button", title: "Відкрити", "aria-label": "Відкрити посилання", onclick: () => { const u = href(el.value); if (u) window.open(u, "_blank", "noopener"); } }, "↗") : null));
+    };
+    f.note = h("textarea", { rows: 3 }, x.note || "");
+    const body = h("div", { style: "display:grid;gap:14px" },
+      VGROUPS.map(([title, fields]) => h("div", { style: "display:grid;gap:8px" }, h("h3", null, title), h("div", { class: "grid2" }, fields.map(mk)))),
+      field("Нотатки", f.note));
+    let sure = false;
+    dialog(isNew ? "Новий сайт" : host(x.domain) || "Сайт", body, (close) => [
+      h("button", { class: "btn", onclick: async (e) => {
+        const obj = Object.fromEntries(VKEYS.map((k) => [k, (f[k].value || "").trim()]));
+        if (!obj.domain) return toast("Вкажи домен");
+        e.currentTarget.disabled = true;
+        if (await vApply(await api("vault_save", { id: isNew ? 0 : x.id, data: await vSeal(vault.key, obj) }), "Збережено")) close();
+        else e.currentTarget.disabled = false;
+      } }, "Зберегти"),
+      h("span", { class: "spacer" }),
+      isNew ? null : h("button", { class: "btn btn--danger btn--sm", onclick: async (e) => {
+        if (!sure) { sure = true; e.currentTarget.textContent = "Точно видалити?"; return; }
+        if (await vApply(await api("vault_delete", { id: x.id }), "Видалено")) close();
+      } }, "Видалити"),
+    ]);
+  }
+
+  /* імпорт таблиці доступів: Домен | Панель адміна | Логін | Пароль | Сервер | Логін | Пароль | Пошта | … | Рік створення | Stripe | Пароль | Insta | Пароль.
+     «Логін» і «Пароль» належать до найближчої колонки-групи зліва. */
+  function parseVault(text) {
+    const rows = [];
+    let cur = [], cell = "", q = false;
+    const sep = text.split("\n")[0].includes("\t") ? "\t" : ",";
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (q) { if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch; continue; }
+      if (ch === '"' && cell === "") q = true;
+      else if (ch === sep) { cur.push(cell); cell = ""; }
+      else if (ch === "\n") { cur.push(cell); rows.push(cur); cur = []; cell = ""; }
+      else if (ch !== "\r") cell += ch;
+    }
+    if (cell !== "" || cur.length) { cur.push(cell); rows.push(cur); }
+    const head = (rows.shift() || []).map((x) => x.trim().toLowerCase());
+    const map = []; let g = null;
+    head.forEach((x, i) => {
+      if (/^домен|^domain|^сайт/.test(x)) { map[i] = "domain"; g = null; }
+      else if (/клієнт|client/.test(x)) map[i] = "client";
+      else if (/адмін|admin/.test(x)) { g = "admin"; map[i] = "admin_url"; }
+      else if (/сервер|хостинг|hosting/.test(x)) { g = "host"; map[i] = "host_url"; }
+      else if (/пошта|mail/.test(x)) { g = "mail"; map[i] = "mail_url"; }
+      else if (/фтп|ftp/.test(x)) { g = "ftp"; map[i] = "ftp_host"; }
+      else if (/stripe/.test(x)) { g = "stripe"; map[i] = "stripe_login"; }
+      else if (/insta/.test(x)) { g = "insta"; map[i] = "insta_login"; }
+      else if (/рік|створ|year|created/.test(x)) { map[i] = "created"; g = null; }
+      else if (/нотат|note|комент/.test(x)) map[i] = "note";
+      else if (/пароль|password|pass/.test(x) && g) map[i] = g + "_pass";
+      else if (/логін|login|користувач|user/.test(x) && g) map[i] = g + (g === "stripe" || g === "insta" ? "_login2" : "_login");
+    });
+    if (!map.includes("domain")) return null;
+    return rows.map((c) => {
+      const o = {};
+      map.forEach((k, i) => { if (!k) return; const v = (c[i] || "").trim(); if (!v) return; if (k.endsWith("_login2")) { const b = k.replace("_login2", "_login"); o[b] = o[b] ? o[b] + " / " + v : v; } else o[k] = v; });
+      return o;
+    }).filter((o) => o.domain);
+  }
+  function vaultImportDialog() {
+    const ta = h("textarea", { rows: 9, placeholder: "Встав сюди таблицю доступів разом із рядком заголовків", spellcheck: "false", autocomplete: "off" });
+    const info = h("p", { class: "small", style: "margin:0" });
+    let parsed = [];
+    ta.addEventListener("input", () => {
+      const p = parseVault(ta.value); parsed = p || [];
+      info.className = p === null ? "err" : "ok";
+      info.textContent = p === null ? "Не бачу колонки «Домен» у першому рядку." : parsed.length ? "Знайдено сайтів: " + parsed.length + ". Кожен буде зашифровано тут, у браузері." : "";
+    });
+    dialog("Імпорт доступів", h("div", { style: "display:grid;gap:10px" },
+      h("p", { class: "small muted", style: "margin:0" }, "У Google-таблиці натисни Ctrl+A, скопіюй і встав сюди. Після імпорту перевір кілька записів, а Google-таблицю краще видалити або хоча б закрити до неї доступ."),
+      ta, info, vault.items.length ? h("p", { class: "small muted", style: "margin:0" }, "Нові записи додадуться до тих, що вже є (" + vault.items.length + ").") : null), (close) => [
+      h("button", { class: "btn", onclick: async (e) => {
+        if (!parsed.length) return ta.focus();
+        e.currentTarget.disabled = true;
+        const rows = [];
+        for (const o of parsed) rows.push(await vSeal(vault.key, Object.fromEntries(VKEYS.map((k) => [k, o[k] || ""]))));
+        const r = await api("vault_import", { rows });
+        ta.value = ""; parsed = [];
+        if (await vApply(r, "Імпортовано: " + (r.imported || 0))) close(); else e.currentTarget.disabled = false;
+      } }, "Зашифрувати й імпортувати"),
+    ]);
+    setTimeout(() => ta.focus(), 50);
+  }
+  function vaultRekeyDialog() {
+    const p0 = h("input", { type: "password", autocomplete: "off" }), p1 = h("input", { type: "password", autocomplete: "new-password" }), p2 = h("input", { type: "password", autocomplete: "new-password" });
+    const err = h("p", { class: "err" });
+    dialog("Змінити майстер-пароль", h("div", { style: "display:grid;gap:10px" }, field("Поточний майстер-пароль", p0), field("Новий (від 12 символів)", p1), field("Новий ще раз", p2), err), (close) => [
+      h("button", { class: "btn", onclick: async (e) => {
+        err.textContent = "";
+        if (p1.value.length < 12) return (err.textContent = "Новий пароль має бути щонайменше 12 символів.");
+        if (p1.value !== p2.value) return (err.textContent = "Нові паролі не збігаються.");
+        const btn = e.currentTarget; btn.disabled = true;
+        try {
+          const old = await vDerive(p0.value, S.vault.meta.salt, S.vault.meta.iter);
+          if ((await vOpen(old, S.vault.meta.check)) !== VAULT_CHECK) throw 0;
+        } catch { btn.disabled = false; return (err.textContent = "Поточний майстер-пароль невірний."); }
+        const { key, meta } = await vNewMeta(p1.value);
+        const rows = [];
+        for (const it of vault.items) { if (it.broken) { btn.disabled = false; return (err.textContent = "Є запис, який не розшифровується. Видали його спершу."); } const { id, ...rest } = it; rows.push({ id, data: await vSeal(key, rest) }); }
+        const r = await api("vault_rekey", { meta, rows });
+        if (r.ok) { vault.key = key; await vApply(r, "Майстер-пароль змінено"); close(); } else { btn.disabled = false; err.textContent = r.error === "changed" ? "Сейф змінився, онови сторінку." : "Не вдалося змінити."; }
+      } }, "Змінити"),
+    ]);
+  }
+  function vaultResetDialog() {
+    const inp = h("input", { type: "text", placeholder: "СТЕРТИ" });
+    dialog("Забув майстер-пароль", h("div", { style: "display:grid;gap:10px" },
+      h("p", { style: "margin:0" }, "Без майстер-пароля записи розшифрувати неможливо, тут ніхто не допоможе. Можна лише стерти сейф повністю і створити новий, а потім ще раз імпортувати доступи."),
+      field("Щоб стерти всі записи, введи слово СТЕРТИ", inp)), (close) => [
+      h("button", { class: "btn btn--danger", onclick: async () => {
+        const r = await api("vault_reset", { confirm: inp.value.trim() });
+        if (r.ok) { S = r; vLock(); close(); render(); toast("Сейф стерто"); } else toast("Введи слово СТЕРТИ");
+      } }, "Стерти сейф"),
+    ]);
+  }
+
   /* ---------- вікна ---------- */
   function dialog(title, body, foot) {
     const dlg = h("dialog", null);
@@ -679,6 +943,7 @@
     clientFilter.focus = !!keepFocus;
     if (id === "clients") clientsView();
     else if (id === "retention") retentionView();
+    else if (id === "sites") sitesView();
     else if (id === "settings") settingsView(new URLSearchParams(query || "").get("google"));
     else meetingsView();
   }

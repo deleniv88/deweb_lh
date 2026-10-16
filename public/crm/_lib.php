@@ -530,3 +530,29 @@ function crm_ret_remind(): array {
   }
   return ['sent' => count($items)];
 }
+
+/* ---- сейф доступів (вкладка «Сайти») ----
+   Паролі шифруються в браузері ключем із майстер-пароля (PBKDF2 → AES-GCM). Майстер-пароля і ключа на сервері немає:
+   тут лежать лише зашифровані записи (і вони ще раз загорнуті ключем CRM), сіль і перевірочний блок. */
+function crm_db_vault(): PDO {
+  $db = crm_db();
+  static $done = false;
+  if (!$done) {
+    $db->exec('CREATE TABLE IF NOT EXISTS vault (id INTEGER PRIMARY KEY AUTOINCREMENT, data TEXT NOT NULL, updated_at INTEGER NOT NULL)');
+    $done = true;
+  }
+  return $db;
+}
+/* зашифрований у браузері блок: «iv.шифротекст» у base64, без розшифрування сервер лише перевіряє форму */
+function crm_vault_blob($v): ?string {
+  $s = (string)($v ?? '');
+  return strlen($s) <= 65536 && preg_match('/^[A-Za-z0-9+\/=]{16,}\.[A-Za-z0-9+\/=]{16,}$/', $s) ? $s : null;
+}
+function crm_vault_meta(): ?array {
+  $m = crm_get('vault_meta');
+  return is_array($m) && !empty($m['salt']) && !empty($m['check']) ? $m : null;
+}
+function crm_vault_rows(): array {
+  return array_map(fn($r) => ['id' => (int)$r['id'], 'data' => (string)(crm_dec($r['data']) ?? '')],
+    crm_db_vault()->query('SELECT * FROM vault ORDER BY id')->fetchAll());
+}

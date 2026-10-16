@@ -6,6 +6,8 @@ header('X-Robots-Tag: noindex, nofollow');
 header('Cache-Control: no-store');
 header('Referrer-Policy: no-referrer');
 header('X-Frame-Options: DENY');
+/* у вкладці «Сайти» розшифровуються паролі — сторінці дозволено вантажити скрипти лише з себе і cdnjs, а надсилати дані лише собі */
+header("Content-Security-Policy: default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'; object-src 'none'");
 $v = fn(string $f) => '/crm/' . $f . '?v=' . @filemtime(__DIR__ . '/' . $f);
 ?><!doctype html>
 <html lang="uk">

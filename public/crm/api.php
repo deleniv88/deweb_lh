@@ -82,6 +82,7 @@ try {
     $g = crm_get('google');
     return ['ok' => true, 'clients' => $clients, 'meetings' => $meetings, 'schedule' => crm_schedule(), 'tz' => CRM_TZ,
       'retention' => crm_ret_all(), 'retention_cols' => crm_ret_cols(),
+      'vault' => ['meta' => crm_vault_meta(), 'rows' => crm_vault_meta() ? crm_vault_rows() : []],
       'google' => ['configured' => crm_google_configured(), 'on' => crm_google_on(), 'email' => is_array($g) ? (string)($g['email'] ?? '') : '',
         'error' => (string)crm_get('google_error', ''), 'redirect' => crm_site() . '/crm/google.php']];
   };
@@ -208,6 +209,64 @@ try {
     out($state());
   }
   if ($action === 'retention_remind') out(['ok' => true, 'remind' => crm_ret_remind()] + $state());
+
+  /* ---------- сейф доступів: сервер бачить лише зашифровані блоки ---------- */
+  if ($action === 'vault_setup') {
+    if (crm_vault_meta()) out(['ok' => false, 'error' => 'exists']);
+    $m = (array)($d['meta'] ?? []);
+    $salt = (string)($m['salt'] ?? ''); $iter = (int)($m['iter'] ?? 0); $check = crm_vault_blob($m['check'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9+\/=]{20,64}$/', $salt) || $iter < 200000 || $iter > 5000000 || !$check) out(['ok' => false, 'error' => 'meta']);
+    crm_set('vault_meta', ['salt' => $salt, 'iter' => $iter, 'check' => $check, 'created' => time()]);
+    crm_tg("🔐 <b>CRM: створено сейф доступів.</b> Майстер-пароль зберігається тільки в тебе, відновити його неможливо.");
+    out($state());
+  }
+  if (in_array($action, ['vault_save', 'vault_delete', 'vault_import', 'vault_rekey'], true) && !crm_vault_meta()) out(['ok' => false, 'error' => 'no_vault']);
+  if ($action === 'vault_save') {
+    $blob = crm_vault_blob($d['data'] ?? '');
+    if (!$blob) out(['ok' => false, 'error' => 'data']);
+    $id = (int)($d['id'] ?? 0);
+    if ($id) crm_db_vault()->prepare('UPDATE vault SET data = ?, updated_at = ? WHERE id = ?')->execute([crm_enc($blob), time(), $id]);
+    else { crm_db_vault()->prepare('INSERT INTO vault (data, updated_at) VALUES (?, ?)')->execute([crm_enc($blob), time()]); $id = (int)crm_db_vault()->lastInsertId(); }
+    out(['ok' => true, 'id' => $id] + $state());
+  }
+  if ($action === 'vault_delete') {
+    crm_db_vault()->prepare('DELETE FROM vault WHERE id = ?')->execute([(int)($d['id'] ?? 0)]);
+    out($state());
+  }
+  if ($action === 'vault_import') {
+    $blobs = array_map('crm_vault_blob', array_slice((array)($d['rows'] ?? []), 0, 1000));
+    if (in_array(null, $blobs, true)) out(['ok' => false, 'error' => 'data']);
+    $db = crm_db_vault(); $db->beginTransaction();
+    foreach ($blobs as $b) $db->prepare('INSERT INTO vault (data, updated_at) VALUES (?, ?)')->execute([crm_enc($b), time()]);
+    $db->commit();
+    out(['ok' => true, 'imported' => count($blobs)] + $state());
+  }
+  /* зміна майстер-пароля: браузер перешифровує все і надсилає разом із новою сіллю */
+  if ($action === 'vault_rekey') {
+    $m = (array)($d['meta'] ?? []);
+    $salt = (string)($m['salt'] ?? ''); $iter = (int)($m['iter'] ?? 0); $check = crm_vault_blob($m['check'] ?? '');
+    if (!preg_match('/^[A-Za-z0-9+\/=]{20,64}$/', $salt) || $iter < 200000 || $iter > 5000000 || !$check) out(['ok' => false, 'error' => 'meta']);
+    $rows = (array)($d['rows'] ?? []);
+    $ids = array_map(fn($r) => (int)$r['id'], crm_vault_rows());
+    $new = [];
+    foreach ($rows as $r) { $b = crm_vault_blob($r['data'] ?? ''); if (!$b) out(['ok' => false, 'error' => 'data']); $new[(int)($r['id'] ?? 0)] = $b; }
+    sort($ids); $got = array_keys($new); sort($got);
+    if ($ids !== $got) out(['ok' => false, 'error' => 'changed']); // хтось змінив сейф паралельно — спершу онови сторінку
+    $db = crm_db_vault(); $db->beginTransaction();
+    foreach ($new as $id => $b) $db->prepare('UPDATE vault SET data = ?, updated_at = ? WHERE id = ?')->execute([crm_enc($b), time(), $id]);
+    crm_set('vault_meta', ['salt' => $salt, 'iter' => $iter, 'check' => $check, 'created' => (int)(crm_vault_meta()['created'] ?? time())]);
+    $db->commit();
+    crm_tg("🔐 <b>CRM: майстер-пароль сейфа змінено.</b>");
+    out($state());
+  }
+  /* забутий майстер-пароль: дані не відновити, можна лише стерти сейф і почати заново */
+  if ($action === 'vault_reset') {
+    if (($d['confirm'] ?? '') !== 'СТЕРТИ') out(['ok' => false, 'error' => 'confirm']);
+    crm_db_vault()->exec('DELETE FROM vault');
+    crm_set('vault_meta', null);
+    crm_tg("⚠️ <b>CRM: сейф доступів стерто</b> (усі записи видалено).\nIP: <code>" . crm_esc(crm_ip()) . '</code>');
+    out($state());
+  }
 
   if ($action === 'google_disconnect') {
     crm_set('google', null); crm_set('google_access', null); crm_set('google_error', null);

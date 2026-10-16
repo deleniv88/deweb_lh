@@ -104,7 +104,7 @@ dialog::backdrop{background:rgba(14,15,35,.45)}
 code{font-family:var(--f-num);background:var(--soft);padding:1px 6px;border-radius:6px;font-size:13px;word-break:break-all}
 
 /* утримання: таблиця на всю ширину */
-.wrap--wide{max-width:none}
+.wrap--wide{max-width:none;width:100%}
 .colbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 10px}
 .colbar__label{font:600 12px var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.04em;padding:0 4px}
 .colset{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
