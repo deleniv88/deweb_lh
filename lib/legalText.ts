@@ -15,8 +15,8 @@ import type { Locale } from "./i18n";
 export const OWNER = {
   name: "Andrii Deleniv",
   email: "andrii.deleniv@gmail.com",
-  address: "",
-  nip: "",
+  address: "ul. Krasiczyńska 8/75, 03-379 Warszawa",
+  nip: "5243037276",
 };
 
 export const LEGAL_UPDATED = { pl: "16 października 2026", en: "16 October 2026", ua: "16 жовтня 2026" } as const;
