@@ -54,6 +54,7 @@ const en = {
   mute: "Mute",
   unmute: "Unmute",
   social: "Social and contact",
+  auditLink: { label: "Free website audit", href: "/en/audit/" },
   close: "Close",
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
@@ -125,6 +126,7 @@ const pl: UIStrings = {
   mute: "Wycisz",
   unmute: "Włącz dźwięk",
   social: "Social media i kontakt",
+  auditLink: { label: "Darmowy audyt strony", href: "/audyt/" },
   close: "Zamknij",
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */
@@ -194,6 +196,7 @@ const ua: UIStrings = {
   mute: "Вимкнути звук",
   unmute: "Увімкнути звук",
   social: "Соцмережі та контакти",
+  auditLink: { label: "Безкоштовний аудит сайту", href: "/ua/audyt/" },
   close: "Закрити",
   works: {
     /* запасні SEO-тексти, якщо в адмінці (Сторінка робіт → SEO) порожньо */

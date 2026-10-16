@@ -5,7 +5,7 @@ import { ArrowUpRight, Lines, RightArrow, socialIcons } from "./Icons";
 
 /* Футер (блок «Футер» документа головної своєї мови) — спільний для головної і сторінки робіт.
    Кнопка з data-open-quote відкриває QuoteModal, який має бути на тій самій сторінці. */
-export default function Footer({ footer, t }: { footer: any; t: { social: string } }) {
+export default function Footer({ footer, t }: { footer: any; t: { social: string; auditLink?: { label: string; href: string } } }) {
   return (
     <footer className="ft" id="contact">
       <div className="ft__in">
@@ -31,7 +31,10 @@ export default function Footer({ footer, t }: { footer: any; t: { social: string
         <div className="ft__bottom">
           <span data-tina-field={tinaField(footer, "copyright")}>{footer?.copyright}</span>
           <span data-tina-field={tinaField(footer, "middle")}>{footer?.middle}</span>
-          <a href={footer?.privacyUrl || "#"} data-tina-field={tinaField(footer, "privacyLabel")}>{footer?.privacyLabel}</a>
+          <span className="ft__legal">
+            {t.auditLink && <a href={t.auditLink.href}>{t.auditLink.label}</a>}
+            <a href={footer?.privacyUrl || "#"} data-tina-field={tinaField(footer, "privacyLabel")}>{footer?.privacyLabel}</a>
+          </span>
         </div>
       </div>
     </footer>

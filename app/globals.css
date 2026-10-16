@@ -1715,6 +1715,7 @@ a:hover > .i-arrow{transform:translate(calc(2 * var(--s)), calc(-2 * var(--s)))}
 .ft__mark i:nth-child(5){margin-left:-.0959em}
 .ft__bottom{display:flex;justify-content:space-between;align-items:center;gap:calc(16 * var(--s));margin-top:calc(20 * var(--s));font-family:var(--f-body);font-weight:500;font-size:calc(15 * var(--s))}
 .ft__bottom a:hover{color:var(--accent-b)}
+.ft__legal{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(8 * var(--s)) calc(28 * var(--s))}
 
 /* =========================================================
    QUOTE POP-UP — вміщується в екран без скролу
@@ -2703,6 +2704,24 @@ html.is-locked .ai-teaser,html.chat-open .ai-teaser{display:none}
 .au-flag button{background:rgba(255,255,255,.2);color:#fff;border-radius:99px;padding:6px 14px;font-weight:600;font-size:13px}
 .au-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:14px;padding:12px 18px;font-size:14px;max-width:calc(100% - 32px);z-index:60;overflow-wrap:anywhere}
 .au-print-head{display:none}
+.au-h1{display:flex;flex-direction:column;align-items:center;gap:calc(12 * var(--s));font-weight:inherit}
+.au-h1 .page__title{display:block}
+/* блок для Google: що перевіряємо + FAQ */
+.au-seo{max-width:960px;margin:64px auto 0;display:flex;flex-direction:column;gap:18px}
+.au-seo h2{font-size:28px}
+.au-seo h2 + .au-faq{margin-top:-4px}
+.au-seo__intro{color:var(--au-mute);font-size:16px;max-width:70ch}
+.au-seo__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:26px}
+.au-seo__grid > div{background:var(--au-panel);border-radius:20px;padding:18px 20px}
+.au-seo__grid h3{font-family:var(--f-display);font-weight:600;font-size:17px;margin-bottom:4px}
+.au-seo__grid p{font-size:14px;color:var(--au-mute)}
+.au-faq{display:flex;flex-direction:column;gap:8px}
+.au-faq details{background:var(--au-panel);border-radius:18px;padding:0 20px}
+.au-faq summary{cursor:pointer;list-style:none;padding:16px 0;font-weight:600;display:flex;justify-content:space-between;gap:16px}
+.au-faq summary::-webkit-details-marker{display:none}
+.au-faq summary::after{content:"+";color:var(--accent-b);font-size:20px;line-height:1;transition:transform .2s}
+.au-faq details[open] summary::after{transform:rotate(45deg)}
+.au-faq details p{padding-bottom:16px;color:var(--au-mute);font-size:14px;max-width:75ch}
 
 @media (max-width:767px){
   .au-panel{padding:18px;border-radius:20px}
@@ -2722,7 +2741,7 @@ html.is-locked .ai-teaser,html.chat-open .ai-teaser{display:none}
 @media print{
   @page{margin:14mm}
   html,body{background:#fff!important}
-  .site-header,.ft,.qm,.quote-fab,.au-head,.au-scan,.au-actions,.au-cta button,.au-flag button,.au-toast,.ai-orb,[class^="ai-"],#ai-chat{display:none!important}
+  .site-header,.ft,.qm,.quote-fab,.au-head,.au-scan,.au-seo,.au-actions,.au-cta button,.au-flag button,.au-toast,.ai-orb,[class^="ai-"],#ai-chat{display:none!important}
   .page.au{padding:0!important;min-height:0}
   .au-col{max-width:none}
   .au-panel{border:1px solid #e3e5ee;break-inside:avoid;padding:16px}
