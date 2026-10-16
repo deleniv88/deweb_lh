@@ -90,12 +90,11 @@
         "type": "AI dla firm",
         "timeline": "Czas realizacji: 1–2 tygodnie",
         "name": "Asystent AI i automatyzacja",
-        "description": "Gdy klienci piszą o każdej porze, a zapytania giną. Asystent odpowiada za Ciebie i umawia rozmowy. Sprawdź czat w prawym dolnym rogu.",
+        "description": "Twoja strona pracuje dla Ciebie 24/7 dzięki asystentowi AI. Zbieraj zapytania we własnym CRM, otrzymuj powiadomienia na Telegramie, a rozmowy trafiają od razu do Twojego kalendarza.",
         "features": [
-          "Czat AI, który zna Twoje usługi i ceny, PL · UA · EN",
-          "Rozmowy w Twoim kalendarzu, zapytania na Telegram",
-          "Cotygodniowy raport z analityki na Telegramie",
-          "Opcjonalna opieka: aktualizacja wiedzy, przegląd rozmów"
+          "Czat AI, który zna Twoje usługi i ceny",
+          "Cotygodniowy raport z analityki",
+          "Pełna kontrola i analityka we własnym CRM"
         ],
         "buttonLabel": "Omówmy projekt",
         "buttonHref": "#contact",
