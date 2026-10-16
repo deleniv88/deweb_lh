@@ -84,6 +84,21 @@
         "buttonLabel": "Discuss project",
         "buttonHref": "#contact",
         "image": "/uploads/service-store.webp"
+      },
+      {
+        "type": "AI for business",
+        "timeline": "Timeline: 1–2 weeks",
+        "name": "AI assistant & automation",
+        "description": "When clients write at any hour and requests get lost. The assistant answers for you and books calls. Try the chat in the bottom right corner.",
+        "features": [
+          "AI chat that knows your services and prices, in PL · UA · EN",
+          "Calls booked into your calendar, requests to Telegram",
+          "Weekly site analytics report in Telegram",
+          "Optional support: knowledge updates, chat review"
+        ],
+        "buttonLabel": "Discuss project",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-ai-en.webp"
       }
     ]
   },

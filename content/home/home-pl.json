@@ -85,6 +85,21 @@
         "buttonLabel": "Omówmy projekt",
         "buttonHref": "#contact",
         "image": "/uploads/service-store.webp"
+      },
+      {
+        "type": "AI dla firm",
+        "timeline": "Czas realizacji: 1–2 tygodnie",
+        "name": "Asystent AI i automatyzacja",
+        "description": "Gdy klienci piszą o każdej porze, a zapytania giną. Asystent odpowiada za Ciebie i umawia rozmowy. Sprawdź czat w prawym dolnym rogu.",
+        "features": [
+          "Czat AI, który zna Twoje usługi i ceny, PL · UA · EN",
+          "Rozmowy w Twoim kalendarzu, zapytania na Telegram",
+          "Cotygodniowy raport z analityki na Telegramie",
+          "Opcjonalna opieka: aktualizacja wiedzy, przegląd rozmów"
+        ],
+        "buttonLabel": "Omówmy projekt",
+        "buttonHref": "#contact",
+        "image": "/uploads/service-ai-pl.webp"
       }
     ]
   },
